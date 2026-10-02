@@ -485,7 +485,6 @@
 
   <footer>
     <ul>
-      <li>iPhone で全画面表示にしたいときは、Safari の共有ボタン →「ホーム画面に追加」で追加したアイコンから開いてください。</li>
       <li>プレイリストはこのブラウザに保存されます。別の端末で使うときや人に渡すときは「共有」か「書き出し / 読み込み」を使ってください。</li>
       <li>YouTube Premium の方へ：iPhone / iPad の Safari では、Premium でもこのページの再生中に広告が出ることがあります。「設定」→「アプリ」→「Safari」→「サイト越えトラッキングを防ぐ」をオフにして、Safari で youtube.com にログインしてから開き直すと、広告が出なくなる場合があります（この設定は Safari 全体に効きます）。</li>
       <li>このページは yosugala 公式とは関係のない、ファンによる非公式のページです。映像はすべて YouTube の埋め込みで公式動画を再生しており、権利は
@@ -1776,8 +1775,6 @@ $('fs').addEventListener('click', async () => {
     try { await screen.orientation.lock('landscape'); } catch {}   // 対応端末では横向きに
   } catch {
     setPseudoFs(true);
-    const iosSafari = /iPhone|iPod/.test(navigator.userAgent) && !navigator.standalone && !matchMedia('(display-mode: standalone)').matches;
-    if (iosSafari) $('msg').textContent = 'iPhone の Safari ではアドレスバーを消せないため、画面いっぱいの表示にしています。完全な全画面にするには、共有ボタン →「ホーム画面に追加」で追加したアイコンから開いてください。';
   }
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('stage').classList.contains('pseudo-fs')) setPseudoFs(false); });
@@ -1786,11 +1783,16 @@ if (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'Mac
   document.documentElement.classList.add('ios');
 // iPhone の横向きでは「画面の端まで使う」（viewport-fit=cover）を外す。付けたままだと切り欠きぶんの余白が
 // YouTube の埋め込みの中にも伝わり、映像だけが右へずれて左に黒帯が出るため。外すと iPhone が自分で左右を空ける。
-// 縦向きでは、ホーム画面から開いたときに上端まで使えるよう付けたままにする
+// 縦向きでは、ホーム画面から開いたときに上端まで使えるよう付けたままにする。
+// 外すと左右が空くぶんページの幅が狭くなり（例: 932 → 814）、リストを右に並べる幅（901px）を下回ってしまうので、
+// 画面の長い辺が 901px 以上の iPhone の横向きでは、ページの幅を画面の長い辺にして縮めて表示する（以前と同じ並びにする）。
+// iPad は Split View などでウィンドウが画面より狭いことがあり、縮めると小さくなりすぎるので対象にしない
 const viewportMeta = document.querySelector('meta[name="viewport"]');
 const landscapeMq = matchMedia('(orientation: landscape)');
 function syncViewportFit() {
-  viewportMeta.content = 'width=device-width, initial-scale=1' + (landscapeMq.matches ? '' : ', viewport-fit=cover');
+  if (!landscapeMq.matches) { viewportMeta.content = 'width=device-width, initial-scale=1, viewport-fit=cover'; return; }
+  const long = Math.max(screen.width, screen.height);
+  viewportMeta.content = long >= 901 && /iPhone|iPod/.test(navigator.userAgent) ? `width=${long}` : 'width=device-width, initial-scale=1';
 }
 syncViewportFit();
 landscapeMq.addEventListener('change', syncViewportFit);
