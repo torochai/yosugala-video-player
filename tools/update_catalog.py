@@ -70,13 +70,13 @@ def live_by_rule(rules, title, fallback):
     return fallback
 
 
-def date_from(title, upload_date):
+def title_date(title):
     m = re.search(r'(\d{4})\.(\d{1,2})\.(\d{1,2})', title)
-    if m:
-        return f'{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}'
-    if upload_date:
-        return f'{upload_date[:4]}-{upload_date[4:6]}-{upload_date[6:]}'
-    return ''
+    return f'{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}' if m else ''
+
+
+def iso(upload_date):
+    return f'{upload_date[:4]}-{upload_date[4:6]}-{upload_date[6:]}' if upload_date else ''
 
 
 def main():
@@ -127,12 +127,12 @@ def main():
         info = cache.get(vid)
         if not info:
             continue
-        title, date = info['title'], date_from(info['title'], info.get('upload_date'))
+        title, published = info['title'], iso(info.get('upload_date'))
         single = parse_single(title)
         if single and not (info['chapters'] and (info['duration'] or 0) > 1200):
             song, live = single
             songs.append({'song': song, 'vid': vid, 'start': 0, 'end': None, 'len': info['duration'],
-                          'live': live_by_rule(live_rules, title, live), 'date': date, 'kind': 'single'})
+                          'live': live_by_rule(live_rules, title, live), 'tdate': title_date(title), 'published': published, 'kind': 'single'})
         elif info['chapters']:
             live = live_by_rule(live_rules, title, parse_full_live(title))
             for c in info['chapters']:
@@ -141,7 +141,7 @@ def main():
                     continue
                 start, end = int(c['start']), int(c['end'])
                 songs.append({'song': name, 'vid': vid, 'start': start, 'end': end, 'len': end - start,
-                              'live': live, 'date': date, 'kind': 'full'})
+                              'live': live, 'tdate': title_date(title), 'published': published, 'kind': 'full'})
         else:
             print(f'  曲に分けられない動画をスキップ: {title[:60]}')
 
@@ -165,7 +165,13 @@ def main():
             if x['kind'] == 'full' and key in singles:
                 x.update(hidden=True, hidden_reason='単独映像あり', duplicate_of=singles[key]); hidden += 1
         print(f'単独映像と重なるフルライブのチャプター {hidden} 件に非表示の印を付けました')
-    out.sort(key=lambda s: (s['song'].casefold(), s['date']), reverse=False)
+    # 公演日: 補正ファイルの live_dates → タイトルの日付 の順で決める（分からなければ空）
+    live_dates = ov.get('live_dates', {})
+    for x in out:
+        x['date'] = live_dates.get(x['live']) or x.pop('tdate', '') or ''
+        x.pop('tdate', None)
+    # 同じ曲の中は公演日の古い順（公演日が分からないものは公開日で比べる）
+    out.sort(key=lambda s: (s['song'].casefold(), s['date'] or s['published']))
 
     with open(OUT, 'w', encoding='utf-8') as f:
         visible = sum(1 for x in out if not x.get('hidden'))

@@ -1,5 +1,5 @@
 {
-  "_説明": "update_catalog.py が catalog.json を作るときの手直し。prefer_single_over_full=true なら、単独映像と重なるフルライブのチャプターに hidden の印を付けてプレイヤーで非表示にする（データには残る）。aliases=曲名の統一、live_rules=動画タイトル(正規表現)→表示するライブ名、segments=「動画ID@開始秒」ごとの開始・終了の修正、exclude_videos/exclude_entries=除外",
+  "_説明": "update_catalog.py が catalog.json を作るときの手直し。prefer_single_over_full=true なら、単独映像と重なるフルライブのチャプターに hidden の印を付けてプレイヤーで非表示にする（データには残る）。aliases=曲名の統一、live_rules=動画タイトル(正規表現)→表示するライブ名、segments=「動画ID@開始秒」ごとの開始・終了の修正、exclude_videos/exclude_entries=除外 live_dates=ライブ名→公演日（タイトルに日付がない公演用。並び順と表示に使う）。",
   "prefer_single_over_full": true,
   "aliases": {
     "MyDear": "My Dear",
@@ -10,17 +10,50 @@
     "ゲーム": "マルバツゲーム"
   },
   "live_rules": [
-    ["tour2025 FINAL", "tour2025 FINAL"],
-    ["LINE CUBE SHIBUYA", "progress the night -LINE CUBE SHIBUYA-"],
-    ["日比谷公園大音", "3rd anniversary live「progress the night -日比谷公園大音楽堂-」"],
-    ["春に廻れなかった場所編", "tour2024 aki「春に廻れなかった場所編」Final"],
-    ["tour2024 Final", "tour2024 Final（Spotify O-EAST）"],
-    ["LIQUIDROOM", "progress the night -LIQUIDROOM-"],
-    ["QUATTRO tour2023", "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）"]
+    [
+      "tour2025 FINAL",
+      "tour2025 FINAL"
+    ],
+    [
+      "LINE CUBE SHIBUYA",
+      "progress the night -LINE CUBE SHIBUYA-"
+    ],
+    [
+      "日比谷公園大音",
+      "3rd anniversary live「progress the night -日比谷公園大音楽堂-」"
+    ],
+    [
+      "春に廻れなかった場所編",
+      "tour2024 aki「春に廻れなかった場所編」Final"
+    ],
+    [
+      "tour2024 Final",
+      "tour2024 Final（Spotify O-EAST）"
+    ],
+    [
+      "LIQUIDROOM",
+      "progress the night -LIQUIDROOM-"
+    ],
+    [
+      "QUATTRO tour2023",
+      "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）"
+    ]
   ],
   "segments": {
-    "nd6EJzBDS60@4508": { "end": 4739, "_memo": "4740 以降は MC とアンコールのコール" }
+    "nd6EJzBDS60@4508": {
+      "end": 4739,
+      "_memo": "4740 以降は MC とアンコールのコール"
+    }
   },
   "exclude_videos": [],
-  "exclude_entries": []
+  "exclude_entries": [],
+  "live_dates": {
+    "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）": "2023-10-21",
+    "progress the night -LIQUIDROOM-": "2024-02-18",
+    "tour2024 Final（Spotify O-EAST）": "2024-06-22",
+    "tour2024 aki「春に廻れなかった場所編」Final": "2024-11-01",
+    "progress the night -LINE CUBE SHIBUYA-": "2025-02-08",
+    "3rd anniversary live「progress the night -日比谷公園大音楽堂-」": "2025-06-22",
+    "tour2025 FINAL": "2025-07-25"
+  }
 }

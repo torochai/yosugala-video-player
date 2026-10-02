@@ -604,6 +604,7 @@ function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catc
 // 「すべてのライブ映像」: catalog.json（tools/update_catalog.py で作る）から作る読み取り専用のプレイリスト
 const CATALOG_ID = '__catalog__';
 let catalog = null, catalogAll = [], catQuery = '', lastTarget = null;
+const liveDates = {};   // 「動画ID@開始秒」→ 公演日
 const catSelected = new Set();
 const normq = (x) => String(x || '').normalize('NFKC').toLowerCase();
 const catalogPl = {
@@ -615,7 +616,7 @@ const catalogPl = {
   },
   get items() {
     const q = normq(catQuery).trim();
-    return q ? catalogAll.filter((it) => normq(it.title + ' ' + it.live).includes(q)) : catalogAll;
+    return q ? catalogAll.filter((it) => normq(`${it.title} ${it.live} ${liveDates[`${it.vid}@${it.start}`] || ''}`).includes(q)) : catalogAll;
   },
 };
 const pl = () => (state.current === CATALOG_ID && catalog ? catalogPl : null)
@@ -624,7 +625,9 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   catalog = c;
   // hidden の付いたもの（単独映像と重なるフルライブのチャプターなど）は一覧に出さない
   catalogAll = c.songs.filter((x) => !x.hidden).map((x) => ({ id: `c:${x.vid}@${x.start}`, vid: x.vid, start: x.start, end: x.end, title: x.song,
-    live: x.live || (x.date ? `${x.date} 公開` : ''), len: x.len ?? null }));
+    live: x.live || '', len: x.len ?? null }));
+  // 公演日（分かるものだけ）。どのプレイリストの曲でも、同じ動画・同じ開始位置なら表示する
+  c.songs.forEach((x) => { if (x.date) liveDates[`${x.vid}@${x.start}`] = x.date; });
   renderAll();
 }).catch(() => {});
 
@@ -830,7 +833,9 @@ function renderList() {
     const main = document.createElement('button'); main.type = 'button'; main.className = 'main';
     const t = document.createElement('span'); t.className = 't'; t.textContent = it.title;
     const s = document.createElement('span'); s.className = 's';
-    s.textContent = [it.live, it.start || it.end != null ? `${fmt(it.start)}〜${it.end != null ? fmt(it.end) : '最後'}` : ''].filter(Boolean).join(' ・ ');
+    const ld = liveDates[`${it.vid}@${it.start}`];
+    const liveText = [it.live, ld ? `（${ld.replace(/-/g, '.')}）` : ''].join('');
+    s.textContent = [liveText, it.start || it.end != null ? `${fmt(it.start)}〜${it.end != null ? fmt(it.end) : '最後'}` : ''].filter(Boolean).join(' ・ ');
     main.append(t, s);
     main.addEventListener('click', () => editing ? openSong(it.id) : playIndex(i));
     const d = document.createElement('span'); d.className = 'd'; d.textContent = fmt(itemLen(it));

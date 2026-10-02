@@ -26,4 +26,5 @@ git add catalog.json tools/video_cache.json && git commit -m "Update catalog" &&
 - 一度取得した動画の情報は `tools/video_cache.json` に保存され、次回からは新しい動画だけを取得します
 - YouTube のボット確認で止められたときは `python3 tools/update_catalog.py --cookies-from-browser chrome` で実行してください
 - 曲名の表記ゆれ、ライブ名の表示、終了時刻の調整、除外は `tools/catalog_overrides.json` で直せます
+- 公演日はタイトルの日付から取ります。タイトルに日付がない公演は `catalog_overrides.json` の `live_dates`（ライブ名 → 公演日）に書いてください。同じ曲の中は公演日の古い順に並びます（公開日 `published` もデータに入っていますが、画面には出しません）
 - 同じ公演・同じ曲の単独映像があるフルライブのチャプターは、`catalog.json` に `"hidden": true`（理由 `hidden_reason`、重なっている単独映像 `duplicate_of`）の印を付けてプレイヤーでは表示しません。表示に戻すときは `catalog_overrides.json` の `prefer_single_over_full` を `false` にして再実行します
