@@ -1318,7 +1318,13 @@ $('catAll').addEventListener('click', () => { items().forEach((it) => catSelecte
 $('catNone').addEventListener('click', () => { catSelected.clear(); renderList(); renderCatBar(); });
 $('catAdd').addEventListener('click', () => openAdd((pl().all || pl().items).filter((it) => catSelected.has(it.id))));
 // 「情報」「公演情報」: このプレイリストについて（説明・セットリスト）をポップアップで開く
-$('infoJump').addEventListener('click', () => { $('pdescBody').scrollTop = 0; $('infoDlg').showModal(); });
+// PC・iPad 横向きでは、ポップアップを動画の欄と同じ幅にする（スマホはほかのダイアログと同じく画面下から出す）
+$('infoJump').addEventListener('click', () => {
+  const wide = matchMedia('(min-width: 901px)').matches;
+  $('infoDlg').style.width = wide ? `${document.querySelector('.stage').offsetWidth}px` : '';
+  $('infoDlg').style.maxWidth = wide ? 'calc(100vw - 32px)' : '';
+  $('pdescBody').scrollTop = 0; $('infoDlg').showModal();
+});
 // ポップアップの外（背景）を押しても閉じる
 $('infoDlg').addEventListener('click', (e) => { if (e.target === $('infoDlg')) $('infoDlg').close(); });
 $('selectToggle').addEventListener('click', () => { selecting = !selecting; if (!selecting) catSelected.clear(); renderAll(); });
