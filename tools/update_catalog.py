@@ -183,12 +183,13 @@ def main():
         x['venue'] = live_venues.get(x['live'], '')
     # 公演の中の曲順 no（1 から）: 表示するものだけに付ける
     #   フルライブのチャプター → 開始時刻の順。単独映像 → 非表示にした同じ曲のチャプターの位置
-    #   フルライブ映像がない公演 → 補正ファイルの setlists（曲名の並び）。どれでも分からなければ最後に公開日順
+    #   フルライブ映像がない公演 → 補正ファイルの setlists（本編・アンコールの曲順）。どれでも分からなければ最後に公開日順
     setlists = ov.get('setlists', {})
     for live in {x['live'] for x in out if x['live']}:
         group = [x for x in out if x['live'] == live]
         chapter_at = {(x['duplicate_of'], x['song']): x['start'] for x in group if x.get('duplicate_of')}
-        setlist = setlists.get(live, [])
+        sl = setlists.get(live, {})
+        setlist = sl.get('main', []) + sl.get('encore', [])
 
         def pos(x):
             if x['kind'] == 'full':
@@ -203,10 +204,16 @@ def main():
     # 同じ曲の中は公演日の古い順（公演日が分からないものは公開日で比べる）
     out.sort(key=lambda s: (s['song'].casefold(), s['date'] or s['published']))
 
+    # 公演ごとの情報（公演日・会場・セットリスト）。プレイヤーで公演ごとのプレイリストの説明に表示する
+    lives = {}
+    for x in out:
+        if x['live'] and x['live'] not in lives:
+            lives[x['live']] = {'date': x['date'], 'venue': x['venue'], **setlists.get(x['live'], {})}
+
     with open(OUT, 'w', encoding='utf-8') as f:
         visible = sum(1 for x in out if not x.get('hidden'))
         json.dump({'updated': datetime.date.today().isoformat(), 'count': visible, 'total': len(out),
-                   'hidden': len(out) - visible, 'songs': out},
+                   'hidden': len(out) - visible, 'lives': lives, 'songs': out},
                   f, ensure_ascii=False, indent=1)
     names = sorted({s['song'] for s in out}, key=str.casefold)
     vis = sum(1 for x in out if not x.get('hidden'))
