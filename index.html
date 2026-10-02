@@ -90,6 +90,15 @@
   }
   .lead { margin: 14px 0 0; color: var(--muted); font-size: .9rem; max-width: 40em; }
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 24px; align-items: start; }
+  /* PC・iPad 横向き: プレイリスト欄をページの一番上（タイトルの右）から始める。タイトル・共有の案内・動画は左の列。
+     曲リストに使える高さを増やして、動画を見ながらリストの中だけをスクロールできるようにする */
+  @media (min-width: 901px) {
+    main { display: grid; grid-template-columns: minmax(0, 1fr) 390px; column-gap: 24px; align-items: start; }
+    .layout { display: contents; }
+    .hero, .banner, .layout > section { grid-column: 1; }
+    .layout > aside { grid-column: 2; grid-row: 1 / span 3; }
+    footer { grid-column: 1 / -1; }
+  }
   button, select, input, textarea { font: inherit; color: inherit; }
 
   .btn { background: var(--glass-2); color: var(--text); border: 1px solid var(--line-2); border-radius: 999px;
@@ -1157,13 +1166,18 @@ function liveLine(it) {
   return [(x.date ? dotDate(x.date) : '') + quoteLive(x.live || it.live), x.venue ? `@ ${x.venue}` : ''].filter(Boolean).join(' ');
 }
 // PC では曲リストを20曲分の高さまでにして、それ以上は枠の中でスクロールする
-const LIST_MAX_ROWS = 20;
+// PC・iPad 横向き（901px 以上）では、ページの一番上にいるときに曲リストの下端が画面の下端に収まる高さにして、
+// 入りきらない曲はリストの中でスクロールする（動画を見ながら下の方の曲を選べるように）。最低でも4曲分の高さは残す
+const LIST_MIN_ROWS = 4;
 function fitListHeight() {
   const ol = $('list');
   ol.style.maxHeight = ''; ol.style.overflowY = '';
-  if (!matchMedia('(min-width: 901px)').matches || ol.children.length <= LIST_MAX_ROWS) return;
-  const top = ol.children[0].getBoundingClientRect().top, cut = ol.children[LIST_MAX_ROWS].getBoundingClientRect().top;
-  ol.style.maxHeight = `${Math.round(cut - top)}px`; ol.style.overflowY = 'auto';
+  if (!matchMedia('(min-width: 901px)').matches || !ol.children.length) return;
+  const top = ol.getBoundingClientRect().top + scrollY;   // ページの一番上から見たリストの位置
+  const foot = document.querySelector('.pfoot'), footH = foot ? foot.offsetHeight : 0;   // 編集中は下にボタン列がある
+  const rowH = ol.children[0].offsetHeight || 60;
+  const h = Math.max(rowH * Math.min(LIST_MIN_ROWS, ol.children.length), Math.floor(innerHeight - top - footH - 20));
+  if (ol.scrollHeight > h + 1) { ol.style.maxHeight = `${h}px`; ol.style.overflowY = 'auto'; }
 }
 window.addEventListener('resize', () => fitListHeight());
 function renderList() {
@@ -1246,9 +1260,10 @@ function renderAll() {
   $('selectToggle').hidden = editing; $('selectToggle').textContent = selecting ? '選択をやめる' : '選択';
   $('selectToggle').classList.toggle('primary', selecting);
   $('catTools').hidden = !pl().catalog; $('pickTools').hidden = !selecting; renderCatBar(); renderTip();
+  fitListHeight();   // 見出しまわり（案内・絞り込み・選択）の表示が決まってから、リストの高さを計算し直す
 }
 // 案内は「×」で閉じるまで表示（閉じた状態は保存して、次から出さない）
-function renderTip() { $('plTip').hidden = !!state.hideTip; $('plTipOpen').hidden = !state.hideTip; }
+function renderTip() { $('plTip').hidden = !!state.hideTip; $('plTipOpen').hidden = !state.hideTip; fitListHeight(); }
 $('plTipOpen').addEventListener('click', () => { state.hideTip = false; save(); renderTip(); });
 $('plTipClose').addEventListener('click', () => { state.hideTip = true; save(); renderTip(); });
 function renderCatBar() {
