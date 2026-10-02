@@ -235,6 +235,10 @@
   /* 「このプレイリストについて」のポップアップ。長い説明（セットリストなど）は中でスクロール */
   #infoDlg .pdesc-body { margin-top: 0; max-height: min(62vh, 640px); overflow-y: auto;
     overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; outline: none; }
+  /* 「情報」「公演情報」のポップアップは背景を暗くしない（ほかのダイアログはそのまま） */
+  #infoDlg::backdrop { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  /* ポップアップ自体は少し透けさせる（文字が読めるように、透けた部分は軽くぼかす） */
+  #infoDlg { background: rgba(14,18,44,.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
   /* ポップアップを開いている間はページ全体をスクロールさせない（iPhone で背景が動かないように） */
   html.dlg-open, html.dlg-open body { overflow: hidden; }
   .pdesc-body { margin-top: 8px; padding: 16px 18px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line);
@@ -820,18 +824,18 @@ function setlistText(info, playable) {
   // 番号の桁がそろうように、足りない桁は数字と同じ幅の空白（U+2007）で埋める（曲名の位置がずれない）
   const width = String((info.main || []).length + (info.encore || []).length).length;
   const line = (no, song, encore) => `　${String(no).padStart(width, '\u2007')}. ${song}${medley.has(song) ? '（メドレー）' : ''}${hasVideo(song, encore) ? '  ▶' : ''}`;
-  // ◻️本編 / ◻️アンコール の見出しのあとに、字下げして通し番号で曲名（番号はアンコールにも続けて振る）
-  const out = ['', '', '◻️ 本編'];
+  // ◻️ セットリスト の見出しの中を [本編] [アンコール] に分け、字下げして通し番号で曲名（番号はアンコールにも続けて振る）
+  const out = ['', '', '◻️ セットリスト', '　[本編]'];
   info.main.forEach((song, i) => out.push(line(i + 1, song)));
   if ((info.encore || []).length) {
-    out.push('', '◻️ アンコール');
+    out.push('', '　[アンコール]');
     info.encore.forEach((song, i) => out.push(line(info.main.length + i + 1, song, true)));
   }
-  if (playable) out.push('', '▶ = このプレイリストで見られる曲');
+  if (playable) out.push('', '　▶ = このプレイリストで見られる曲');   // セットリストの中なので字下げする
   if (info.note) out.push('', `※ ${info.note}`);
   // 出典は1つでも複数（配列）でもよい
   const sources = [].concat(info.source || []);
-  if (sources.length) out.push('', '出典:', ...sources);
+  if (sources.length) out.push('', '◻️ 出典', ...sources.map((u) => `　・${u}`));   // ほかの見出しと同じく字下げし、先頭に・
   return out.join('\n');
 }
 
