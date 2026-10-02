@@ -394,7 +394,8 @@ const DEFAULT_ITEMS = [
   ['Tv7KrUG9C0Q', 3096, 3348, '四葉のクローバー', 'tour2025 FINAL'],
   ['x4nkkUcnD_Q', 0, null, 'きっかけ', 'tour2025 FINAL', 249],
 ];
-const DEFAULT_NAME = '人気曲セレクション 16曲';
+const DEFAULT_NAME = 'ライブ映像セレクション 16曲';
+const OLD_DEFAULT_NAMES = ['人気曲セレクション 16曲'];   // 以前の名前（保存済みのものを新しい名前に変える）
 const DEFAULT_DESC = `yosugala official の公式ライブ映像から、人気の高い16曲を人気順に並べたプレイリストです（2026年10月時点の集計）。
 
 ■ 人気順の決め方
@@ -478,6 +479,7 @@ function load() {
       s.playlists = s.playlists.filter((p) => p && Array.isArray(p.items));
       s.playlists.forEach((p) => {
         p.items = p.items.filter((it) => it && typeof it.vid === 'string');
+        if (OLD_DEFAULT_NAMES.includes(p.name)) p.name = DEFAULT_NAME;
         if (p.desc == null) p.desc = p.name === DEFAULT_NAME ? DEFAULT_DESC : '';
         if (p.desc) p.desc = p.desc.replace('・デビュー曲の prologue のような思い入れは反映されていません', '・デビュー曲の prologue のように、再生数や演奏回数では測れない曲の大切さは、順位に入れていません');
       });
