@@ -472,9 +472,9 @@ const DEFAULT_ITEMS = [
   ['Tv7KrUG9C0Q', 3096, 3348, '四葉のクローバー', 'tour2025 FINAL'],
   ['x4nkkUcnD_Q', 0, null, 'きっかけ', 'tour2025 FINAL', 249],
 ];
-const DEFAULT_NAME = 'ライブ映像セレクション 16曲';
+const DEFAULT_NAME = "トロ's ライブ映像セレクション";
 const DEFAULT_AUTHOR = 'トロ（@torosugala）';
-const OLD_DEFAULT_NAMES = ['人気曲セレクション 16曲'];   // 以前の名前（保存済みのものを新しい名前に変える）
+const OLD_DEFAULT_NAMES = ['人気曲セレクション 16曲', 'ライブ映像セレクション 16曲', "トロ's ライブ映像セレクション (16)"];   // 以前の名前（保存済みのものを新しい名前に変える）
 const DEFAULT_DESC = `トロ（@torosugala）が個人的に選んだ、yosugala の公式ライブ映像16曲のセレクションです。yosugala 公式のものではありません。
 
 ■ 選び方
@@ -610,7 +610,7 @@ const catSelected = new Set();
 const normq = (x) => String(x || '').normalize('NFKC').toLowerCase();
 const catalogPl = {
   id: CATALOG_ID, readonly: true, author: '',
-  get name() { return `すべてのライブ映像（${catalogAll.length}）`; },
+  name: 'すべてのライブ映像',
   get desc() {
     return catalog ? `yosugala official の公式ライブ映像を、曲ごとに分けた一覧です（${catalogAll.length} 件・${catalog.updated} 時点）。新しい公式ライブ映像が出たら追加していきます。
 曲の右の「＋」、またはチェックを入れて「選択した曲をプレイリストに追加」で、好きなプレイリストに入れられます。上の欄で曲名やライブ名を絞り込めます。` : '';
@@ -776,6 +776,8 @@ function createPlayer() {
 
 // ---------- プレイリスト表示 ----------
 let editing = false;
+// プルダウンでは「名前 (曲数)」と表示する（曲数は自動）
+const withCount = (p) => `${p.name} (${p.items.length})`;
 function renderSelect() {
   const sel = $('plSelect'); sel.textContent = '';
   const opt = (id, name) => { const o = document.createElement('option'); o.value = id; o.textContent = name; return o; };
@@ -785,16 +787,16 @@ function renderSelect() {
     list.forEach(([id, name]) => g.appendChild(opt(id, name))); sel.appendChild(g);
   };
   // マイライブラリ: 自分で作った（編集できる）プレイリスト。空でも見出しは出して「なし」と表示する
-  const mine = state.playlists.filter((p) => !p.readonly).map((p) => [p.id, p.name]);
+  const mine = state.playlists.filter((p) => !p.readonly).map((p) => [p.id, withCount(p)]);
   if (mine.length) group('マイライブラリ', mine);
   else {
     const g = document.createElement('optgroup'); g.label = 'マイライブラリ';
     const o = opt('', 'なし'); o.disabled = true; g.appendChild(o); sel.appendChild(g);
   }
   // ライブラリ: 組み込みのプレイリスト（トロのセレクションなど）。編集はできないが複製できる
-  group('ライブラリ', state.playlists.filter((p) => p.readonly).map((p) => [p.id, p.name]));
+  group('ライブラリ', state.playlists.filter((p) => p.readonly).map((p) => [p.id, withCount(p)]));
   // すべてのライブ映像: 特別扱いの全曲一覧（検索して選んで追加する）
-  if (catalog) group('すべてのライブ映像', [[CATALOG_ID, catalogPl.name]]);
+  if (catalog) group('すべてのライブ映像', [[CATALOG_ID, `${catalogPl.name} (${catalogAll.length})`]]);
   sel.value = pl().id;
 }
 // 説明文（URL だけリンクにして、それ以外はテキストのまま表示）
@@ -816,6 +818,7 @@ function renderDesc() {
   if (au) { linkify($('plAuthor'), au); $('plAuthor').prepend('作成：'); }
 }
 function renderList() {
+  renderSelect();
   renderDesc();
   const ol = $('list'); ol.textContent = '';
   const list = items();
