@@ -801,8 +801,9 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
     if (!list.length) return;
     const { date, live, venue } = list[0];
     catalogPls.push(catalogPlaylist(LIVE_ID + k, `${dotDate(date)}${quoteLive(live)}`, list.map(toItem),
-      // 公演情報: 公演名・公演日・会場のあとにセットリスト（プレイリストの説明文は入れない）
-      [`公演名: ${quoteLive(live)}`, `公演日: ${dotDate(date)}`, venue ? `会場: ${venue}` : ''].filter(Boolean).join('\n')
+      // 公演情報: ◻️ 公演名 / ◻️ 公演日 / ◻️ 会場 のあとにセットリスト（見出しと字下げはセットリストと同じ形。プレイリストの説明文は入れない）
+      [['公演名', quoteLive(live)], ['公演日', dotDate(date)], ['会場', venue]].filter(([, v]) => v)
+        .map(([k, v]) => `◻️ ${k}\n　${v}`).join('\n\n')
       + setlistText((c.lives || {})[live], full.length ? null : new Set(list.map((x) => x.song))), false, true));
   });
   renderAll(); openSharedLib(); applyResume();
