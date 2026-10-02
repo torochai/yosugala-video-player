@@ -390,7 +390,7 @@
 <script>
 // ---------- 初期プレイリスト ----------
 const DEFAULT_ITEMS = [
-  ['nd6EJzBDS60', 4508, 4771, 'indigo', 'progress the night -LIQUIDROOM-'],
+  ['nd6EJzBDS60', 4508, 4739, 'indigo', 'progress the night -LIQUIDROOM-'],   // 4740 以降はMCとアンコールのコール
   ['zFgFUba5RKE', 0, null, 'アステリズム', 'tour2024 aki「春に廻れなかった場所編」Final', 273],
   ['K5DhUNxzjtI', 0, null, 'コノユビトマレ', 'progress the night -LINE CUBE SHIBUYA-', 196],
   ['nd6EJzBDS60', 3490, 3709, '夜明けの唄', 'progress the night -LIQUIDROOM-'],
@@ -511,6 +511,7 @@ function load() {
         if (OLD_DEFAULT_NAMES.includes(p.name)) p.name = DEFAULT_NAME;
         if (p.desc == null) p.desc = p.name === DEFAULT_NAME ? DEFAULT_DESC : '';
         if (OLD_DEFAULT_DESCS.includes(p.desc)) p.desc = DEFAULT_DESC;
+        p.items.forEach((it) => { if (it.vid === 'nd6EJzBDS60' && it.start === 4508 && it.end === 4771) { it.end = 4739; it.len = null; } });
       });
       if (s.playlists.length) return s;
     }
