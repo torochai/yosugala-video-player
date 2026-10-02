@@ -761,7 +761,9 @@ function setlistText(info, playable) {
   }
   if (playable) out.push('', '▶ = このプレイリストで見られる曲');
   if (info.note) out.push('', `※ ${info.note}`);
-  if (info.source) out.push('', `出典: ${info.source}`);
+  // 出典は1つでも複数（配列）でもよい
+  const sources = [].concat(info.source || []);
+  if (sources.length) out.push('', '出典:', ...sources);
   return out.join('\n');
 }
 
