@@ -90,6 +90,11 @@
   .bicon.toggle[aria-pressed="true"] { color: var(--moon); opacity: 1; text-shadow: 0 0 10px var(--moon); filter: drop-shadow(0 0 6px rgba(185,203,255,.55)); }
   .time { font-variant-numeric: tabular-nums; font-size: .74rem; color: var(--muted); white-space: nowrap; flex: none; padding: 0 2px; }
   .bar input[type=range] { accent-color: var(--moon); cursor: pointer; height: 4px; }
+  /* タッチ端末はつまみを押しやすく（見た目の太さはそのまま、触れる範囲を広げる） */
+  @media (pointer: coarse) {
+    .bar input[type=range] { height: 32px; }
+    .bicon { width: 40px; height: 40px; }
+  }
   #seek { flex: 1; min-width: 60px; margin: 0 6px; }
   /* 音量バーはスピーカーにマウスを乗せたときだけ広がる */
   .volwrap { display: flex; align-items: center; flex: none; }
@@ -163,7 +168,10 @@
   .stage.is-fs { border-radius: 0; border: 0; width: 100vw; height: 100vh; background: #000; }
   .stage.is-fs .screen { flex: 1; aspect-ratio: auto; }
   /* iPhone などページからの全画面に対応しない端末では、画面いっぱいに広げて代わりにする */
-  .stage.pseudo-fs { position: fixed; inset: 0; z-index: 1000; height: 100dvh;
+  /* 擬似全画面: 外側（スマホでは上部固定にしている枠）ごと画面全体に固定する */
+  html.pseudo-fs-on .stage-wrap { position: fixed !important; inset: 0; width: 100%; height: 100%; z-index: 1000; background: #000; margin: 0;
+    align-self: stretch; justify-self: stretch; }
+  .stage.pseudo-fs { position: absolute; inset: 0; width: auto; height: auto;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); }
   html.pseudo-fs-on, html.pseudo-fs-on body { overflow: hidden; }
   /* 全画面では曲名をバーに出す（動画の上には何も重ねない） */
@@ -172,9 +180,10 @@
   .bar-title .bn { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--moon); margin-right: 8px; }
   .stage.is-fs .bar-title { display: block; }
   /* 全画面で3秒操作がないとバーを畳む。下端に細い帯を残し、そこにマウスを持っていくと再表示 */
-  .stage.is-fs .bar { max-height: 120px; overflow: hidden; padding-bottom: max(8px, env(safe-area-inset-bottom));
+  .stage.is-fs .bar { max-height: 160px; overflow: hidden; padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right));
     transition: max-height .35s, padding .35s, opacity .35s; }
-  .stage.is-fs.idle .bar { max-height: 10px; padding-top: 0; padding-bottom: 0; opacity: .35; }
+  .stage.is-fs.idle .bar { max-height: 10px; padding-top: 0; padding-bottom: 0; opacity: 0; }
   .stage.is-fs.idle { cursor: none; }
 
   /* スマホ・タブレット */
@@ -466,7 +475,7 @@ function playIndex(i) {
   if (i < 0 || i >= list.length) return;
   curId = list[i].id; $('msg').textContent = '';
   showNow();
-  if (!ready) return whenReady(() => playIndex(i));
+  if (!ready) { if (!player) pendingPlay = i; return whenReady(() => playIndex(i)); }
   started = true; previewing = false;
   const it = list[i], opts = { videoId: it.vid, startSeconds: it.start };
   if (it.end != null) opts.endSeconds = it.end;
@@ -505,7 +514,7 @@ function watch() {
 }
 // YouTube プレイヤーは PLAY（または再生操作）を押したときに初めて作る。
 // それまでは PLAY 画面だけを表示し、プレイヤーの上には何も重ねない。
-let apiReady = false, wantPlayer = false, pending = null;
+let apiReady = false, wantPlayer = false, pending = null, pendingPlay = null;
 window.onYouTubeIframeAPIReady = function () { apiReady = true; if (wantPlayer) createPlayer(); };
 function whenReady(fn) {
   if (ready) return fn();
@@ -513,14 +522,31 @@ function whenReady(fn) {
   $('start').hidden = true;
   if (apiReady) createPlayer();
 }
+// PLAY を押した曲は、プレイヤーを作るときに autoplay で再生を始める。
+// 読み込み後に別途「再生」を命じると、ブラウザの自動再生制限で止められることがあるため。
 function createPlayer() {
   if (player) return;
-  const first = items()[Math.max(0, curIndex())] || items()[0];
+  const first = items()[pendingPlay ?? Math.max(0, curIndex())] || items()[0];
+  const vars = { rel: 0, playsinline: 1, controls: 0, cc_load_policy: 0, iv_load_policy: 3,
+                 autoplay: pendingPlay != null ? 1 : 0, start: first ? Math.floor(first.start) : 0 };
+  if (first && first.end != null) vars.end = Math.ceil(first.end);
   player = new YT.Player('player', {
     videoId: first ? first.vid : undefined,
-    playerVars: { rel: 0, playsinline: 1, controls: 0, cc_load_policy: 0, iv_load_policy: 3, start: first ? Math.floor(first.start) : 0 },
+    playerVars: vars,
     events: {
       onReady: () => { ready = true; watch(); applyCaptions(); applyVolume();
+        if (pendingPlay != null) {
+          const i = pendingPlay; pendingPlay = null; pending = null;
+          curId = items()[i].id; started = true; previewing = false; showNow();
+          player.playVideo();
+          // それでも始まらないとき（主に iPhone）は、動画のボタンを押してもらう
+          setTimeout(() => {
+            const st = player.getPlayerState();
+            if (st !== YT.PlayerState.PLAYING && st !== YT.PlayerState.BUFFERING)
+              $('msg').textContent = 'ブラウザの設定で自動再生が止められました。動画の再生ボタンを押してください。';
+          }, 2500);
+          return;
+        }
         const fn = pending; pending = null; fn ? fn() : cueIndex(Math.max(0, curIndex())); },
       // 字幕モジュールが読み込まれたタイミングで、設定に合わせてオン/オフし直す
       onApiChange: () => applyCaptions(),
@@ -529,6 +555,7 @@ function createPlayer() {
         // 最後まで再生する曲は長さを覚えておく（リストの表示用）
         if (e.data === YT.PlayerState.PLAYING) { applyCaptions(); setTimeout(applyCaptions, 1500); setTimeout(applyCaptions, 4000); }
         // 動画を直接クリックして再生が始まったときも、プレイリスト再生として扱う
+        if (e.data === YT.PlayerState.PLAYING && /自動再生/.test($('msg').textContent)) $('msg').textContent = '';
         if (e.data === YT.PlayerState.PLAYING && !started && !previewing && curIndex() >= 0) { started = true; showNow(); }
         if (e.data === YT.PlayerState.PLAYING && started) {
           const it = items()[curIndex()];
@@ -819,7 +846,8 @@ document.addEventListener('webkitfullscreenchange', syncFsIcon);
 let idleTimer = null;
 function wake() {
   $('stage').classList.remove('idle'); clearTimeout(idleTimer);
-  if (isFs()) idleTimer = setTimeout(() => {
+  // タッチ端末は動画をタップしてもページに伝わらず、隠すと戻せなくなるので隠さない
+  if (isFs() && !matchMedia('(pointer: coarse)').matches) idleTimer = setTimeout(() => {
     if (isFs() && player.getPlayerState() === YT.PlayerState.PLAYING && !seeking)
       $('stage').classList.add('idle');
   }, 3000);
@@ -854,7 +882,10 @@ setCaptions(!!state.captions);
 
 // フルスクリーン（曲が切り替わってもフルスクリーンのまま続けて再生する）
 const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
-function setPseudoFs(on) {
+function setPseudoFs(on, fromHistory) {
+  if (on === $('stage').classList.contains('pseudo-fs')) return;
+  if (on) history.pushState({ pseudoFs: true }, '');
+  else if (!fromHistory && history.state && history.state.pseudoFs) history.back();
   $('stage').classList.toggle('pseudo-fs', on);
   document.documentElement.classList.toggle('pseudo-fs-on', on);
   syncFsIcon(); wake();
@@ -874,6 +905,7 @@ $('fs').addEventListener('click', async () => {
   }
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('stage').classList.contains('pseudo-fs')) setPseudoFs(false); });
+window.addEventListener('popstate', () => { if ($('stage').classList.contains('pseudo-fs')) setPseudoFs(false, true); });
 renderAll();
 const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
 </script>
