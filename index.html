@@ -55,7 +55,7 @@
   /* 星空の背景画像（サムネイルと同じ作り方）。iPhone でも固定されるよう擬似要素で敷く */
   body::before { background: linear-gradient(rgba(5,6,15,.22), rgba(5,6,15,.22)), #05060f url(bg.jpg) center / cover no-repeat; }
   /* 星の上でも文字が読めるように、ほんのり影をつける */
-  .hero, .now, .pdesc-head, footer { text-shadow: 0 0 10px rgba(5,6,15,.95), 0 0 2px rgba(5,6,15,.9); }
+  .hero, .now, footer { text-shadow: 0 0 10px rgba(5,6,15,.95), 0 0 2px rgba(5,6,15,.9); }
   h1 .sub { text-shadow: none; filter: drop-shadow(0 0 8px rgba(5,6,15,.9)); }
   /* タイトルまわりの背景をほんのり暗くして、星と文字が重なっても読めるように */
   .hero { position: relative; }
@@ -228,12 +228,12 @@
   .targets .btn .c { color: var(--muted); font-size: .76rem; margin-left: 6px; }
   .targets .btn.last { border-color: var(--moon); }
   .author a { color: var(--moon); }
-  .pdesc { margin-top: 14px; }
   /* 「情報」ボタン（説明までスクロール）はスマホだけ。PC では説明が動画の下に見えているので出さない */
-  @media (min-width: 901px) { #infoJump { display: none; } }
+
   /* スマホ・iPad では「情報」だけボタン列の左端に置く（ほかのボタンは右寄せのまま） */
-  @media (max-width: 900px) { #infoJump { margin-right: auto; } }
-  .pdesc-head { color: var(--moon); font-family: var(--serif); font-style: italic; font-size: .95rem; letter-spacing: .08em; }
+  #infoJump { margin-right: auto; }
+  /* 「このプレイリストについて」のポップアップ。長い説明（セットリストなど）は中でスクロール */
+  #infoDlg .pdesc-body { margin-top: 0; max-height: min(62vh, 640px); overflow-y: auto; }
   .pdesc-body { margin-top: 8px; padding: 16px 18px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #cfd4ea; font-size: .84rem; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
   .pdesc-body a { color: var(--moon); }
@@ -322,14 +322,12 @@
   /* スマホ・タブレット */
   @media (max-width: 900px) {
     main { padding: calc(20px + env(safe-area-inset-top)) 0 40px; }
-    .hero, .now, .msg, .banner, .pdesc, footer { margin-left: 16px; margin-right: 16px; }
+    .hero, .now, .msg, .banner, footer { margin-left: 16px; margin-right: 16px; }
     /* タイトル背後のぼかしを画面内に収める */
     .hero::before { inset: -20px -16px -20px -16px; }
     .layout { grid-template-columns: 1fr; gap: 16px; }
     /* section の枠を外して、動画をページ全体の範囲で上部固定できるようにする */
     .layout > section { display: contents; }
-    /* スマホでは説明文を曲リストの下に出す（曲リストを先に見られるように） */
-    .pdesc { order: 1; margin-top: 4px; }
     .stage-wrap { align-self: start; }
     .now { margin-top: 0; }
     /* 動画は画面上部に固定し、リストをスクロールしても見えるようにする */
@@ -403,10 +401,6 @@
         </div>
       </div>
       <div class="msg" id="msg" role="status"></div>
-      <div class="pdesc" id="pdesc" hidden>
-        <div class="pdesc-head">このプレイリストについて</div>
-        <div class="pdesc-body" id="pdescBody"></div>
-      </div>
     </section>
 
     <aside class="panel" id="panel">
@@ -454,7 +448,7 @@
             <div class="author" id="plAuthor" hidden></div>
           </div>
           <div class="pactions">
-            <button class="btn small" type="button" id="infoJump" hidden title="このプレイリストについての説明を表示">情報</button>
+            <button class="btn small" type="button" id="infoJump" hidden data-tip="このプレイリストについて">情報</button>
             <button class="btn small" type="button" id="dupMine" hidden>複製</button>
             <button class="btn small" type="button" id="dupCancel" hidden title="いま作ったコピーを削除して、元のプレイリストに戻ります">キャンセル</button>
             <button class="btn small" type="button" id="selectToggle" title="曲を選んで、まとめてプレイリストに追加します">選択</button>
@@ -513,6 +507,16 @@
 </dialog>
 
 <!-- プレイリストの説明 -->
+<!-- このプレイリストについて（「情報」「公演情報」ボタンで開く） -->
+<dialog id="infoDlg">
+  <form method="dialog">
+    <h2 id="infoTitle"></h2>
+    <div class="author" id="infoAuthor" hidden></div>
+    <div class="pdesc-body" id="pdescBody"></div>
+    <div class="actions"><button class="btn primary" value="close">閉じる</button></div>
+  </form>
+</dialog>
+
 <dialog id="descDlg">
   <form method="dialog">
     <h2>説明・作成者</h2>
@@ -1158,7 +1162,9 @@ function linkify(el, text) {
 }
 function renderDesc() {
   const d = (pl().desc || '').trim(), au = authorName(pl().author);
-  $('pdesc').hidden = !d; linkify($('pdescBody'), d);
+  linkify($('pdescBody'), d);
+  $('infoTitle').textContent = pl().name;
+  $('infoAuthor').hidden = !au; $('infoAuthor').textContent = au ? '作成：' + au : '';
   $('plAuthor').hidden = !au;
   if (au) $('plAuthor').textContent = '作成：' + au;
 }
@@ -1311,12 +1317,10 @@ $('catSearch').addEventListener('input', () => { catQuery = $('catSearch').value
 $('catAll').addEventListener('click', () => { items().forEach((it) => catSelected.add(it.id)); renderList(); renderCatBar(); });
 $('catNone').addEventListener('click', () => { catSelected.clear(); renderList(); renderCatBar(); });
 $('catAdd').addEventListener('click', () => openAdd((pl().all || pl().items).filter((it) => catSelected.has(it.id))));
-// 上に固定している動画の高さの分だけずらして、説明の見出しが動画に隠れないようにする
-$('infoJump').addEventListener('click', () => {
-  const stage = document.querySelector('.stage-wrap'), sticky = stage && getComputedStyle(stage).position === 'sticky';
-  const top = $('pdesc').getBoundingClientRect().top + scrollY - (sticky ? stage.offsetHeight : 0) - 8;
-  window.scrollTo({ top, behavior: 'smooth' });
-});
+// 「情報」「公演情報」: このプレイリストについて（説明・セットリスト）をポップアップで開く
+$('infoJump').addEventListener('click', () => { $('pdescBody').scrollTop = 0; $('infoDlg').showModal(); });
+// ポップアップの外（背景）を押しても閉じる
+$('infoDlg').addEventListener('click', (e) => { if (e.target === $('infoDlg')) $('infoDlg').close(); });
 $('selectToggle').addEventListener('click', () => { selecting = !selecting; if (!selecting) catSelected.clear(); renderAll(); });
 // 複製した直後だけ「キャンセル」できるように、コピーと元のプレイリストを覚えておく（完了・切り替えで確定）
 let dupFrom = null;   // { copyId, srcId }
