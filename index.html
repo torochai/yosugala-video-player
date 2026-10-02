@@ -161,6 +161,11 @@
     transition: border-color .2s, box-shadow .2s; }
   .prow select:hover { border-color: var(--moon); box-shadow: 0 0 12px rgba(185,203,255,.2); }
   .prow select option, .prow select optgroup { background: #0e1230; color: var(--text); }
+  .tip { display: flex; gap: 8px; align-items: flex-start; padding: 10px 10px 10px 12px; border-radius: 10px;
+    background: rgba(185,203,255,.08); border: 1px solid var(--line-2); font-size: .78rem; line-height: 1.7; color: #cfd4ea; }
+  .tip p { margin: 0; flex: 1; }
+  .tip-icon { flex: none; }
+  .tip .tip-close { flex: none; width: 26px; height: 26px; font-size: .8rem; margin: -4px -2px 0 0; }
   .pinfo { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
   .pinfo > div:first-child { min-width: 0; }
   .pactions { display: flex; gap: 6px; flex: none; }
@@ -356,6 +361,12 @@
         <div class="pl-label">プレイリスト（タップで切り替え）</div>
         <div class="prow">
           <select id="plSelect" aria-label="プレイリストを切り替え"></select>
+        </div>
+        <!-- プレイリストを自由に作れること・保存先の案内（× で閉じると次から出さない） -->
+        <div class="tip" id="plTip" hidden>
+          <span class="tip-icon" aria-hidden="true">💡</span>
+          <p>好きな曲を集めて、自由にプレイリストを作れます（「＋ 新規作成」や「複製して編集」から）。作ったプレイリストはこのブラウザに保存されます。別の端末で使うときは「共有リンク」で移せます。</p>
+          <button class="icon tip-close" type="button" id="plTipClose" aria-label="この案内を閉じる">✕</button>
         </div>
         <!-- 「すべてのライブ映像」を開いているときの検索と追加 -->
         <div class="cattools" id="catTools" hidden>
@@ -956,8 +967,11 @@ function renderAll() {
   $('editToggle').textContent = editing ? '完了' : '編集'; $('editToggle').hidden = ro;
   $('dupEdit').hidden = !ro;
   $('dupMine').hidden = ro;
-  $('catTools').hidden = pl().id !== CATALOG_ID; renderCatBar();
+  $('catTools').hidden = pl().id !== CATALOG_ID; renderCatBar(); renderTip();
 }
+// 案内は「×」で閉じるまで表示（閉じた状態は保存して、次から出さない）
+function renderTip() { $('plTip').hidden = !!state.hideTip; }
+$('plTipClose').addEventListener('click', () => { state.hideTip = true; save(); renderTip(); });
 function renderCatBar() {
   const n = catSelected.size;
   $('catAdd').disabled = !n;
@@ -1003,6 +1017,7 @@ $('dupEdit').addEventListener('click', () => {
   p.name = pl().name + (pl().id === CATALOG_ID && catQuery.trim() ? `「${catQuery.trim()}」` : '') + ' (コピー)';
   p.author = ''; p.desc = '';
   state.playlists.push(p); editing = true; switchTo(p.id);
+  $('msg').textContent = 'コピーを作りました。このブラウザに保存されます。';
 });
 $('addFromCatalog').addEventListener('click', () => { lastTarget = pl().id; editing = false; switchTo(CATALOG_ID); });
 
@@ -1127,6 +1142,7 @@ async function createPlaylist() {
   if (!name) return false;
   const p = { id: uid(), name, author: '', desc: '', items: [] };
   state.playlists.push(p); editing = true; switchTo(p.id);
+  $('msg').textContent = '新しいプレイリストを作りました。このブラウザに保存されます。';
   return true;
 }
 
