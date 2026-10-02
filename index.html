@@ -794,9 +794,10 @@ function renderSelect() {
     const o = opt('', 'なし'); o.disabled = true; g.appendChild(o); sel.appendChild(g);
   }
   // ライブラリ: 組み込みのプレイリスト（トロのセレクションなど）。編集はできないが複製できる
-  group('ライブラリ', state.playlists.filter((p) => p.readonly).map((p) => [p.id, withCount(p)]));
-  // すべてのライブ映像: 特別扱いの全曲一覧（検索して選んで追加する）
-  if (catalog) group('すべてのライブ映像', [[CATALOG_ID, `${catalogPl.name} (${catalogAll.length})`]]);
+  // ライブラリ: 組み込みのプレイリスト（トロ's セレクションなど）と、いちばん下に「すべてのライブ映像」
+  const lib = state.playlists.filter((p) => p.readonly).map((p) => [p.id, withCount(p)]);
+  if (catalog) lib.push([CATALOG_ID, `${catalogPl.name} (${catalogAll.length})`]);
+  group('ライブラリ', lib);
   sel.value = pl().id;
 }
 // 説明文（URL だけリンクにして、それ以外はテキストのまま表示）
@@ -879,7 +880,7 @@ function renderAll() {
   renderSelect(); renderList(); $('plTools').hidden = !editing;
   $('panel').classList.toggle('editing', editing); $('panel').classList.toggle('catalog', ro);
   $('editToggle').textContent = editing ? '完了' : '編集'; $('editToggle').hidden = ro;
-  $('dupEdit').hidden = !(ro && pl().id !== CATALOG_ID);
+  $('dupEdit').hidden = !ro;
   $('dupMine').hidden = ro;
   $('catTools').hidden = pl().id !== CATALOG_ID; renderCatBar();
 }
@@ -924,8 +925,9 @@ $('catNone').addEventListener('click', () => { catSelected.clear(); renderList()
 $('catAdd').addEventListener('click', () => openAdd(catalogAll.filter((it) => catSelected.has(it.id))));
 $('dupMine').addEventListener('click', () => { $('plDup').click(); });
 $('dupEdit').addEventListener('click', () => {
-  const p = unpack(pack(pl()));
-  p.name = pl().name + ' (コピー)'; p.author = ''; p.desc = '';
+  const p = unpack(pack(pl()));   // すべてのライブ映像では、検索で絞り込んだ表示中の曲だけがコピーされる
+  p.name = pl().name + (pl().id === CATALOG_ID && catQuery.trim() ? `「${catQuery.trim()}」` : '') + ' (コピー)';
+  p.author = ''; p.desc = '';
   state.playlists.push(p); editing = true; switchTo(p.id);
 });
 $('addFromCatalog').addEventListener('click', () => { lastTarget = pl().id; editing = false; switchTo(CATALOG_ID); });
