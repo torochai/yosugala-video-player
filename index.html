@@ -674,9 +674,10 @@ const infoOf = (it) => liveInfo[`${it.vid}@${it.start}`] || {};
 const catSelected = new Set();
 const normq = (x) => String(x || '').normalize('NFKC').toLowerCase();
 const dotDate = (d) => d.replace(/-/g, '.');
-const CAT_HELP = '曲の右の「＋」、またはチェックを入れて「選択した曲をプレイリストに追加」で、好きなプレイリストに入れられます。上の欄で曲名やライブ名を絞り込めます。';
-// tools = true のもの（すべてのライブ映像の2つ）だけ、絞り込み・チェックして追加・「＋」が使える。
+const CAT_HELP = '曲の右の「＋」、または「選択」でチェックを入れて「選択した曲をプレイリストに追加」で、好きなプレイリストに入れられます。上の欄で曲名やライブ名を絞り込めます。';
+// tools = true のもの（すべてのライブ映像の2つ）だけ、曲名・ライブ名で絞り込める。
 // それ以外（Official Live Video・公演ごと）はトロ's セレクションと同じ、ふつうの読み取り専用プレイリスト
+// （「＋」と「選択」はどのプレイリストでも使える）
 function catalogPlaylist(id, name, all, desc, tools = false) {
   return {
     id, name, all, desc, readonly: true, catalog: tools, author: '',
