@@ -281,7 +281,7 @@
 
   <div class="banner" id="shareBanner" hidden>
     <span id="shareText"></span>
-    <button class="btn primary" type="button" id="shareSave">マイプレイリストに保存</button>
+    <button class="btn primary" type="button" id="shareSave">マイライブラリに保存</button>
     <button class="btn" type="button" id="shareDismiss">保存しない</button>
   </div>
 
@@ -355,6 +355,7 @@
             <div class="author" id="plAuthor" hidden></div>
           </div>
           <div class="pactions">
+            <button class="btn small" type="button" id="dupMine" hidden>複製</button>
             <button class="btn small" type="button" id="editToggle">編集</button>
             <button class="btn small" type="button" id="dupEdit" hidden title="このプレイリストは編集できません。コピーを作って編集します">複製して編集</button>
           </div>
@@ -778,18 +779,17 @@ let editing = false;
 function renderSelect() {
   const sel = $('plSelect'); sel.textContent = '';
   const opt = (id, name) => { const o = document.createElement('option'); o.value = id; o.textContent = name; return o; };
-  // マイプレイリスト: 自分で作った（編集できる）もの。まだなければ見出しごと出さない
-  const mine = state.playlists.filter((p) => !p.readonly);
-  if (mine.length) {
-    const g1 = document.createElement('optgroup'); g1.label = 'マイプレイリスト';
-    mine.forEach((p) => g1.appendChild(opt(p.id, p.name)));
-    sel.appendChild(g1);
-  }
-  // ライブラリ: 組み込みのプレイリスト（トロのセレクション）と、すべてのライブ映像
-  const g2 = document.createElement('optgroup'); g2.label = 'ライブラリ';
-  state.playlists.filter((p) => p.readonly).forEach((p) => g2.appendChild(opt(p.id, p.name)));
-  if (catalog) g2.appendChild(opt(CATALOG_ID, catalogPl.name));
-  sel.appendChild(g2);
+  const group = (label, list) => {
+    if (!list.length) return;
+    const g = document.createElement('optgroup'); g.label = label;
+    list.forEach(([id, name]) => g.appendChild(opt(id, name))); sel.appendChild(g);
+  };
+  // マイライブラリ: 自分で作った（編集できる）プレイリスト。まだなければ見出しごと出さない
+  group('マイライブラリ', state.playlists.filter((p) => !p.readonly).map((p) => [p.id, p.name]));
+  // ライブラリ: 組み込みのプレイリスト（トロのセレクションなど）。編集はできないが複製できる
+  group('ライブラリ', state.playlists.filter((p) => p.readonly).map((p) => [p.id, p.name]));
+  // すべてのライブ映像: 特別扱いの全曲一覧（検索して選んで追加する）
+  if (catalog) group('すべてのライブ映像', [[CATALOG_ID, catalogPl.name]]);
   sel.value = pl().id;
 }
 // 説明文（URL だけリンクにして、それ以外はテキストのまま表示）
@@ -872,6 +872,7 @@ function renderAll() {
   $('panel').classList.toggle('editing', editing); $('panel').classList.toggle('catalog', ro);
   $('editToggle').textContent = editing ? '完了' : '編集'; $('editToggle').hidden = ro;
   $('dupEdit').hidden = !(ro && pl().id !== CATALOG_ID);
+  $('dupMine').hidden = ro;
   $('catTools').hidden = pl().id !== CATALOG_ID; renderCatBar();
 }
 function renderCatBar() {
@@ -913,6 +914,7 @@ $('catSearch').addEventListener('input', () => { catQuery = $('catSearch').value
 $('catAll').addEventListener('click', () => { items().forEach((it) => catSelected.add(it.id)); renderList(); renderCatBar(); });
 $('catNone').addEventListener('click', () => { catSelected.clear(); renderList(); renderCatBar(); });
 $('catAdd').addEventListener('click', () => openAdd(catalogAll.filter((it) => catSelected.has(it.id))));
+$('dupMine').addEventListener('click', () => { $('plDup').click(); });
 $('dupEdit').addEventListener('click', () => {
   const p = unpack(pack(pl()));
   p.name = pl().name + ' (コピー)'; p.author = ''; p.desc = '';
