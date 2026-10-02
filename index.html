@@ -1523,8 +1523,11 @@ function segment() {
 let seeking = false;
 setInterval(() => {
   if (!player || !ready || !player.getCurrentTime) {
-    const it = items()[Math.max(0, curIndex())];
-    $('tcur').textContent = '0:00'; $('tdur').textContent = it ? fmt(itemLen(it)) || '0:00' : '0:00';
+    // PLAY を押す前: 続きから再生する曲なら、シークバーと時間をその位置に合わせておく
+    const it = items()[Math.max(0, curIndex())], len = it ? itemLen(it) : null;
+    const t = it ? startOf(it) - it.start : 0;
+    if (!seeking) { $('seek').max = len || 1; $('seek').value = len ? Math.min(t, len) : 0; }
+    $('tcur').textContent = fmt(t) || '0:00'; $('tdur').textContent = it ? fmt(len) || '0:00' : '0:00';
     return;
   }
   const { s, e } = segment(), len = Math.max(0, e - s), t = Math.min(len, Math.max(0, player.getCurrentTime() - s));
