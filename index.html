@@ -123,12 +123,9 @@
   .prow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .prow select { flex: 1 1 160px; min-width: 0; background: rgba(5,6,15,.5); border: 1px solid var(--line-2); border-radius: 10px; padding: 8px 10px; }
   .meta { color: var(--muted); font-size: .78rem; letter-spacing: .05em; }
-  .pdesc summary { cursor: pointer; color: var(--moon); font-size: .8rem; letter-spacing: .05em; list-style: none; }
-  .pdesc summary::-webkit-details-marker { display: none; }
-  .pdesc summary::before { content: "▸ "; }
-  .pdesc[open] summary::before { content: "▾ "; }
-  .pdesc-body { margin-top: 8px; padding: 10px 12px; border-radius: 10px; background: rgba(5,6,15,.45); border: 1px solid var(--line);
-    font-size: .8rem; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 40vh; overflow-y: auto; }
+  .pdesc-head { color: var(--moon); font-size: .76rem; letter-spacing: .08em; }
+  .pdesc-body { margin-top: 6px; padding: 10px 12px; border-radius: 10px; background: rgba(5,6,15,.45); border: 1px solid var(--line);
+    font-size: .8rem; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 220px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
   .pdesc-body a { color: var(--moon); }
   ol { list-style: none; margin: 0; padding: 0; max-height: min(70vh, 760px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
   li { border-bottom: 1px solid var(--line); }
@@ -298,10 +295,10 @@
           <button class="btn small danger" type="button" id="plDelete">削除</button>
         </div>
         <div class="meta" id="plMeta"></div>
-        <details class="pdesc" id="pdesc" hidden>
-          <summary>このプレイリストについて</summary>
+        <div class="pdesc" id="pdesc" hidden>
+          <div class="pdesc-head">このプレイリストについて</div>
           <div class="pdesc-body" id="pdescBody"></div>
-        </details>
+        </div>
       </div>
       <ol id="list" aria-label="曲リスト"></ol>
       <div class="pfoot"><button class="btn" type="button" id="addSong">＋ 曲を追加</button></div>
@@ -797,7 +794,6 @@ $('plNew').addEventListener('click', () => {
 $('plDesc').addEventListener('click', () => { $('descText').value = pl().desc || ''; $('descDlg').showModal(); });
 $('descSave').addEventListener('click', () => {
   pl().desc = $('descText').value.trim().slice(0, 5000); save(); renderDesc(); $('descDlg').close();
-  if (pl().desc) $('pdesc').open = true;
 });
 $('plRename').addEventListener('click', () => {
   const name = prompt('プレイリストの名前', pl().name); if (!name) return;
