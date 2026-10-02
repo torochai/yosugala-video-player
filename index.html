@@ -691,7 +691,8 @@ let state = load();
 // ページを開いたときは、最後に曲を再生したプレイリストから始める（開いただけのものは覚えない）。
 // まだ何も再生していなければトロ's セレクション。見つからないプレイリストなら pl() がトロ's セレクションにする
 // （共有リンク #pl= / #lib= から開いたときは、このあとでリンク先のプレイリストに切り替える）
-state.current = state.lastPlayed || BUILTIN_ID;
+const startPlaylist = (s) => { s.current = s.lastPlayed || BUILTIN_ID; return s; };
+startPlaylist(state);
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 // catalog.json（tools/update_catalog.py で作る）から作る読み取り専用のプレイリスト
 //   すべてのライブ映像 - 曲名順 / すべてのライブ映像 - 公演日順 / Official Live Video - 公開日順
@@ -796,11 +797,19 @@ function unpack(o) {
   if (!o || !Array.isArray(o.items)) throw new Error('形式が正しくありません');
   return { id: uid(), name: String(o.name || '読み込んだプレイリスト').slice(0, 80), author: authorName(o.author), desc: String(o.desc || '').slice(0, 5000), items: o.items.map((a) => {
     if (!Array.isArray(a) || !/^[\w-]{11}$/.test(a[0])) throw new Error('動画IDが正しくありません');
-    return { id: uid(), vid: a[0], start: +a[1] || 0, end: a[2] == null ? null : +a[2], title: String(a[3] || '(無題)'),
-             live: String(a[4] || ''), len: a[5] == null ? null : +a[5] };
+    // 秒数は数字だけ受け付ける（開始は0以上、終了は開始より後、長さは0より大きいときだけ）
+    const num = (v) => (v != null && v !== '' && Number.isFinite(+v) ? +v : null);
+    const start = Math.max(0, num(a[1]) ?? 0), end = num(a[2]), len = num(a[5]);
+    return { id: uid(), vid: a[0], start, end: end != null && end > start ? end : null, title: String(a[3] || '(無題)'),
+             live: String(a[4] || ''), len: len != null && len > 0 ? len : null };
   }) };
 }
-const b64enc = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+// 長いプレイリストでも止まらないように、少しずつ文字にする（一度に ... で渡すと引数が多すぎてエラーになる）
+function b64enc(s) {
+  const bytes = new TextEncoder().encode(s); let bin = '';
+  for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
 const b64dec = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)));
 
 // ---------- 再生 ----------
@@ -950,7 +959,10 @@ function createPlayer() {
       onReady: () => { ready = true; watch(); applyCaptions(); applyVolume();
         if (pendingPlay != null) {
           const i = pendingPlay; pendingPlay = null; pending = null;
-          curId = items()[i].id; started = true; previewing = false; resumeAt = null; showNow();
+          // 準備中に曲数の少ないプレイリストへ切り替えていたら、その1曲目にする
+          const it = items()[i] || items()[0];
+          if (!it) return;
+          curId = it.id; started = true; previewing = false; resumeAt = null; showNow();
           player.playVideo();
           // それでも始まらないとき（主に iPhone）は、動画のボタンを押してもらう
           setTimeout(() => {
@@ -1176,7 +1188,7 @@ function renderAll() {
   const ro = !!pl().readonly;
   if (ro) editing = false;
   if (editing) selecting = false;
-  renderSelect(); renderList(); $('plTools').hidden = !editing;
+  renderList(); $('plTools').hidden = !editing;   // renderList の中でプルダウンの中身も作る
   $('panel').classList.toggle('editing', editing); $('panel').classList.toggle('catalog', ro);
   $('editToggle').textContent = editing ? '完了' : '編集'; $('editToggle').hidden = ro;
   $('dupEdit').hidden = !ro; $('libShare').hidden = !ro;
@@ -1203,10 +1215,12 @@ function renderCatBar() {
 let pendingAdd = [];
 function openAdd(list) {
   pendingAdd = list;
-  $('addInfo').textContent = list.length === 1 ? `「${list[0].title}」（${list[0].live}）を追加するプレイリストを選んでください。`
+  const live = list.length === 1 ? infoOf(list[0]).live || list[0].live : '';
+  $('addInfo').textContent = list.length === 1 ? `「${list[0].title}」${live ? `（${live}）` : ''}を追加するプレイリストを選んでください。`
                                                : `${list.length} 曲を追加するプレイリストを選んでください。`;
   const box = $('addTargets'); box.textContent = '';
-  state.playlists.filter((p) => !p.readonly).forEach((p) => {
+  // 共有リンクで開いた保存前のプレイリストには追加させない（保存されないので消えてしまう）
+  state.playlists.filter((p) => !p.readonly && p !== shared).forEach((p) => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (p.id === lastTarget ? ' last' : '');
     b.textContent = p.name;
     const c = document.createElement('span'); c.className = 'c'; c.textContent = `${p.items.length} 曲`; b.appendChild(c);
@@ -1429,7 +1443,7 @@ function libKey(p) {
   return catalogPls.filter((x) => x.id.startsWith(LIVE_ID + date + '|')).length > 1 ? encodeURIComponent(k) : date;
 }
 function libId(key) {
-  key = decodeURIComponent(key);
+  try { key = decodeURIComponent(key); } catch { return null; }   // 壊れたリンク（%の後が不正など）でも止まらない
   const fixed = { toro: BUILTIN_ID, songs: CATALOG_ID, dates: CATALOG_DATE_ID, singles: SINGLES_ID }[key];
   if (fixed) return fixed;
   const p = catalogPls.find((x) => x.id === LIVE_ID + key) || catalogPls.find((x) => x.id.startsWith(LIVE_ID + key + '|'));
@@ -1474,7 +1488,7 @@ function clearHash() { history.replaceState(null, '', location.pathname + locati
 $('shareSave').addEventListener('click', () => { shared = null; save(); $('shareBanner').hidden = true; clearHash(); renderAll(); });
 $('shareDismiss').addEventListener('click', () => {
   state.playlists = state.playlists.filter((p) => p.id !== shared.id); shared = null;
-  state = Object.assign(load(), {}); $('shareBanner').hidden = true; clearHash(); switchTo(state.current);
+  state = startPlaylist(load()); $('shareBanner').hidden = true; clearHash(); switchTo(state.current);
 });
 const _save = save;
 save = function () { if (shared) { const keep = state.playlists; state = { ...state, playlists: keep.filter((p) => p !== shared) };
@@ -1549,7 +1563,10 @@ function wake() {
 document.addEventListener('fullscreenchange', wake);
 document.addEventListener('webkitfullscreenchange', wake);
 $('seek').addEventListener('input', () => { seeking = true; $('tcur').textContent = fmt(+$('seek').value); });
-$('seek').addEventListener('change', () => { player.seekTo(segment().s + +$('seek').value, true); seeking = false; });
+$('seek').addEventListener('change', () => {
+  seeking = false;   // 先に戻す（プレイヤーがまだないときに止まったままにならないように）
+  if (player && ready) player.seekTo(segment().s + +$('seek').value, true);
+});
 function applyVolume() {
   if (!player || !ready) return;
   player.setVolume(state.volume ?? 100);
