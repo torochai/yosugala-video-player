@@ -657,9 +657,11 @@ function load() {
 let state = load();
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 // catalog.json（tools/update_catalog.py で作る）から作る読み取り専用のプレイリスト
-//   すべてのライブ映像 - 曲順（曲名順）/ すべてのライブ映像 - 公演日順 / 公演ごと（YYYY.MM.DD「公演名」・セットリスト順）
+//   すべてのライブ映像 - 曲順（曲名順）/ すべてのライブ映像 - 公演日順 / Official Live Video - 公開日順
+//   / 公演ごと（YYYY.MM.DD「公演名」・セットリスト順）
 const CATALOG_ID = '__catalog__';             // すべてのライブ映像 - 曲順（以前からの ID のまま）
 const CATALOG_DATE_ID = '__catalog_date__';   // すべてのライブ映像 - 公演日順
+const SINGLES_ID = '__catalog_singles__';     // Official Live Video - 公開日順（単独で公開された映像だけ・新しい順）
 const LIVE_ID = '__live__:';                  // 公演ごと: LIVE_ID + 公演日 + '|' + 公演名
 let catalog = null, catalogAll = [], catalogPls = [], catQuery = '', lastTarget = null;
 const liveInfo = {};   // 「動画ID@開始秒」→ { date: 公演日, live: 公演名, venue: 会場名 }
@@ -696,6 +698,11 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
     catalogPlaylist(CATALOG_ID, 'すべてのライブ映像 - 曲順', catalogAll, `${about}\n曲名の順に並べています。${CAT_HELP}`),
     catalogPlaylist(CATALOG_DATE_ID, 'すべてのライブ映像 - 公演日順', byDate, `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。${CAT_HELP}`),
   ];
+  // Official Live Video: 1曲ずつ公開された映像（フルライブ映像から切り出したものは入れない）を公開日の新しい順に
+  const singles = c.songs.filter((x) => x.kind === 'single' && !x.hidden)
+    .sort((a, b) => b.published.localeCompare(a.published) || a.song.localeCompare(b.song)).map(toItem);
+  catalogPls.push(catalogPlaylist(SINGLES_ID, 'Official Live Video - 公開日順', singles,
+    `yosugala official が1曲ずつ公開している公式ライブ映像（Official Live Video）を、公開日の新しい順に並べています（${singles.length} 本・${c.updated} 時点）。フルライブ映像から切り出した曲は入っていません。\n${CAT_HELP}`));
   // 公演ごと（公演日が分かるものだけ）。新しい公演が上
   //   フルライブ映像がある公演は、フルライブ映像のチャプターだけをその順に（単独映像と重なるチャプターも使う）
   //   フルライブ映像がない公演は、単独映像をセットリスト順に
@@ -890,7 +897,7 @@ function renderSelect() {
   }
   // ライブラリ: 組み込みのプレイリスト（トロ's セレクションなど）。編集はできないが複製できる
   const lib = state.playlists.filter((p) => p.readonly).map((p) => [p.id, withCount(p)]);
-  // その下に「すべてのライブ映像」の2つと、公演ごとのプレイリスト（新しい公演が上）
+  // その下に「すべてのライブ映像」の2つ、「Official Live Video」、公演ごとのプレイリスト（新しい公演が上）
   catalogPls.forEach((p) => lib.push([p.id, `${p.name} (${p.all.length})`]));
   group('ライブラリ', lib);
   sel.value = pl().id;
@@ -1228,18 +1235,20 @@ async function copyLink(url, done) {
 $('plShare').addEventListener('click', () => copyLink(`${location.origin}${location.pathname}#pl=${b64enc(JSON.stringify(pack(pl())))}`,
   '共有リンクをコピーしました。開いた人は、このプレイリストを保存して再生できます。'));
 // ライブラリのプレイリストは曲を埋め込まず「#lib=名前」の短いリンクにする（開くといつも最新の内容）
-//   toro = トロ's セレクション / songs = すべてのライブ映像 - 曲順 / dates = すべてのライブ映像 - 公演日順 / YYYY-MM-DD = その日の公演
+//   toro = トロ's セレクション / songs = すべてのライブ映像 - 曲順 / dates = すべてのライブ映像 - 公演日順
+//   singles = Official Live Video - 公開日順 / YYYY-MM-DD = その日の公演
 function libKey(p) {
   if (p.id === BUILTIN_ID) return 'toro';
   if (p.id === CATALOG_ID) return 'songs';
   if (p.id === CATALOG_DATE_ID) return 'dates';
+  if (p.id === SINGLES_ID) return 'singles';
   const k = p.id.slice(LIVE_ID.length), date = k.split('|')[0];
   // 同じ日に公演が2つあるときだけ、公演名まで入れる
   return catalogPls.filter((x) => x.id.startsWith(LIVE_ID + date + '|')).length > 1 ? encodeURIComponent(k) : date;
 }
 function libId(key) {
   key = decodeURIComponent(key);
-  const fixed = { toro: BUILTIN_ID, songs: CATALOG_ID, dates: CATALOG_DATE_ID }[key];
+  const fixed = { toro: BUILTIN_ID, songs: CATALOG_ID, dates: CATALOG_DATE_ID, singles: SINGLES_ID }[key];
   if (fixed) return fixed;
   const p = catalogPls.find((x) => x.id === LIVE_ID + key) || catalogPls.find((x) => x.id.startsWith(LIVE_ID + key + '|'));
   return p ? p.id : null;
