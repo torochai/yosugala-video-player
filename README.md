@@ -11,3 +11,18 @@ https://torochai.github.io/yosugala-video-player/
 
 映像はすべて YouTube の埋め込みで公式動画を再生しています。映像・楽曲の権利は yosugala および各権利者に帰属します。
 このページは yosugala 公式とは関係ありません。
+
+## ライブ映像の一覧（catalog.json）の更新
+
+プレイヤーの「すべてのライブ映像」は `catalog.json` から作られます。
+公式チャンネルに新しいライブ映像が出たら、次のコマンドで更新して push してください（yt-dlp が必要です）。
+
+```bash
+python3 tools/update_catalog.py
+git add catalog.json tools/video_cache.json && git commit -m "Update catalog" && git push
+```
+
+- 単独の「Official Live Video」は1曲として、フルライブ映像はチャプターで曲ごとに分けて登録します（MC・SE などは除外）
+- 一度取得した動画の情報は `tools/video_cache.json` に保存され、次回からは新しい動画だけを取得します
+- YouTube のボット確認で止められたときは `python3 tools/update_catalog.py --cookies-from-browser chrome` で実行してください
+- 曲名の表記ゆれ、ライブ名の表示、終了時刻の調整、除外は `tools/catalog_overrides.json` で直せます

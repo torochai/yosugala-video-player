@@ -139,6 +139,17 @@
   .prow select { flex: 1 1 160px; min-width: 0; background: rgba(5,6,15,.5); border: 1px solid var(--line-2); border-radius: 10px; padding: 8px 10px; }
   .meta { color: var(--muted); font-size: .78rem; letter-spacing: .05em; }
   .author { color: var(--muted); font-size: .78rem; }
+  .cattools { display: grid; gap: 8px; }
+  .cattools input[type=search] { width: 100%; background: rgba(5,6,15,.5); border: 1px solid var(--line-2); border-radius: 10px; padding: 8px 10px; color: var(--text); }
+  .cattools input[type=search]:focus { outline: none; border-color: var(--moon); }
+  .btn:disabled { opacity: .4; cursor: default; box-shadow: none; }
+  .row .pick { width: 18px; height: 18px; accent-color: var(--moon); cursor: pointer; margin: 0; }
+  .row .addone { font-size: 1.05rem; }
+  .catalog .row .d { margin-right: 4px; }
+  .targets { display: grid; gap: 8px; }
+  .targets .btn { text-align: left; white-space: normal; border-radius: 10px; }
+  .targets .btn .c { color: var(--muted); font-size: .76rem; margin-left: 6px; }
+  .targets .btn.last { border-color: var(--moon); }
   .author a { color: var(--moon); }
   .pdesc { margin-top: 14px; }
   .pdesc-head { color: var(--moon); font-family: var(--serif); font-style: italic; font-size: .95rem; letter-spacing: .08em; }
@@ -309,6 +320,15 @@
           <select id="plSelect" aria-label="プレイリスト"></select>
           <button class="btn" type="button" id="editToggle">編集</button>
         </div>
+        <!-- 「すべてのライブ映像」を開いているときの検索と追加 -->
+        <div class="cattools" id="catTools" hidden>
+          <input type="search" id="catSearch" placeholder="曲名・ライブ名で絞り込み" autocomplete="off" aria-label="曲名・ライブ名で絞り込み">
+          <div class="prow">
+            <button class="btn small" type="button" id="catAll">表示中をすべて選択</button>
+            <button class="btn small" type="button" id="catNone" hidden>選択を解除</button>
+            <button class="btn small primary" type="button" id="catAdd" disabled>選択した曲をプレイリストに追加</button>
+          </div>
+        </div>
         <div class="prow" id="plTools" hidden>
           <button class="btn small" type="button" id="plNew">＋ 新規</button>
           <button class="btn small" type="button" id="plRename">名前変更</button>
@@ -322,7 +342,10 @@
         <div class="author" id="plAuthor" hidden></div>
       </div>
       <ol id="list" aria-label="曲リスト"></ol>
-      <div class="pfoot"><button class="btn" type="button" id="addSong">＋ 曲を追加</button></div>
+      <div class="pfoot"><div class="prow">
+        <button class="btn" type="button" id="addFromCatalog">＋ ライブ映像から選ぶ</button>
+        <button class="btn" type="button" id="addSong">＋ URL で追加</button>
+      </div></div>
     </aside>
   </div>
 
@@ -377,6 +400,20 @@
       <button class="btn" value="cancel">キャンセル</button>
       <button class="btn primary" type="button" id="descSave">保存</button>
     </div>
+  </form>
+</dialog>
+
+<!-- プレイリストに追加 -->
+<dialog id="addDlg">
+  <form method="dialog">
+    <h2>プレイリストに追加</h2>
+    <p class="hint" id="addInfo"></p>
+    <div class="targets" id="addTargets"></div>
+    <label>新しいプレイリストを作って追加
+      <span class="timefield"><input type="text" id="addNewName" placeholder="プレイリスト名" autocomplete="off">
+      <button class="btn small" type="button" id="addNewBtn">作成して追加</button></span>
+    </label>
+    <div class="actions"><button class="btn" value="cancel">キャンセル</button></div>
   </form>
 </dialog>
 
@@ -531,7 +568,31 @@ function load() {
 }
 let state = load();
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
-const pl = () => state.playlists.find((p) => p.id === state.current) || state.playlists[0];
+// 「すべてのライブ映像」: catalog.json（tools/update_catalog.py で作る）から作る読み取り専用のプレイリスト
+const CATALOG_ID = '__catalog__';
+let catalog = null, catalogAll = [], catQuery = '', lastTarget = null;
+const catSelected = new Set();
+const normq = (x) => String(x || '').normalize('NFKC').toLowerCase();
+const catalogPl = {
+  id: CATALOG_ID, readonly: true, author: '',
+  get name() { return `すべてのライブ映像（${catalogAll.length}）`; },
+  get desc() {
+    return catalog ? `yosugala official の公式ライブ映像を、曲ごとに分けた一覧です（${catalogAll.length} 件・${catalog.updated} 時点）。新しい公式ライブ映像が出たら追加していきます。
+曲の右の「＋」、またはチェックを入れて「選択した曲をプレイリストに追加」で、好きなプレイリストに入れられます。上の欄で曲名やライブ名を絞り込めます。` : '';
+  },
+  get items() {
+    const q = normq(catQuery).trim();
+    return q ? catalogAll.filter((it) => normq(it.title + ' ' + it.live).includes(q)) : catalogAll;
+  },
+};
+const pl = () => (state.current === CATALOG_ID && catalog ? catalogPl : null)
+  || state.playlists.find((p) => p.id === state.current) || state.playlists[0];
+fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
+  catalog = c;
+  catalogAll = c.songs.map((x) => ({ id: `c:${x.vid}@${x.start}`, vid: x.vid, start: x.start, end: x.end, title: x.song,
+    live: x.live || (x.date ? `${x.date} 公開` : ''), len: x.len ?? null }));
+  renderAll();
+}).catch(() => {});
 
 // 共有・書き出し用のコンパクトな形式
 function pack(p) { return { name: p.name, author: p.author || '', desc: p.desc || '', items: p.items.map((it) => [it.vid, it.start, it.end, it.title, it.live || '', it.len ?? null]) }; }
@@ -679,9 +740,16 @@ function createPlayer() {
 let editing = false;
 function renderSelect() {
   const sel = $('plSelect'); sel.textContent = '';
+  const g1 = document.createElement('optgroup'); g1.label = 'マイプレイリスト';
   state.playlists.forEach((p) => {
-    const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o);
+    const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; g1.appendChild(o);
   });
+  sel.appendChild(g1);
+  if (catalog) {
+    const g2 = document.createElement('optgroup'); g2.label = 'ライブラリ';
+    const o = document.createElement('option'); o.value = CATALOG_ID; o.textContent = catalogPl.name; g2.appendChild(o);
+    sel.appendChild(g2);
+  }
   sel.value = pl().id;
 }
 // 説明文（URL だけリンクにして、それ以外はテキストのまま表示）
@@ -708,17 +776,23 @@ function renderList() {
   const list = items();
   const total = list.reduce((a, it) => a + (itemLen(it) || 0), 0);
   const unknown = list.some((it) => itemLen(it) == null);
-  $('plMeta').textContent = `${list.length} 曲` + (list.length ? ` ・ 約 ${fmt(total)}${unknown ? ' 以上' : ''}` : '');
+  const ro = !!pl().readonly;
+  $('plMeta').textContent = `${list.length} ${ro ? '件' : '曲'}` + (list.length ? ` ・ 約 ${fmt(total)}${unknown ? ' 以上' : ''}` : '');
   if (!list.length) {
     const li = document.createElement('li'); li.className = 'empty';
-    li.textContent = editing ? '「＋ 曲を追加」から曲を追加してください。' : '曲がありません。「編集」から曲を追加できます。';
+    li.textContent = ro ? '見つかりませんでした。' : editing ? '「＋ ライブ映像から選ぶ」か「＋ URL で追加」から曲を追加してください。' : '曲がありません。「編集」から曲を追加できます。';
     ol.appendChild(li);
   }
   list.forEach((it, i) => {
     const li = document.createElement('li'); li.dataset.id = it.id; li.draggable = editing;
     const row = document.createElement('div'); row.className = 'row'; row.dataset.id = it.id;
-    const n = document.createElement('span'); n.className = 'n'; n.textContent = editing ? '⠿' : pad(i + 1);
+    let n = document.createElement('span'); n.className = 'n'; n.textContent = editing ? '⠿' : pad(i + 1);
     if (editing) n.classList.add('handle');
+    if (ro) {   // カタログ: 番号の代わりにチェック
+      n = document.createElement('input'); n.type = 'checkbox'; n.className = 'pick'; n.checked = catSelected.has(it.id);
+      n.setAttribute('aria-label', `${it.title} を選択`);
+      n.addEventListener('change', () => { n.checked ? catSelected.add(it.id) : catSelected.delete(it.id); renderCatBar(); });
+    }
     const main = document.createElement('button'); main.type = 'button'; main.className = 'main';
     const t = document.createElement('span'); t.className = 't'; t.textContent = it.title;
     const s = document.createElement('span'); s.className = 's';
@@ -738,13 +812,65 @@ function renderList() {
       mk('✕', '削除', () => removeSong(it.id)),
     );
     const right = document.createElement('span'); right.append(d, tools);
+    if (ro) {
+      const add = document.createElement('button'); add.type = 'button'; add.className = 'icon addone'; add.textContent = '＋';
+      add.title = 'プレイリストに追加'; add.setAttribute('aria-label', `${it.title} をプレイリストに追加`);
+      add.addEventListener('click', () => openAdd([it]));
+      right.appendChild(add);
+    }
     row.append(n, main, right); li.appendChild(row); ol.appendChild(li);
     if (editing) addDrag(li);
   });
   showNow();
 }
-function renderAll() { renderSelect(); renderList(); $('plTools').hidden = !editing;
-  $('panel').classList.toggle('editing', editing); $('editToggle').textContent = editing ? '完了' : '編集'; }
+function renderAll() {
+  const ro = !!pl().readonly;
+  if (ro) editing = false;
+  renderSelect(); renderList(); $('plTools').hidden = !editing;
+  $('panel').classList.toggle('editing', editing); $('panel').classList.toggle('catalog', ro);
+  $('editToggle').textContent = editing ? '完了' : '編集'; $('editToggle').hidden = ro;
+  $('catTools').hidden = !ro; renderCatBar();
+}
+function renderCatBar() {
+  const n = catSelected.size;
+  $('catAdd').disabled = !n;
+  $('catAdd').textContent = n ? `選択した ${n} 曲をプレイリストに追加` : '選択した曲をプレイリストに追加';
+  $('catNone').hidden = !n;
+}
+
+// ---------- ライブ映像からプレイリストへ追加 ----------
+let pendingAdd = [];
+function openAdd(list) {
+  pendingAdd = list;
+  $('addInfo').textContent = list.length === 1 ? `「${list[0].title}」（${list[0].live}）を追加するプレイリストを選んでください。`
+                                               : `${list.length} 曲を追加するプレイリストを選んでください。`;
+  const box = $('addTargets'); box.textContent = '';
+  state.playlists.forEach((p) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (p.id === lastTarget ? ' last' : '');
+    b.textContent = p.name;
+    const c = document.createElement('span'); c.className = 'c'; c.textContent = `${p.items.length} 曲`; b.appendChild(c);
+    b.addEventListener('click', () => addTo(p));
+    box.appendChild(b);
+  });
+  $('addNewName').value = '';
+  $('addDlg').showModal();
+}
+function addTo(p) {
+  p.items.push(...pendingAdd.map((it) => ({ id: uid(), vid: it.vid, start: it.start, end: it.end, title: it.title, live: it.live, len: it.len ?? null })));
+  lastTarget = p.id; save();
+  $('msg').textContent = `「${p.name}」に ${pendingAdd.length} 曲追加しました。`;
+  pendingAdd = []; catSelected.clear(); $('addDlg').close(); renderAll();
+}
+$('addNewBtn').addEventListener('click', () => {
+  const name = $('addNewName').value.trim(); if (!name) { $('addNewName').focus(); return; }
+  const p = { id: uid(), name: name.slice(0, 80), author: '', desc: '', items: [] };
+  state.playlists.push(p); addTo(p);
+});
+$('catSearch').addEventListener('input', () => { catQuery = $('catSearch').value; renderList(); });
+$('catAll').addEventListener('click', () => { items().forEach((it) => catSelected.add(it.id)); renderList(); renderCatBar(); });
+$('catNone').addEventListener('click', () => { catSelected.clear(); renderList(); renderCatBar(); });
+$('catAdd').addEventListener('click', () => openAdd(catalogAll.filter((it) => catSelected.has(it.id))));
+$('addFromCatalog').addEventListener('click', () => { lastTarget = pl().id; editing = false; switchTo(CATALOG_ID); });
 
 // ---------- 並べ替え ----------
 function move(from, to) {

@@ -1,0 +1,25 @@
+{
+  "_説明": "update_catalog.py が catalog.json を作るときの手直し。aliases=曲名の統一、live_rules=動画タイトル(正規表現)→表示するライブ名、segments=「動画ID@開始秒」ごとの開始・終了の修正、exclude_videos/exclude_entries=除外",
+  "aliases": {
+    "MyDear": "My Dear",
+    "sparkle": "Sparkle",
+    "オヒメサマ?": "オヒメサマ？",
+    "prologue2025": "prologue",
+    "OXゲーム": "マルバツゲーム",
+    "ゲーム": "マルバツゲーム"
+  },
+  "live_rules": [
+    ["tour2025 FINAL", "tour2025 FINAL"],
+    ["LINE CUBE SHIBUYA", "progress the night -LINE CUBE SHIBUYA-"],
+    ["日比谷公園大音", "3rd anniversary live「progress the night -日比谷公園大音楽堂-」"],
+    ["春に廻れなかった場所編", "tour2024 aki「春に廻れなかった場所編」Final"],
+    ["tour2024 Final", "tour2024 Final（Spotify O-EAST）"],
+    ["LIQUIDROOM", "progress the night -LIQUIDROOM-"],
+    ["QUATTRO tour2023", "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）"]
+  ],
+  "segments": {
+    "nd6EJzBDS60@4508": { "end": 4739, "_memo": "4740 以降は MC とアンコールのコール" }
+  },
+  "exclude_videos": [],
+  "exclude_entries": []
+}
