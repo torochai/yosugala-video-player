@@ -651,8 +651,9 @@ const KEY = 'yosugala-live-selection-v1';
 // トロのプレイリストは組み込み（読み取り専用）。毎回ここに書いた内容で作り直す
 const BUILTIN_ID = 'builtin-toro';
 function defaultPlaylist() {
-  return { id: BUILTIN_ID, builtin: true, readonly: true, name: DEFAULT_NAME, author: DEFAULT_AUTHOR, desc: DEFAULT_DESC, items: DEFAULT_ITEMS.map(([vid, start, end, title, live, len]) =>
-    ({ id: uid(), vid, start, end, title, live, len: len ?? null })) };
+  return { id: BUILTIN_ID, builtin: true, readonly: true, name: DEFAULT_NAME, author: DEFAULT_AUTHOR, desc: DEFAULT_DESC, items: DEFAULT_ITEMS.map(([vid, start, end, title, live, len], i) =>
+    // 曲の ID は「何曲目か＋動画 ID＋開始秒」で固定する（開くたびに変わると、続きから再生する曲を覚えられない）
+    ({ id: `toro:${i}:${vid}@${start}`, vid, start, end, title, live, len: len ?? null })) };
 }
 function load() {
   try {
@@ -759,7 +760,7 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
       `${dotDate(date)}${quoteLive(live)}${venue ? ` @ ${venue}` : ''} の公式ライブ映像を、セットリストの順に並べています（${full.length ? 'フルライブ映像から曲ごとに分けています' : '公開されている映像の曲だけです'}）。`
       + setlistText((c.lives || {})[live], full.length ? null : new Set(list.map((x) => x.song))), false, true));
   });
-  renderAll(); openSharedLib();
+  renderAll(); openSharedLib(); applyResume();
 }).catch(() => { if (sharedLib) { sharedLib = null; $('msg').textContent = 'ライブ映像の一覧を読み込めませんでした。'; } });
 
 // 公演の説明に付けるセットリスト（catalog.json の lives。tools/catalog_overrides.json の setlists から作る）
@@ -836,6 +837,35 @@ function cueIndex(i) {
 }
 // 曲を再生したプレイリストを覚えておき、次にページを開いたときはそこから始める（試聴は除く）
 function rememberPlayed() { if (state.lastPlayed !== pl().id) { state.lastPlayed = pl().id; save(); } }
+// 続きから再生: 再生中の位置（プレイリスト・曲・秒）を state.resume に覚えておき、次に開いたときはその曲を選んでおく。
+// 自動再生はブラウザに止められるので、PLAY（その曲の再生）を押したときに、覚えておいた秒から始める
+let resumeAt = null;   // { id, t }: 次にこの曲を再生するときの開始秒
+const startOf = (it) => (resumeAt && resumeAt.id === it.id ? resumeAt.t : it.start);
+let lastResumeSave = 0;
+function saveResume(force) {
+  if (!player || !ready || !started || previewing || !player.getCurrentTime) return;
+  if (!force && Date.now() - lastResumeSave < 5000) return;
+  const it = items()[curIndex()];
+  if (!it || player.getVideoData().video_id !== it.vid) return;
+  lastResumeSave = Date.now();
+  const t = Math.floor(player.getCurrentTime()), end = it.end != null ? it.end : player.getDuration();
+  // 曲の終わり5秒以内なら、次は曲の頭から
+  state.resume = { pl: pl().id, id: it.id, t: end && t >= end - 5 ? it.start : Math.max(it.start, t) };
+  save();
+}
+// 起動時（とカタログを読み込んだあと）: 前回のプレイリストを開いていれば、続きの曲を選んでおく
+function applyResume() {
+  const r = state.resume;
+  if (!r || started || r.pl !== pl().id) return;
+  const i = items().findIndex((it) => it.id === r.id);
+  if (i < 0) return;
+  // 曲の範囲の外（終了位置が変わったなど）なら曲の頭から
+  const it = items()[i], t = r.t > it.start && (it.end == null || r.t < it.end - 5) ? r.t : it.start;
+  resumeAt = { id: r.id, t }; curId = r.id; showNow();
+  if (t > it.start) $('msg').textContent = `前回の続き（${fmt(t - it.start)}）から再生します。`;
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveResume(true); });
+window.addEventListener('pagehide', () => saveResume(true));
 function playIndex(i) {
   const list = items();
   if (i < 0 || i >= list.length) return;
@@ -843,7 +873,8 @@ function playIndex(i) {
   showNow();
   if (!ready) { if (!player) pendingPlay = i; return whenReady(() => playIndex(i)); }
   started = true; previewing = false;
-  const it = list[i], opts = { videoId: it.vid, startSeconds: it.start };
+  const it = list[i], opts = { videoId: it.vid, startSeconds: startOf(it) };
+  resumeAt = null;
   if (it.end != null) opts.endSeconds = it.end;
   player.loadVideoById(opts);
 }
@@ -867,12 +898,14 @@ function next(auto) {
   if (auto && state.repeat === 'one' && i >= 0) return playIndex(i);
   if (i >= 0 && i < n - 1) return playIndex(i + 1);
   if (state.repeat === 'all' && n) return playIndex(0);
+  if (state.resume && state.resume.pl === pl().id) { delete state.resume; save(); }
   started = false; cueIndex(0);
 }
 function watch() {
   clearInterval(watchTimer);
   watchTimer = setInterval(() => {
     if (!player || !started || !player.getCurrentTime) return;
+    if (player.getPlayerState() === YT.PlayerState.PLAYING) saveResume(false);
     const it = items()[curIndex()];
     if (it && it.end != null && player.getPlayerState() === YT.PlayerState.PLAYING &&
         player.getVideoData().video_id === it.vid && player.getCurrentTime() >= it.end - 0.2) autoNext();
@@ -894,7 +927,7 @@ function createPlayer() {
   if (player) return;
   const first = items()[pendingPlay ?? Math.max(0, curIndex())] || items()[0];
   const vars = { rel: 0, playsinline: 1, controls: 0, cc_load_policy: 0, iv_load_policy: 3,
-                 autoplay: pendingPlay != null ? 1 : 0, start: first ? Math.floor(first.start) : 0 };
+                 autoplay: pendingPlay != null ? 1 : 0, start: first ? Math.floor(startOf(first)) : 0 };
   if (first && first.end != null) vars.end = Math.ceil(first.end);
   player = new YT.Player('player', {
     videoId: first ? first.vid : undefined,
@@ -903,7 +936,7 @@ function createPlayer() {
       onReady: () => { ready = true; watch(); applyCaptions(); applyVolume();
         if (pendingPlay != null) {
           const i = pendingPlay; pendingPlay = null; pending = null;
-          curId = items()[i].id; started = true; previewing = false; showNow();
+          curId = items()[i].id; started = true; previewing = false; resumeAt = null; showNow();
           player.playVideo();
           // それでも始まらないとき（主に iPhone）は、動画のボタンを押してもらう
           setTimeout(() => {
@@ -1330,7 +1363,7 @@ async function createPlaylist() {
 function switchTo(id) {
   // ライブ映像の一覧を切り替えたら、絞り込みと選択は解除する
   if (id !== state.current) { catQuery = ''; $('catSearch').value = ''; catSelected.clear(); selecting = false; }
-  state.current = id; save(); curId = null;
+  state.current = id; save(); curId = null; resumeAt = null;
   started = false; previewing = false; cueIndex(0);
   $('msg').textContent = ''; renderAll();
 }
@@ -1577,7 +1610,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('stage
 window.addEventListener('popstate', () => { if ($('stage').classList.contains('pseudo-fs')) setPseudoFs(false, true); });
 if (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
   document.documentElement.classList.add('ios');
-renderAll(); openSharedLib();
+renderAll(); openSharedLib(); applyResume();
 const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
 </script>
 </body>
