@@ -193,6 +193,8 @@
   .pdesc-body { margin-top: 8px; padding: 16px 18px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #cfd4ea; font-size: .84rem; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
   .pdesc-body a { color: var(--moon); }
+  /* セットリストの番号の桁で曲名の位置がずれないように、数字は等幅にする */
+  .pdesc-body { font-variant-numeric: tabular-nums; }
   /* 曲リスト: PC では20曲を超えたら枠の中でスクロール（高さは JS で20曲分に合わせる） */
   ol { list-style: none; margin: 0; padding: 0; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
   li { border-bottom: 1px solid var(--line); }
@@ -744,12 +746,14 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
 function setlistText(info, playable) {
   if (!info || !(info.main || []).length) return '';
   const medley = new Set(info.medley || []);
-  const line = (no, song) => `　${no}. ${song}${medley.has(song) ? '（メドレー）' : ''}${playable && playable.has(song) ? '  ▶' : ''}`;
+  // 番号の桁がそろうように、足りない桁は数字と同じ幅の空白（U+2007）で埋める（曲名の位置がずれない）
+  const width = String((info.main || []).length + (info.encore || []).length).length;
+  const line = (no, song) => `　${String(no).padStart(width, '\u2007')}. ${song}${medley.has(song) ? '（メドレー）' : ''}${playable && playable.has(song) ? '  ▶' : ''}`;
   // ⬜️本編 / ⬜️アンコール の見出しのあとに、字下げして通し番号で曲名（番号はアンコールにも続けて振る）
-  const out = ['', '', '⬜️本編'];
+  const out = ['', '', '⬜️ 本編'];
   info.main.forEach((song, i) => out.push(line(i + 1, song)));
   if ((info.encore || []).length) {
-    out.push('', '⬜️アンコール');
+    out.push('', '⬜️ アンコール');
     info.encore.forEach((song, i) => out.push(line(info.main.length + i + 1, song)));
   }
   if (playable) out.push('', '▶ = このプレイリストで見られる曲');
