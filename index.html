@@ -187,6 +187,8 @@
   .row .main { min-width: 0; text-align: left; background: none; border: 0; padding: 0; cursor: pointer; }
   .row .t { display: block; overflow-wrap: anywhere; letter-spacing: .02em; }
   .row .s { display: block; color: var(--muted); font-size: .74rem; overflow-wrap: anywhere; }
+  .row .tag { display: inline-block; margin-left: 6px; padding: 0 6px; border: 1px solid var(--line-2); border-radius: 999px;
+    font-size: .66rem; line-height: 1.5; color: var(--moon); vertical-align: 1px; white-space: nowrap; }
   .row .d { color: var(--muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
   .row .tools { display: none; gap: 0; align-items: center; }
   .editing .row .tools { display: flex; }
@@ -890,9 +892,12 @@ function renderList() {
     const s = document.createElement('span'); s.className = 's';
     const ld = liveDates[`${it.vid}@${it.start}`];
     const liveText = (ld ? ld.replace(/-/g, '.') : '') + quoteLive(it.live);   // YYYY.MM.DD「ライブ名」
+    // フルライブ映像から切り出した曲（途中から始まる・途中で終わる）には「フルライブより」の印を付ける。
     // 元動画のどこからどこまでか（時間の範囲）は、編集モードのときだけ表示する
-    const range = editing && (it.start || it.end != null) ? `${fmt(it.start)}〜${it.end != null ? fmt(it.end) : '最後'}` : '';
+    const partial = !!(it.start || it.end != null);
+    const range = editing && partial ? `${fmt(it.start)}〜${it.end != null ? fmt(it.end) : '最後'}` : '';
     s.textContent = [liveText, range].filter(Boolean).join(' ・ ');
+    if (partial) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'フルライブより'; s.appendChild(tag); }
     main.append(t, s);
     main.addEventListener('click', () => editing ? openSong(it.id) : playIndex(i));
     const d = document.createElement('span'); d.className = 'd'; d.textContent = fmt(itemLen(it));
