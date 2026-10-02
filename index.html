@@ -208,6 +208,8 @@
     .layout { grid-template-columns: 1fr; gap: 16px; }
     /* section の枠を外して、動画をページ全体の範囲で上部固定できるようにする */
     .layout > section { display: contents; }
+    /* スマホでは説明文を曲リストの下に出す（曲リストを先に見られるように） */
+    .pdesc { order: 1; margin-top: 4px; }
     .stage-wrap { align-self: start; }
     .now { margin-top: 0; }
     /* 動画は画面上部に固定し、リストをスクロールしても見えるようにする */
