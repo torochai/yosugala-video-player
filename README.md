@@ -37,7 +37,7 @@ git add catalog.json tools/video_cache.json && git commit -m "Update catalog" &&
 - 曲名の表記ゆれ、ライブ名の表示、終了時刻の調整、除外は `tools/catalog_overrides.json` で直せます
 - タイトルに公演名がない単独映像は `catalog_overrides.json` の `video_lives`（動画ID → ライブ名）で公演を指定します
 - 会場名は `catalog_overrides.json` の `live_venues`（ライブ名 → 会場名）に書きます
-- 公演ごとのセットリストは `catalog_overrides.json` の `setlists`（ライブ名 → `main` 本編・`encore` アンコール・`medley` メドレーの曲・`source` 出典・`note` 補足）に書きます。公演ごとのプレイリストの「このプレイリストについて」に表示します（スマホでは「公演情報」ボタンでそこまでスクロールします）
+- 公演ごとのセットリストは `catalog_overrides.json` の `setlists`（ライブ名 → `main` 本編・`encore` アンコール・`medley` メドレーの曲・`source` 出典・`note` 補足・`encore_video` 本編とアンコールの両方で披露した曲のうち映像がアンコールのほうの曲）に書きます。公演ごとのプレイリストの「このプレイリストについて」に表示します（スマホでは「公演情報」ボタンでそこまでスクロールします）
 - 公演の中の曲順は、フルライブ映像があればチャプターの順です（単独映像は、非表示にした同じ曲のチャプターの位置に入ります）。フルライブ映像がない公演は `setlists` の曲順で決めます
 - 補正ファイルだけを直したときは `python3 tools/update_catalog.py --offline` で、YouTube に接続せずに `video_cache.json` から作り直せます
 - 公演日はタイトルの日付から取ります。タイトルに日付がない公演は `catalog_overrides.json` の `live_dates`（ライブ名 → 公演日）に書いてください。同じ曲の中は公演日の古い順に並びます（公開日 `published` もデータに入っていますが、画面には出しません）

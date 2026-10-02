@@ -182,7 +182,9 @@
     "indigo"
    ],
    "source": "https://spice.eplus.jp/articles/319962",
-   "note": "indigo は本編とアンコールの2回披露されていて、映像がどちらかは分からないため、本編の位置に並べています。"
+   "encore_video": [
+    "indigo"
+   ]
   },
   "tour2024 Final": {
    "date": "2024-06-22",
@@ -399,7 +401,7 @@
    "kind": "single",
    "date": "2023-06-22",
    "venue": "Spotify O-WEST",
-   "no": 3
+   "no": 4
   },
   {
    "song": "indigo",
@@ -843,7 +845,7 @@
    "kind": "single",
    "date": "2023-06-22",
    "venue": "Spotify O-WEST",
-   "no": 4
+   "no": 3
   },
   {
    "song": "ひとりごと",
