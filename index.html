@@ -203,6 +203,7 @@
           <button class="btn" type="button" id="next">次へ ▶︎</button>
           <button class="btn" type="button" id="repeat" aria-label="リピート">リピート：オフ</button>
           <button class="btn" type="button" id="fs" aria-label="フルスクリーン">⛶ 全画面</button>
+          <button class="btn" type="button" id="cc" aria-label="字幕">字幕：オフ</button>
         </div>
       </div>
       <div class="msg" id="msg" role="status"></div>
@@ -347,7 +348,11 @@ function defaultPlaylist() {
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && Array.isArray(s.playlists) && s.playlists.length) return s;
+    if (s && Array.isArray(s.playlists) && s.playlists.length) {
+      s.playlists = s.playlists.filter((p) => p && Array.isArray(p.items));
+      s.playlists.forEach((p) => { p.items = p.items.filter((it) => it && typeof it.vid === 'string'); });
+      if (s.playlists.length) return s;
+    }
   } catch {}
   const p = defaultPlaylist();
   return { current: p.id, playlists: [p] };
@@ -427,12 +432,15 @@ window.onYouTubeIframeAPIReady = function () {
   const first = items()[0];
   player = new YT.Player('player', {
     videoId: first ? first.vid : undefined,
-    playerVars: { rel: 0, playsinline: 1, start: first ? Math.floor(first.start) : 0 },
+    playerVars: { rel: 0, playsinline: 1, cc_load_policy: 0, iv_load_policy: 3, start: first ? Math.floor(first.start) : 0 },
     events: {
-      onReady: () => { ready = true; watch(); },
+      onReady: () => { ready = true; watch(); applyCaptions(); },
+      // 字幕モジュールが読み込まれたタイミングで、設定に合わせてオン/オフし直す
+      onApiChange: () => applyCaptions(),
       onStateChange: (e) => {
         if (e.data === YT.PlayerState.ENDED && started) autoNext();
         // 最後まで再生する曲は長さを覚えておく（リストの表示用）
+        if (e.data === YT.PlayerState.PLAYING) { applyCaptions(); setTimeout(applyCaptions, 1500); setTimeout(applyCaptions, 4000); }
         if (e.data === YT.PlayerState.PLAYING && started) {
           const it = items()[curIndex()];
           if (it && it.end == null && it.len == null && player.getVideoData().video_id === it.vid) {
@@ -661,6 +669,23 @@ $('prev').addEventListener('click', () => playIndex(Math.max(0, curIndex() - 1))
 $('next').addEventListener('click', () => next(false));
 $('repeat').addEventListener('click', () => setRepeat({ off: 'all', all: 'one', one: 'off' }[state.repeat || 'off']));
 setRepeat(state.repeat || 'off');
+
+// 字幕（初期はオフ。YouTube 側の設定や動画の既定で字幕が出る場合も消す）
+function applyCaptions() {
+  if (!player || !ready) return;
+  try {
+    if (state.captions) player.loadModule('captions');
+    else { player.setOption('captions', 'track', {}); player.unloadModule('captions'); player.unloadModule('cc'); }
+  } catch {}
+}
+function setCaptions(on) {
+  state.captions = on; save();
+  $('cc').textContent = on ? '字幕：オン' : '字幕：オフ';
+  $('cc').setAttribute('aria-pressed', on);
+  applyCaptions();
+}
+$('cc').addEventListener('click', () => setCaptions(!state.captions));
+setCaptions(!!state.captions);
 
 // フルスクリーン（曲が切り替わってもフルスクリーンのまま続けて再生する）
 const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
