@@ -123,9 +123,10 @@
   .prow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .prow select { flex: 1 1 160px; min-width: 0; background: rgba(5,6,15,.5); border: 1px solid var(--line-2); border-radius: 10px; padding: 8px 10px; }
   .meta { color: var(--muted); font-size: .78rem; letter-spacing: .05em; }
-  .pdesc-head { color: var(--moon); font-size: .76rem; letter-spacing: .08em; }
-  .pdesc-body { margin-top: 6px; padding: 10px 12px; border-radius: 10px; background: rgba(5,6,15,.45); border: 1px solid var(--line);
-    font-size: .8rem; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 220px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+  .pdesc { margin-top: 18px; }
+  .pdesc-head { color: var(--moon); font-family: var(--serif); font-style: italic; font-size: .95rem; letter-spacing: .08em; }
+  .pdesc-body { margin-top: 8px; padding: 16px 18px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #cfd4ea; font-size: .84rem; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
   .pdesc-body a { color: var(--moon); }
   ol { list-style: none; margin: 0; padding: 0; max-height: min(70vh, 760px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
   li { border-bottom: 1px solid var(--line); }
@@ -203,7 +204,7 @@
   /* スマホ・タブレット */
   @media (max-width: 900px) {
     main { padding: calc(20px + env(safe-area-inset-top)) 0 40px; }
-    .hero, .now, .msg, .banner, footer { margin-left: 16px; margin-right: 16px; }
+    .hero, .now, .msg, .banner, .pdesc, footer { margin-left: 16px; margin-right: 16px; }
     .layout { grid-template-columns: 1fr; gap: 16px; }
     /* section の枠を外して、動画をページ全体の範囲で上部固定できるようにする */
     .layout > section { display: contents; }
@@ -277,6 +278,10 @@
         </div>
       </div>
       <div class="msg" id="msg" role="status"></div>
+      <div class="pdesc" id="pdesc" hidden>
+        <div class="pdesc-head">このプレイリストについて</div>
+        <div class="pdesc-body" id="pdescBody"></div>
+      </div>
     </section>
 
     <aside class="panel" id="panel">
@@ -295,10 +300,6 @@
           <button class="btn small danger" type="button" id="plDelete">削除</button>
         </div>
         <div class="meta" id="plMeta"></div>
-        <div class="pdesc" id="pdesc" hidden>
-          <div class="pdesc-head">このプレイリストについて</div>
-          <div class="pdesc-body" id="pdescBody"></div>
-        </div>
       </div>
       <ol id="list" aria-label="曲リスト"></ol>
       <div class="pfoot"><button class="btn" type="button" id="addSong">＋ 曲を追加</button></div>
