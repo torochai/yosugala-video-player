@@ -69,6 +69,13 @@
     border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.55), 0 0 80px rgba(110,130,255,.12); }
   .screen { position: relative; width: 100%; aspect-ratio: 16 / 9; }
   .screen > #player, .screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .start { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    color: #fff; border: 0; cursor: pointer; z-index: 2; font-family: var(--serif); font-size: 1.15rem; letter-spacing: .25em;
+    background: radial-gradient(60% 80% at 50% 120%, rgba(243,183,195,.25), transparent 70%), radial-gradient(80% 90% at 50% 0%, #1b2560, #05060f 75%); }
+  .start .play { width: 78px; height: 78px; border-radius: 50%; border: 1px solid rgba(255,255,255,.45); display: grid; place-items: center;
+    box-shadow: 0 0 30px rgba(185,203,255,.35), inset 0 0 20px rgba(185,203,255,.15); transition: transform .2s; }
+  .start:hover .play { transform: scale(1.06); }
+  .start .play::before { content: ""; border-left: 20px solid #fff; border-top: 12px solid transparent; border-bottom: 12px solid transparent; margin-left: 6px; }
   .bar { display: flex; align-items: center; gap: 4px; padding: 8px 10px; background: linear-gradient(180deg, #0b1030, #070a1c);
     border-top: 1px solid var(--line); }
   .bicon { background: none; border: 0; color: var(--text); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1rem;
@@ -219,6 +226,9 @@
       <div class="stage-wrap"><div class="stage" id="stage">
         <div class="screen">
           <div id="player"></div>
+          <button class="start" id="start" type="button" aria-label="再生">
+            <span class="play" aria-hidden="true"></span><span>PLAY</span>
+          </button>
         </div>
         <!-- 操作バー（YouTube の操作バーは非表示にして、こちらで操作する） -->
         <div class="bar">
@@ -456,7 +466,7 @@ function playIndex(i) {
   if (i < 0 || i >= list.length) return;
   curId = list[i].id; $('msg').textContent = '';
   showNow();
-  if (!ready) return;
+  if (!ready) return whenReady(() => playIndex(i));
   started = true; previewing = false;
   const it = list[i], opts = { videoId: it.vid, startSeconds: it.start };
   if (it.end != null) opts.endSeconds = it.end;
@@ -493,13 +503,25 @@ function watch() {
         player.getVideoData().video_id === it.vid && player.getCurrentTime() >= it.end - 0.2) autoNext();
   }, 500);
 }
-window.onYouTubeIframeAPIReady = function () {
-  const first = items()[0];
+// YouTube プレイヤーは PLAY（または再生操作）を押したときに初めて作る。
+// それまでは PLAY 画面だけを表示し、プレイヤーの上には何も重ねない。
+let apiReady = false, wantPlayer = false, pending = null;
+window.onYouTubeIframeAPIReady = function () { apiReady = true; if (wantPlayer) createPlayer(); };
+function whenReady(fn) {
+  if (ready) return fn();
+  pending = fn; wantPlayer = true;
+  $('start').hidden = true;
+  if (apiReady) createPlayer();
+}
+function createPlayer() {
+  if (player) return;
+  const first = items()[Math.max(0, curIndex())] || items()[0];
   player = new YT.Player('player', {
     videoId: first ? first.vid : undefined,
     playerVars: { rel: 0, playsinline: 1, controls: 0, cc_load_policy: 0, iv_load_policy: 3, start: first ? Math.floor(first.start) : 0 },
     events: {
-      onReady: () => { ready = true; watch(); applyCaptions(); applyVolume(); cueIndex(Math.max(0, curIndex())); },
+      onReady: () => { ready = true; watch(); applyCaptions(); applyVolume();
+        const fn = pending; pending = null; fn ? fn() : cueIndex(Math.max(0, curIndex())); },
       // 字幕モジュールが読み込まれたタイミングで、設定に合わせてオン/オフし直す
       onApiChange: () => applyCaptions(),
       onStateChange: (e) => {
@@ -638,11 +660,12 @@ $('fEndNow').addEventListener('click', () => nowFor('fEnd'));
 $('fPreview').addEventListener('click', () => {
   try {
     const f = readSongForm(); $('fErr').textContent = '';
-    if (!ready) return;
-    started = false; previewing = true;
-    const opts = { videoId: f.vid, startSeconds: f.start }; if (f.end != null) opts.endSeconds = f.end;
-    player.loadVideoById(opts);
     $('songDlg').close();
+    whenReady(() => {
+      started = false; previewing = true;
+      const opts = { videoId: f.vid, startSeconds: f.start }; if (f.end != null) opts.endSeconds = f.end;
+      player.loadVideoById(opts);
+    });
     $('msg').textContent = '試聴中です。位置を決めたら、曲の「✎」から開き直して「今」で時刻を入れられます。';
   } catch (e) { $('fErr').textContent = e.message; }
 });
@@ -765,7 +788,11 @@ function segment() {
 }
 let seeking = false;
 setInterval(() => {
-  if (!player || !ready || !player.getCurrentTime) return;
+  if (!player || !ready || !player.getCurrentTime) {
+    const it = items()[Math.max(0, curIndex())];
+    $('tcur').textContent = '0:00'; $('tdur').textContent = it ? fmt(itemLen(it)) || '0:00' : '0:00';
+    return;
+  }
   const { s, e } = segment(), len = Math.max(0, e - s), t = Math.min(len, Math.max(0, player.getCurrentTime() - s));
   if (!seeking) { $('seek').max = len || 1; $('seek').value = t; $('tcur').textContent = fmt(t); }
   $('tdur').textContent = fmt(len);
@@ -774,11 +801,12 @@ setInterval(() => {
   $('pp').setAttribute('aria-label', playing ? '一時停止' : '再生');
 }, 250);
 function togglePlay() {
-  if (!ready) return;
+  if (!ready) return playIndex(Math.max(0, curIndex()));
   if (!started && !previewing) return playIndex(Math.max(0, curIndex()));
   player.getPlayerState() === YT.PlayerState.PLAYING ? player.pauseVideo() : player.playVideo();
 }
 $('pp').addEventListener('click', togglePlay);
+$('start').addEventListener('click', () => playIndex(Math.max(0, curIndex())));
 $('pp').innerHTML = ICON.play; $('prev').innerHTML = ICON.prev; $('next').innerHTML = ICON.next;
 $('mute').innerHTML = ICON.vol; $('fs').innerHTML = ICON.fs;
 const isFs = () => !!fsEl() || $('stage').classList.contains('pseudo-fs');
