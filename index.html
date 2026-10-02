@@ -258,7 +258,6 @@
           <input type="range" id="seek" min="0" max="1" step="0.1" value="0" aria-label="再生位置">
           <span class="time"><span id="tcur">0:00</span> / <span id="tdur">0:00</span></span>
           <button class="bicon toggle" type="button" id="repeat" aria-label="リピート"></button>
-          <button class="bicon toggle" type="button" id="cc" aria-label="字幕"></button>
           <span class="volwrap">
             <button class="bicon" type="button" id="mute" aria-label="ミュート" title="ミュート（M）"></button>
             <input type="range" id="vol" min="0" max="100" step="1" value="100" aria-label="音量">
@@ -805,15 +804,8 @@ function applyCaptions() {
     else { player.setOption('captions', 'track', {}); player.unloadModule('captions'); player.unloadModule('cc'); }
   } catch {}
 }
-function setCaptions(on) {
-  state.captions = on; save();
-  $('cc').innerHTML = ICON.cc;
-  $('cc').title = on ? '字幕：オン' : '字幕：オフ';
-  $('cc').setAttribute('aria-label', $('cc').title);
-  $('cc').setAttribute('aria-pressed', on);
-  applyCaptions();
-}
-$('cc').addEventListener('click', () => setCaptions(!state.captions));
+// 字幕は常にオフ（以前のバージョンで「オン」にしていた場合も戻す）
+state.captions = false;
 
 // ---------- 操作バー ----------
 // シークバーは曲の範囲（開始〜終了）だけを表す
@@ -889,7 +881,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'm') $('mute').click();
   else if (e.key === 'f') $('fs').click();
 });
-setCaptions(!!state.captions);
+
 
 // フルスクリーン（曲が切り替わってもフルスクリーンのまま続けて再生する）
 const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
