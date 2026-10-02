@@ -82,6 +82,7 @@
   .btn:hover { border-color: var(--moon); box-shadow: 0 0 14px rgba(185,203,255,.25); }
   .btn.primary { background: linear-gradient(90deg, #6f86ff, #b48cff 55%, var(--dawn)); border-color: transparent; color: #0a0e24; font-weight: 700; }
   .btn.danger { color: var(--danger); }
+  .btn.primary.danger { background: var(--danger); color: #1a0508; }
   .btn.small { padding: 5px 11px; font-size: .78rem; }
   .icon { background: none; border: 0; color: var(--muted); cursor: pointer; width: 32px; height: 32px; border-radius: 50%; font-size: .95rem; }
   .icon:hover { color: var(--text); background: var(--glass-2); }
@@ -438,6 +439,20 @@
       <button class="btn small" type="button" id="addNewBtn">作成して追加</button></span>
     </label>
     <div class="actions"><button class="btn" value="cancel">キャンセル</button></div>
+  </form>
+</dialog>
+
+<!-- 名前の入力・削除の確認（ブラウザ標準のダイアログの代わり） -->
+<dialog id="askDlg">
+  <form id="askForm">
+    <h2 id="askTitle"></h2>
+    <p class="hint" id="askMsg"></p>
+    <input type="text" id="askInput" maxlength="80" autocomplete="off">
+    <p class="err" id="askErr"></p>
+    <div class="actions">
+      <button class="btn" type="button" id="askCancel">キャンセル</button>
+      <button class="btn primary" type="submit" id="askOk">OK</button>
+    </div>
   </form>
 </dialog>
 
@@ -1026,13 +1041,48 @@ $('fSave').addEventListener('click', () => {
     save(); renderList(); $('songDlg').close();
   } catch (e) { $('fErr').textContent = e.message; }
 });
-function removeSong(id) {
+async function removeSong(id) {
   const it = items().find((x) => x.id === id);
-  if (!confirm(`「${it.title}」をこのプレイリストから削除しますか？`)) return;
+  if (!await ask({ title: '曲を削除', message: `「${it.title}」（${it.live || ''}）をこのプレイリストから削除しますか？`, ok: '削除', danger: true })) return;
   pl().items = items().filter((x) => x.id !== id);
   save(); renderList();
 }
 $('addSong').addEventListener('click', () => openSong(null));
+
+// ---------- 入力・確認ダイアログ ----------
+// input: true なら名前を入力させて文字列を返す。false なら確認だけで true を返す。キャンセルは null
+let askDone = null;
+function ask({ title, message = '', input = false, value = '', ok = 'OK', danger = false }) {
+  return new Promise((resolve) => {
+    askDone = resolve;
+    $('askTitle').textContent = title; $('askMsg').textContent = message; $('askMsg').hidden = !message;
+    $('askInput').hidden = !input; $('askInput').value = value; $('askErr').textContent = '';
+    $('askOk').textContent = ok; $('askOk').classList.toggle('danger', danger);
+    $('askDlg').showModal();
+    if (input) setTimeout(() => { $('askInput').focus(); $('askInput').select(); }, 0);
+  });
+}
+function askFinish(result) { const f = askDone; askDone = null; if ($('askDlg').open) $('askDlg').close(); if (f) f(result); }
+$('askForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (!$('askInput').hidden) {
+    const v = $('askInput').value.trim();
+    if (!v) { $('askErr').textContent = '名前を入力してください。'; $('askInput').focus(); return; }
+    return askFinish(v.slice(0, 80));
+  }
+  askFinish(true);
+});
+$('askCancel').addEventListener('click', () => askFinish(null));
+// Esc で閉じたとき（前のダイアログの閉じた通知が遅れて届いても、次に開いたダイアログは閉じない）
+$('askDlg').addEventListener('close', () => { if (!$('askDlg').open) askFinish(null); });
+async function createPlaylist() {
+  const name = await ask({ title: '新しいプレイリスト', message: 'プレイリストの名前を入れてください。作成後、そのまま曲を追加できます。',
+                           input: true, value: '新しいプレイリスト', ok: '作成' });
+  if (!name) return false;
+  const p = { id: uid(), name, author: '', desc: '', items: [] };
+  state.playlists.push(p); editing = true; switchTo(p.id);
+  return true;
+}
 
 // ---------- プレイリスト操作 ----------
 function switchTo(id) {
@@ -1043,17 +1093,12 @@ function switchTo(id) {
 const NEW_ID = '__new__';
 $('plSelect').addEventListener('change', (e) => {
   if (e.target.value !== NEW_ID) return switchTo(e.target.value);
-  // 「＋ 新規作成」: 名前を聞いて空のプレイリストを作り、そのまま編集モードにする
-  const name = prompt('新しいプレイリストの名前', '新しいプレイリスト');
-  if (!name || !name.trim()) { e.target.value = pl().id; return; }
-  const p = { id: uid(), name: name.trim().slice(0, 80), author: '', desc: '', items: [] };
-  state.playlists.push(p); editing = true; switchTo(p.id);
+  // 「＋ 新規作成」: 名前を聞いて空のプレイリストを作り、そのまま編集モードにする（キャンセルなら元の選択に戻す）
+  e.target.value = pl().id;
+  createPlaylist();
 });
 $('editToggle').addEventListener('click', () => { editing = !editing; renderAll(); });
-$('plNew').addEventListener('click', () => {
-  const name = prompt('新しいプレイリストの名前', '新しいプレイリスト'); if (!name) return;
-  const p = { id: uid(), name: name.trim().slice(0, 80), items: [] }; state.playlists.push(p); switchTo(p.id);
-});
+$('plNew').addEventListener('click', () => createPlaylist());
 $('plDesc').addEventListener('click', () => {
   $('authorText').value = pl().author || ''; $('descText').value = pl().desc || ''; $('descDlg').showModal();
 });
@@ -1061,16 +1106,16 @@ $('descSave').addEventListener('click', () => {
   pl().author = authorName($('authorText').value);
   pl().desc = $('descText').value.trim().slice(0, 5000); save(); renderDesc(); $('descDlg').close();
 });
-$('plRename').addEventListener('click', () => {
-  const name = prompt('プレイリストの名前', pl().name); if (!name) return;
-  pl().name = name.trim().slice(0, 80); save(); renderAll();
+$('plRename').addEventListener('click', async () => {
+  const name = await ask({ title: '名前を変更', input: true, value: pl().name, ok: '変更' }); if (!name) return;
+  pl().name = name; save(); renderAll();
 });
 $('plDup').addEventListener('click', () => {
   const p = unpack(pack(pl())); p.name = pl().name + ' (コピー)'; state.playlists.push(p); switchTo(p.id);
 });
-$('plDelete').addEventListener('click', () => {
+$('plDelete').addEventListener('click', async () => {
   if (pl().readonly) return;
-  if (!confirm(`プレイリスト「${pl().name}」を削除しますか？（元に戻せません）`)) return;
+  if (!await ask({ title: 'プレイリストを削除', message: `「${pl().name}」を削除しますか？ 元に戻せません。`, ok: '削除', danger: true })) return;
   state.playlists = state.playlists.filter((p) => p.id !== pl().id);
   if (!state.playlists.length) state.playlists.push(defaultPlaylist());
   switchTo(state.playlists[0].id);
@@ -1078,7 +1123,7 @@ $('plDelete').addEventListener('click', () => {
 $('plShare').addEventListener('click', async () => {
   const url = `${location.origin}${location.pathname}#pl=${b64enc(JSON.stringify(pack(pl())))}`;
   try { await navigator.clipboard.writeText(url); $('msg').textContent = '共有リンクをコピーしました。開いた人は、このプレイリストを保存して再生できます。'; }
-  catch { prompt('このリンクをコピーしてください', url); }
+  catch { ask({ title: '共有リンク', message: '自動でコピーできなかったので、下のリンクを選択してコピーしてください。', input: true, value: url, ok: '閉じる' }); }
 });
 $('plIO').addEventListener('click', () => {
   $('ioText').value = JSON.stringify(pack(pl()), null, 1); $('ioErr').textContent = ''; $('ioDlg').showModal();
