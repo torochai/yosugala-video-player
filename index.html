@@ -194,12 +194,10 @@
   .pl-head .tip-open, .pl-head .tip-open:hover { margin-left: auto; flex: none; border: 0; background: none; box-shadow: none; padding: 0 2px; line-height: 1; }
   .pl-head:has(.tip-open:not([hidden])) .pl-label { margin-bottom: 0; }
   /* ホバーの説明（data-tip）。ブラウザ標準の title は出るまで1秒前後かかるので、すぐ出るものを自前で出す。
-     右端のボタン用に、ボタンの右端にそろえて下に出す */
-  [data-tip] { position: relative; }
-  [data-tip]::after { content: attr(data-tip); position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; white-space: nowrap;
+     パネルの外にも出せるように body に置き、ボタンの左上（右端をボタンにそろえて真上）に出す */
+  .hovertip { position: fixed; z-index: 1100; white-space: nowrap; pointer-events: none;
     padding: 5px 9px; border-radius: 8px; background: #0e1230; border: 1px solid var(--line-2); color: var(--text);
-    font-size: .74rem; letter-spacing: .02em; line-height: 1.4; pointer-events: none; opacity: 0; transition: opacity .1s; }
-  @media (hover: hover) { [data-tip]:hover::after, [data-tip]:focus-visible::after { opacity: 1; } }
+    font-size: .74rem; letter-spacing: .02em; line-height: 1.4; box-shadow: 0 6px 18px rgba(0,0,0,.5); }
   /* マウスで操作する端末（PC）は「クリック」、それ以外は「タップ」 */
   .by-mouse { display: none; }
   @media (hover: hover) and (pointer: fine) { .by-mouse { display: inline; } .by-touch { display: none; } }
@@ -1096,6 +1094,23 @@ function openPlMenu() {
   if (cur && cur.offsetTop + cur.offsetHeight > menu.clientHeight) menu.scrollTop = cur.offsetTop - menu.clientHeight / 2;
 }
 $('plPick').addEventListener('click', () => (plMenu ? closePlMenu(false) : openPlMenu()));
+// ホバーの説明（data-tip）: マウスで操作する端末だけ、乗せたらすぐ、ボタンの左上に出す
+let hoverTip = null, hoverTipEl = null;
+function hideTip() { if (hoverTip) { hoverTip.remove(); hoverTip = null; hoverTipEl = null; } }
+function showTip(el) {
+  if (hoverTipEl === el) return;   // 同じボタンの上で動いているあいだは作り直さない
+  hideTip(); hoverTipEl = el;
+  const t = document.createElement('div'); t.className = 'hovertip'; t.textContent = el.dataset.tip;
+  document.body.appendChild(t); hoverTip = t;
+  const r = el.getBoundingClientRect();
+  t.style.left = `${Math.max(8, r.right - t.offsetWidth)}px`;
+  t.style.top = `${Math.max(8, r.top - t.offsetHeight - 6)}px`;
+}
+if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  document.addEventListener('mouseover', (e) => { const el = e.target.closest && e.target.closest('[data-tip]'); if (el) showTip(el); });
+  document.addEventListener('mouseout', (e) => { const el = e.target.closest && e.target.closest('[data-tip]'); if (el && !el.contains(e.relatedTarget)) hideTip(); });
+}
+['click', 'scroll', 'resize'].forEach((ev) => window.addEventListener(ev, hideTip, { passive: true, capture: true }));
 // メニューの外を押す・Esc・ページのスクロールや大きさの変更で閉じる。↑↓で項目を移動
 document.addEventListener('pointerdown', (e) => { if (plMenu && !plMenu.contains(e.target) && !$('plPick').contains(e.target)) closePlMenu(false); });
 document.addEventListener('keydown', (e) => {
