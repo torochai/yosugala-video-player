@@ -182,6 +182,8 @@
   .stage.pseudo-fs { position: absolute; inset: 0; width: auto; height: auto;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); }
   html.pseudo-fs-on, html.pseudo-fs-on body { overflow: hidden; }
+  /* iPhone / iPad はページから音量を変えられない（本体のボタンのみ）ので音量ボタンを出さない */
+  html.ios .volwrap { display: none; }
   /* 全画面では曲名をバーに出す（動画の上には何も重ねない） */
   .bar-title { display: none; min-width: 0; max-width: 32%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     font-size: .9rem; font-weight: 700; letter-spacing: .04em; margin: 0 8px; }
@@ -916,6 +918,8 @@ $('fs').addEventListener('click', async () => {
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('stage').classList.contains('pseudo-fs')) setPseudoFs(false); });
 window.addEventListener('popstate', () => { if ($('stage').classList.contains('pseudo-fs')) setPseudoFs(false, true); });
+if (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
+  document.documentElement.classList.add('ios');
 renderAll();
 const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
 </script>
