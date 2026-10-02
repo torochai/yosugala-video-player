@@ -1,5 +1,5 @@
 {
-  "name": "yosugala Live Selection",
+  "name": "yosugala Live Video Player",
   "short_name": "yosugala",
   "description": "yosugala の公式ライブ映像から好きな曲だけを集めて、自分だけのセットリストで続けて再生できる非公式プレイヤー",
   "start_url": "./",

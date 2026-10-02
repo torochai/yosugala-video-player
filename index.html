@@ -7,20 +7,20 @@
 <!-- ホーム画面に追加して開くと、Safari のバーなしで全画面表示になる -->
 <!-- SNS で共有したときのカード表示（OGP） -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="yosugala Live Selection">
-<meta property="og:title" content="yosugala Live Selection">
+<meta property="og:site_name" content="yosugala Live Video Player">
+<meta property="og:title" content="yosugala Live Video Player">
 <meta property="og:description" content="yosugala の公式ライブ映像から好きな曲を集めて、自分だけのセットリストで続けて再生できる非公式ファンメイドプレイヤー">
-<meta property="og:image" content="https://torochai.github.io/yosugala-video-player/ogp-v2.png">
+<meta property="og:image" content="https://torochai.github.io/yosugala-video-player/ogp-v3.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="yosugala Live Selection — 非公式ファンメイドプレイヤー">
+<meta property="og:image:alt" content="yosugala Live Video Player — 非公式ファンメイドプレイヤー">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="yosugala Live Selection">
+<meta name="twitter:title" content="yosugala Live Video Player">
 <meta name="twitter:description" content="yosugala の公式ライブ映像から好きな曲を集めて、自分だけのセットリストで続けて再生できる非公式ファンメイドプレイヤー">
-<meta name="twitter:image" content="https://torochai.github.io/yosugala-video-player/ogp-v2.png">
-<meta name="twitter:image:alt" content="yosugala Live Selection — 非公式ファンメイドプレイヤー">
+<meta name="twitter:image" content="https://torochai.github.io/yosugala-video-player/ogp-v3.png">
+<meta name="twitter:image:alt" content="yosugala Live Video Player — 非公式ファンメイドプレイヤー">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -28,7 +28,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="yosugala">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>yosugala Live Selection</title>
+<title>yosugala Live Video Player</title>
 <meta name="description" content="yosugala の公式ライブ映像から好きな曲だけを集めて、自分だけのセットリストで続けて再生できる非公式プレイヤー">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -280,7 +280,7 @@
 <main>
   <header class="hero">
     <p class="eyebrow">UNOFFICIAL FAN-MADE PLAYER</p>
-    <h1>yosugala<span class="sub">Live Selection</span></h1>
+    <h1>yosugala<span class="sub">Live Video Player</span></h1>
     <p class="lead">フルライブ映像の中の1曲だけでも、好きな曲を集めて、自分だけのセットリストで続けて再生。</p>
   </header>
 
@@ -679,7 +679,7 @@ function showNow() {
   $('barTitle').innerHTML = '';
   if (it) { const n = document.createElement('span'); n.className = 'bn'; n.textContent = pad(i + 1);
     $('barTitle').append(n, document.createTextNode(it.title)); }
-  document.title = it && started ? `${it.title} - yosugala Live Selection` : 'yosugala Live Selection';
+  document.title = it && started ? `${it.title} - yosugala Live Video Player` : 'yosugala Live Video Player';
   document.querySelectorAll('#list .row').forEach((r) => r.classList.toggle('cur', r.dataset.id === curId));
 }
 function cueIndex(i) {
