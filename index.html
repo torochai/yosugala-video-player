@@ -614,6 +614,8 @@ const DEFAULT_ITEMS = [
 ];
 const DEFAULT_NAME = "トロ's セレクション";
 const DEFAULT_AUTHOR = 'トロ';
+// 以前の曲名（保存済みのプレイリストや共有リンクの曲名を、いまの正式な表記に直す）
+const OLD_SONG_TITLES = { 'マルバツゲーム': '◯×ゲーム' };
 const OLD_DEFAULT_NAMES = ['人気曲セレクション 16曲', 'ライブ映像セレクション 16曲', "トロ's ライブ映像セレクション (16)", "トロ's ライブ映像セレクション"];   // 以前の名前（保存済みのものを新しい名前に変える）
 const DEFAULT_DESC = `トロが個人的に選んだ、yosugala の公式ライブ映像16曲のセレクションです。yosugala 公式のものではありません。
 
@@ -725,6 +727,7 @@ function load() {
         if (OLD_DEFAULT_DESCS.includes(p.desc)) p.desc = DEFAULT_DESC;
         if (p.author == null) p.author = p.name === DEFAULT_NAME ? DEFAULT_AUTHOR : '';
         p.items.forEach((it) => { if (it.vid === 'nd6EJzBDS60' && it.start === 4508 && it.end === 4771) { it.end = 4739; it.len = null; } });
+        p.items.forEach((it) => { if (OLD_SONG_TITLES[it.title]) it.title = OLD_SONG_TITLES[it.title]; });
       });
       // 組み込みプレイリストを正しい内容に置き換える（以前に編集していた場合は、その内容をコピーとして残す）
       const sig = (p) => p.items.map((it) => `${it.vid}@${it.start}@${it.end}`).join(',');
@@ -763,6 +766,8 @@ const liveInfo = {};   // 「動画ID@開始秒」→ { date: 公演日, live: �
 const infoOf = (it) => liveInfo[`${it.vid}@${it.start}`] || {};
 const catSelected = new Set();
 const normq = (x) => String(x || '').normalize('NFKC').toLowerCase();
+// 記号の入った曲名を、読みや似た記号でも絞り込めるようにする（曲名 → 検索に足す言葉）
+const SONG_READINGS = { '◯×ゲーム': 'マルバツゲーム まるばつげーむ ○×ゲーム 〇×ゲーム oxゲーム' };
 const dotDate = (d) => d.replace(/-/g, '.');
 const CAT_HELP = '曲の右の「＋」、または「選択」でチェックを入れて「選択した曲をプレイリストに追加」で、好きなプレイリストに入れられます。上の欄で曲名やライブ名を絞り込めます。';
 // tools = true のもの（すべてのライブ映像の2つ）だけ、曲名・ライブ名で絞り込める。
@@ -774,7 +779,7 @@ function catalogPlaylist(id, name, all, desc, tools = false, live = false) {
     get items() {
       const q = normq(catQuery).trim();
       if (!tools || !q) return all;
-      return all.filter((it) => { const x = infoOf(it); return normq(`${it.title} ${x.live || it.live} ${x.date || ''} ${x.venue || ''}`).includes(q); });
+      return all.filter((it) => { const x = infoOf(it); return normq(`${it.title} ${SONG_READINGS[it.title] || ''} ${x.live || it.live} ${x.date || ''} ${x.venue || ''}`).includes(q); });
     },
   };
 }
@@ -859,7 +864,7 @@ function unpack(o) {
     // 秒数は数字だけ受け付ける（開始は0以上、終了は開始より後、長さは0より大きいときだけ）
     const num = (v) => (v != null && v !== '' && Number.isFinite(+v) ? +v : null);
     const start = Math.max(0, num(a[1]) ?? 0), end = num(a[2]), len = num(a[5]);
-    return { id: uid(), vid: a[0], start, end: end != null && end > start ? end : null, title: String(a[3] || '(無題)'),
+    return { id: uid(), vid: a[0], start, end: end != null && end > start ? end : null, title: OLD_SONG_TITLES[a[3]] || String(a[3] || '(無題)'),
              live: String(a[4] || ''), len: len != null && len > 0 ? len : null };
   }) };
 }
