@@ -136,7 +136,17 @@
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 20px 50px rgba(0,0,0,.4); }
   .phead { padding: 14px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
   .prow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .prow select { flex: 1 1 160px; min-width: 0; background: rgba(5,6,15,.5); border: 1px solid var(--line-2); border-radius: 10px; padding: 8px 10px; }
+  .prow select { flex: 1 1 160px; min-width: 0; border: 1px solid var(--line-2); border-radius: 10px; padding: 9px 38px 9px 12px;
+    -webkit-appearance: none; appearance: none; cursor: pointer; font-weight: 500;
+    /* 右端の ▼（プルダウンだと分かるように） */
+    background: rgba(5,6,15,.5) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b9cbff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 16px;
+    transition: border-color .2s, box-shadow .2s; }
+  .prow select:hover { border-color: var(--moon); box-shadow: 0 0 12px rgba(185,203,255,.2); }
+  .prow select option, .prow select optgroup { background: #0e1230; color: var(--text); }
+  .pinfo { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
+  .pinfo > div:first-child { min-width: 0; }
+  .pactions { display: flex; gap: 6px; flex: none; }
+  .pl-label { color: var(--muted); font-size: .72rem; letter-spacing: .08em; margin-bottom: -4px; }
   .meta { color: var(--muted); font-size: .78rem; letter-spacing: .05em; }
   .author { color: var(--muted); font-size: .78rem; }
   .cattools { display: grid; gap: 8px; }
@@ -316,10 +326,9 @@
 
     <aside class="panel" id="panel">
       <div class="phead">
+        <div class="pl-label">プレイリスト（タップで切り替え）</div>
         <div class="prow">
-          <select id="plSelect" aria-label="プレイリスト"></select>
-          <button class="btn" type="button" id="editToggle">編集</button>
-          <button class="btn" type="button" id="dupEdit" hidden title="このプレイリストは編集できません。コピーを作って編集します">複製して編集</button>
+          <select id="plSelect" aria-label="プレイリストを切り替え"></select>
         </div>
         <!-- 「すべてのライブ映像」を開いているときの検索と追加 -->
         <div class="cattools" id="catTools" hidden>
@@ -339,8 +348,17 @@
           <button class="btn small" type="button" id="plDesc">説明・作成者を編集</button>
           <button class="btn small danger" type="button" id="plDelete">削除</button>
         </div>
-        <div class="meta" id="plMeta"></div>
-        <div class="author" id="plAuthor" hidden></div>
+        <!-- 曲数・作成者と、編集ボタン（選択ボックスから離して置く） -->
+        <div class="pinfo">
+          <div>
+            <div class="meta" id="plMeta"></div>
+            <div class="author" id="plAuthor" hidden></div>
+          </div>
+          <div class="pactions">
+            <button class="btn small" type="button" id="editToggle">編集</button>
+            <button class="btn small" type="button" id="dupEdit" hidden title="このプレイリストは編集できません。コピーを作って編集します">複製して編集</button>
+          </div>
+        </div>
       </div>
       <ol id="list" aria-label="曲リスト"></ol>
       <div class="pfoot"><div class="prow">
