@@ -135,6 +135,7 @@
   .bicon { background: none; border: 0; color: var(--text); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1rem;
     display: grid; place-items: center; flex: none; }
   .bicon:hover { background: var(--glass-2); color: #fff; box-shadow: 0 0 12px rgba(185,203,255,.25); }
+  .bicon:disabled, .bicon:disabled:hover { opacity: .3; cursor: default; background: none; box-shadow: none; }   /* 押せないとき（最後の曲の「次の曲」など） */
   .bicon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .bicon svg .fill { fill: currentColor; stroke: none; }
   .bicon svg text { fill: currentColor; stroke: none; font: 700 7.5px var(--sans); }
@@ -890,6 +891,7 @@ function showNow() {
   $('start').classList.toggle('has-thumb', !!th);
   $('start').style.setProperty('--thumb', th ? `url("https://i.ytimg.com/vi/${th.vid}/hqdefault.jpg")` : 'none');
   document.querySelectorAll('#list .row').forEach((r) => r.classList.toggle('cur', r.dataset.id === curId));
+  updateNextBtn();
 }
 function cueIndex(i) {
   const list = items(), it = list[i];
@@ -969,14 +971,19 @@ function setRepeat(mode) {
   $('repeat').title = REPEAT_LABEL[mode];
   $('repeat').setAttribute('aria-label', REPEAT_LABEL[mode]);
   $('repeat').setAttribute('aria-pressed', mode !== 'off');
+  updateNextBtn();
 }
+// リピート「全曲」以外で最後の曲を選んでいるときは、「次の曲」は使えない（押しても何もしない）
+const atLastNoWrap = () => state.repeat !== 'all' && items().length > 0 && curIndex() === items().length - 1;
+function updateNextBtn() { $('next').disabled = atLastNoWrap(); }
 function next(auto) {
   const i = curIndex(), n = items().length;
+  if (!auto && atLastNoWrap()) return;
   if (auto && state.repeat === 'one' && i >= 0) return playIndex(i);
   if (i >= 0 && i < n - 1) return playIndex(i + 1);
   if (state.repeat === 'all' && n) return playIndex(0);
   if (resume && resume.pl === pl().id) storeResume(null);
-  started = false; cueIndex(0);
+  started = false; cueIndex(0); scrollCurToTop();   // 最後まで聞き終えたら1曲目に戻し、リストも一番上へ
 }
 function watch() {
   clearInterval(watchTimer);
