@@ -170,8 +170,8 @@
   .pdesc-body { margin-top: 8px; padding: 16px 18px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #cfd4ea; font-size: .84rem; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
   .pdesc-body a { color: var(--moon); }
-  /* 曲リストは高さ制限なし（ページごとスクロールして全曲を見る） */
-  ol { list-style: none; margin: 0; padding: 0; }
+  /* 曲リスト: PC では30曲を超えたら枠の中でスクロール（高さは JS で30曲分に合わせる） */
+  ol { list-style: none; margin: 0; padding: 0; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
   li { border-bottom: 1px solid var(--line); }
   li:last-child { border-bottom: 0; }
   li.dragging { opacity: .4; }
@@ -846,6 +846,16 @@ function renderDesc() {
   $('plAuthor').hidden = !au;
   if (au) $('plAuthor').textContent = '作成：' + au;
 }
+// PC では曲リストを30曲分の高さまでにして、それ以上は枠の中でスクロールする
+const LIST_MAX_ROWS = 30;
+function fitListHeight() {
+  const ol = $('list');
+  ol.style.maxHeight = ''; ol.style.overflowY = '';
+  if (!matchMedia('(min-width: 901px)').matches || ol.children.length <= LIST_MAX_ROWS) return;
+  const top = ol.children[0].getBoundingClientRect().top, cut = ol.children[LIST_MAX_ROWS].getBoundingClientRect().top;
+  ol.style.maxHeight = `${Math.round(cut - top)}px`; ol.style.overflowY = 'auto';
+}
+window.addEventListener('resize', () => fitListHeight());
 function renderList() {
   renderSelect();
   renderDesc();
@@ -900,6 +910,7 @@ function renderList() {
     row.append(n, main, right); li.appendChild(row); ol.appendChild(li);
     if (editing) addDrag(li);
   });
+  fitListHeight();
   showNow();
 }
 function renderAll() {
