@@ -1088,8 +1088,8 @@ $('addSong').addEventListener('click', () => openSong(null));
 $('xShare').addEventListener('click', () => {
   const url = `${location.origin}${location.pathname}?ref=x`;
   // 「ページのタイトル - 説明文」の1行（再生中はタブ名が曲名に変わるので、タイトルは固定の名前を使う）
-  const text = `yosugala Live Video Player - ${$('lead').textContent.trim()}`;
-  const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=yosugala`;   // #yosugala を付ける
+  const text = `yosugala Live Video Player - ${$('lead').textContent.trim()} #yosugala`;   // ハッシュタグは本文の末尾（URL の前）
+  const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
   window.open(intent, '_blank', 'noopener,width=600,height=520');
 });
 
