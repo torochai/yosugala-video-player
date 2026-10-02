@@ -112,6 +112,9 @@
   .start { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
     color: #fff; border: 0; cursor: pointer; z-index: 2; font-family: var(--serif); font-size: 1.15rem; letter-spacing: .25em;
     background: radial-gradient(60% 80% at 50% 120%, rgba(243,183,195,.25), transparent 70%), radial-gradient(80% 90% at 50% 0%, #1b2560, #05060f 75%); }
+  /* 再生前の画面の背景に、次に再生する曲のサムネイル（再生ボタンが見えるように暗い膜を重ねる） */
+  .start.has-thumb { background: radial-gradient(closest-side, rgba(5,6,15,.55), rgba(5,6,15,.3)), linear-gradient(rgba(5,6,15,.4), rgba(5,6,15,.55)),
+    var(--thumb) center / cover no-repeat, #05060f; }
   .start .play { width: 78px; height: 78px; border-radius: 50%; border: 1px solid rgba(255,255,255,.45); display: grid; place-items: center;
     box-shadow: 0 0 30px rgba(185,203,255,.35), inset 0 0 20px rgba(185,203,255,.15); transition: transform .2s; }
   .start:hover .play { transform: scale(1.06); }
@@ -345,7 +348,7 @@
         <div class="screen">
           <div id="player"></div>
           <button class="start" id="start" type="button" aria-label="再生">
-            <span class="play" aria-hidden="true"></span><span>PLAY</span>
+            <span class="play" aria-hidden="true"></span>
           </button>
         </div>
         <!-- 操作バー（YouTube の操作バーは非表示にして、こちらで操作する） -->
@@ -835,6 +838,10 @@ function showNow() {
   if (it) { const n = document.createElement('span'); n.className = 'bn'; n.textContent = pad(i + 1);
     $('barTitle').append(n, document.createTextNode(it.title)); }
   document.title = it && started ? `${it.title} - yosugala Live Video Player` : 'yosugala Live Video Player';
+  // 再生前の画面の背景: 選んでいる曲（なければ1曲目）の YouTube サムネイル（動画 ID の形を確かめてから URL に入れる）
+  const th = [it || list[0]].find((x) => x && /^[\w-]{11}$/.test(x.vid));
+  $('start').classList.toggle('has-thumb', !!th);
+  $('start').style.setProperty('--thumb', th ? `url("https://i.ytimg.com/vi/${th.vid}/hqdefault.jpg")` : 'none');
   document.querySelectorAll('#list .row').forEach((r) => r.classList.toggle('cur', r.dataset.id === curId));
 }
 function cueIndex(i) {
