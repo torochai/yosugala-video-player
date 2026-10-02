@@ -911,9 +911,7 @@ $('fs').addEventListener('click', async () => {
   } catch {
     setPseudoFs(true);
     const iosSafari = /iPhone|iPod/.test(navigator.userAgent) && !navigator.standalone && !matchMedia('(display-mode: standalone)').matches;
-    $('msg').textContent = iosSafari
-      ? 'iPhone の Safari ではアドレスバーを消せないため、画面いっぱいの表示にしています。完全な全画面にするには、共有ボタン →「ホーム画面に追加」で追加したアイコンから開いてください。'
-      : '画面いっぱいに表示しています。スマホを横向きにすると大きく見られます。もう一度ボタンを押すと戻ります。';
+    if (iosSafari) $('msg').textContent = 'iPhone の Safari ではアドレスバーを消せないため、画面いっぱいの表示にしています。完全な全画面にするには、共有ボタン →「ホーム画面に追加」で追加したアイコンから開いてください。';
   }
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('stage').classList.contains('pseudo-fs')) setPseudoFs(false); });
