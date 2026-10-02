@@ -167,9 +167,10 @@
   .btn.tip-open { padding: 2px 10px; font-size: 1.05rem; line-height: 1.4; }   /* ほかのボタンと同じ枠付き・同じ高さ */
   .tip-icon { flex: none; }
   .tip .tip-close { flex: none; width: 26px; height: 26px; font-size: .8rem; margin: -4px -2px 0 0; }
-  .pinfo { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
-  .pinfo > div:first-child { min-width: 0; }
-  .pactions { display: flex; gap: 6px; flex: none; }
+  /* ボタンが多くて並ばないときは、ボタンを次の行（右寄せ）に回す */
+  .pinfo { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 10px; }
+  .pinfo > div:first-child { min-width: 0; flex: 1 1 11em; }
+  .pactions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-left: auto; }
   .pl-label { color: var(--muted); font-size: .72rem; letter-spacing: .08em; margin-bottom: -4px; }
   .meta { color: var(--muted); font-size: .78rem; letter-spacing: .05em; }
   .author { color: var(--muted); font-size: .78rem; }
@@ -179,7 +180,7 @@
   .btn:disabled { opacity: .4; cursor: default; box-shadow: none; }
   .row .pick { width: 18px; height: 18px; accent-color: var(--moon); cursor: pointer; margin: 0; }
   .row .addone { font-size: 1.05rem; }
-  .catalog .row .d { margin-right: 4px; }
+  .panel:not(.editing) .row .d { margin-right: 4px; }
   .targets { display: grid; gap: 8px; }
   .targets .btn { text-align: left; white-space: normal; border-radius: 10px; }
   .targets .btn .c { color: var(--muted); font-size: .76rem; margin-left: 6px; }
@@ -369,9 +370,12 @@
           <p>好きな曲を集めて、自由にプレイリストを作れます（「＋ 新規作成」や「複製して編集」から）。作ったプレイリストはこのブラウザに保存されます。別の端末で使うときは「共有リンク」で移せます。</p>
           <button class="icon tip-close" type="button" id="plTipClose" aria-label="この案内を閉じる">✕</button>
         </div>
-        <!-- ライブ映像の一覧（すべてのライブ映像・公演ごと）を開いているときの検索と追加 -->
+        <!-- 「すべてのライブ映像」を開いているときの絞り込み -->
         <div class="cattools" id="catTools" hidden>
           <input type="search" id="catSearch" placeholder="曲名・ライブ名で絞り込み" autocomplete="off" aria-label="曲名・ライブ名で絞り込み">
+        </div>
+        <!-- 「選択」を押したときの、チェックした曲をまとめてプレイリストに追加するボタン -->
+        <div class="cattools" id="pickTools" hidden>
           <div class="prow">
             <button class="btn small" type="button" id="catAll">表示中をすべて選択</button>
             <button class="btn small" type="button" id="catNone" hidden>選択を解除</button>
@@ -395,6 +399,7 @@
           <div class="pactions">
             <button class="btn small tip-open" type="button" id="plTipOpen" hidden title="使い方のヒントを表示" aria-label="使い方のヒントを表示">💡</button>
             <button class="btn small" type="button" id="dupMine" hidden>複製</button>
+            <button class="btn small" type="button" id="selectToggle" title="曲を選んで、まとめてプレイリストに追加します">選択</button>
             <button class="btn small" type="button" id="editToggle">編集</button>
             <button class="btn small" type="button" id="libShare" hidden title="このプレイリストを開くリンクをコピーします">共有リンク</button>
             <button class="btn small" type="button" id="dupEdit" hidden title="このプレイリストは編集できません。コピーを作って編集します">複製して編集</button>
@@ -670,12 +675,14 @@ const catSelected = new Set();
 const normq = (x) => String(x || '').normalize('NFKC').toLowerCase();
 const dotDate = (d) => d.replace(/-/g, '.');
 const CAT_HELP = '曲の右の「＋」、またはチェックを入れて「選択した曲をプレイリストに追加」で、好きなプレイリストに入れられます。上の欄で曲名やライブ名を絞り込めます。';
-function catalogPlaylist(id, name, all, desc) {
+// tools = true のもの（すべてのライブ映像の2つ）だけ、絞り込み・チェックして追加・「＋」が使える。
+// それ以外（Official Live Video・公演ごと）はトロ's セレクションと同じ、ふつうの読み取り専用プレイリスト
+function catalogPlaylist(id, name, all, desc, tools = false) {
   return {
-    id, name, all, desc, readonly: true, catalog: true, author: '',
+    id, name, all, desc, readonly: true, catalog: tools, author: '',
     get items() {
       const q = normq(catQuery).trim();
-      if (!q) return all;
+      if (!tools || !q) return all;
       return all.filter((it) => { const x = infoOf(it); return normq(`${it.title} ${x.live || it.live} ${x.date || ''} ${x.venue || ''}`).includes(q); });
     },
   };
@@ -695,14 +702,14 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   const byDate = [...visible].sort(byLive).map(toItem);
   const about = `yosugala official の公式ライブ映像を、曲ごとに分けた一覧です（${catalogAll.length} 件・${c.updated} 時点）。新しい公式ライブ映像が出たら追加していきます。`;
   catalogPls = [
-    catalogPlaylist(CATALOG_ID, 'すべてのライブ映像 - 曲名順', catalogAll, `${about}\n曲名の順に並べています。${CAT_HELP}`),
-    catalogPlaylist(CATALOG_DATE_ID, 'すべてのライブ映像 - 公演日順', byDate, `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。${CAT_HELP}`),
+    catalogPlaylist(CATALOG_ID, 'すべてのライブ映像 - 曲名順', catalogAll, `${about}\n曲名の順に並べています。${CAT_HELP}`, true),
+    catalogPlaylist(CATALOG_DATE_ID, 'すべてのライブ映像 - 公演日順', byDate, `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。${CAT_HELP}`, true),
   ];
   // Official Live Video: 1曲ずつ公開された映像（フルライブ映像から切り出したものは入れない）を公開日の古い順に
   const singles = c.songs.filter((x) => x.kind === 'single' && !x.hidden)
     .sort((a, b) => a.published.localeCompare(b.published) || a.song.localeCompare(b.song)).map(toItem);
   catalogPls.push(catalogPlaylist(SINGLES_ID, 'Official Live Video - 公開日順', singles,
-    `yosugala official が1曲ずつ公開している公式ライブ映像（Official Live Video）を、公開日の古い順に並べています（${singles.length} 本・${c.updated} 時点）。フルライブ映像から切り出した曲は入っていません。\n${CAT_HELP}`));
+    `yosugala official が1曲ずつ公開している公式ライブ映像（Official Live Video）を、公開日の古い順に並べています（${singles.length} 本・${c.updated} 時点）。フルライブ映像から切り出した曲は入っていません。`));
   // 公演ごと（公演日が分かるものだけ）。新しい公演が上
   //   フルライブ映像がある公演は、フルライブ映像のチャプターだけをその順に（単独映像と重なるチャプターも使う）
   //   フルライブ映像がない公演は、単独映像をセットリスト順に
@@ -718,7 +725,7 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
     if (!list.length) return;
     const { date, live, venue } = list[0];
     catalogPls.push(catalogPlaylist(LIVE_ID + k, `${dotDate(date)}${quoteLive(live)}`, list.map(toItem),
-      `${dotDate(date)}${quoteLive(live)}${venue ? ` @ ${venue}` : ''} の公式ライブ映像を、セットリストの順に並べています（${full.length ? 'フルライブ映像から曲ごとに分けています' : '公開されている映像の曲だけです'}）。\n${CAT_HELP}`));
+      `${dotDate(date)}${quoteLive(live)}${venue ? ` @ ${venue}` : ''} の公式ライブ映像を、セットリストの順に並べています（${full.length ? 'フルライブ映像から曲ごとに分けています' : '公開されている映像の曲だけです'}）。`));
   });
   renderAll(); openSharedLib();
 }).catch(() => { if (sharedLib) { sharedLib = null; $('msg').textContent = 'ライブ映像の一覧を読み込めませんでした。'; } });
@@ -875,7 +882,7 @@ function createPlayer() {
 };
 
 // ---------- プレイリスト表示 ----------
-let editing = false;
+let editing = false, selecting = false;   // selecting: 「選択」中（チェックを入れてまとめて追加）
 // プルダウンでは「名前 (曲数)」と表示する（曲数は自動）
 const withCount = (p) => `${p.name} (${p.items.length})`;
 function renderSelect() {
@@ -961,7 +968,7 @@ function renderList() {
     const row = document.createElement('div'); row.className = 'row'; row.dataset.id = it.id;
     let n = document.createElement('span'); n.className = 'n'; n.textContent = editing ? '⠿' : pad(i + 1);
     if (editing) n.classList.add('handle');
-    if (cat) {   // カタログ: 番号の代わりにチェック
+    if (selecting) {   // 「選択」中: 番号の代わりにチェック
       n = document.createElement('input'); n.type = 'checkbox'; n.className = 'pick'; n.checked = catSelected.has(it.id);
       n.setAttribute('aria-label', `${it.title} を選択`);
       n.addEventListener('change', () => { n.checked ? catSelected.add(it.id) : catSelected.delete(it.id); renderCatBar(); });
@@ -991,7 +998,7 @@ function renderList() {
       mk('✕', '削除', () => removeSong(it.id)),
     );
     const right = document.createElement('span'); right.append(d, tools);
-    if (cat) {
+    if (!editing) {   // どのプレイリストでも（編集中以外）、曲の右の「＋」で好きなプレイリストに追加できる
       const add = document.createElement('button'); add.type = 'button'; add.className = 'icon addone'; add.textContent = '＋';
       add.title = 'プレイリストに追加'; add.setAttribute('aria-label', `${it.title} をプレイリストに追加`);
       add.addEventListener('click', () => openAdd([it]));
@@ -1006,12 +1013,15 @@ function renderList() {
 function renderAll() {
   const ro = !!pl().readonly;
   if (ro) editing = false;
+  if (editing) selecting = false;
   renderSelect(); renderList(); $('plTools').hidden = !editing;
   $('panel').classList.toggle('editing', editing); $('panel').classList.toggle('catalog', ro);
   $('editToggle').textContent = editing ? '完了' : '編集'; $('editToggle').hidden = ro;
   $('dupEdit').hidden = !ro; $('libShare').hidden = !ro;
   $('dupMine').hidden = ro;
-  $('catTools').hidden = !pl().catalog; renderCatBar(); renderTip();
+  $('selectToggle').hidden = editing; $('selectToggle').textContent = selecting ? '選択をやめる' : '選択';
+  $('selectToggle').classList.toggle('primary', selecting);
+  $('catTools').hidden = !pl().catalog; $('pickTools').hidden = !selecting; renderCatBar(); renderTip();
 }
 // 案内は「×」で閉じるまで表示（閉じた状態は保存して、次から出さない）
 function renderTip() { $('plTip').hidden = !!state.hideTip; $('plTipOpen').hidden = !state.hideTip; }
@@ -1045,7 +1055,7 @@ function addTo(p) {
   p.items.push(...pendingAdd.map((it) => ({ id: uid(), vid: it.vid, start: it.start, end: it.end, title: it.title, live: it.live, len: it.len ?? null })));
   lastTarget = p.id; save();
   $('msg').textContent = `「${p.name}」に ${pendingAdd.length} 曲追加しました。`;
-  pendingAdd = []; catSelected.clear(); $('addDlg').close(); renderAll();
+  pendingAdd = []; catSelected.clear(); selecting = false; $('addDlg').close(); renderAll();
 }
 $('addNewBtn').addEventListener('click', () => {
   const name = $('addNewName').value.trim(); if (!name) { $('addNewName').focus(); return; }
@@ -1055,7 +1065,8 @@ $('addNewBtn').addEventListener('click', () => {
 $('catSearch').addEventListener('input', () => { catQuery = $('catSearch').value; renderList(); });
 $('catAll').addEventListener('click', () => { items().forEach((it) => catSelected.add(it.id)); renderList(); renderCatBar(); });
 $('catNone').addEventListener('click', () => { catSelected.clear(); renderList(); renderCatBar(); });
-$('catAdd').addEventListener('click', () => openAdd(pl().all.filter((it) => catSelected.has(it.id))));
+$('catAdd').addEventListener('click', () => openAdd((pl().all || pl().items).filter((it) => catSelected.has(it.id))));
+$('selectToggle').addEventListener('click', () => { selecting = !selecting; if (!selecting) catSelected.clear(); renderAll(); });
 $('dupMine').addEventListener('click', () => { $('plDup').click(); });
 $('dupEdit').addEventListener('click', () => {
   const p = unpack(pack(pl()));   // すべてのライブ映像では、検索で絞り込んだ表示中の曲だけがコピーされる
@@ -1194,7 +1205,7 @@ async function createPlaylist() {
 // ---------- プレイリスト操作 ----------
 function switchTo(id) {
   // ライブ映像の一覧を切り替えたら、絞り込みと選択は解除する
-  if (id !== state.current) { catQuery = ''; $('catSearch').value = ''; catSelected.clear(); }
+  if (id !== state.current) { catQuery = ''; $('catSearch').value = ''; catSelected.clear(); selecting = false; }
   state.current = id; save(); curId = null;
   started = false; previewing = false; cueIndex(0);
   $('msg').textContent = ''; renderAll();
@@ -1206,7 +1217,7 @@ $('plSelect').addEventListener('change', (e) => {
   e.target.value = pl().id;
   createPlaylist();
 });
-$('editToggle').addEventListener('click', () => { editing = !editing; renderAll(); });
+$('editToggle').addEventListener('click', () => { editing = !editing; catSelected.clear(); renderAll(); });
 $('plDesc').addEventListener('click', () => {
   $('authorText').value = pl().author || ''; $('descText').value = pl().desc || ''; $('descDlg').showModal();
 });
