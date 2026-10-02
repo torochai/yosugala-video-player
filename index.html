@@ -164,6 +164,7 @@
   .tip { display: flex; gap: 8px; align-items: flex-start; padding: 10px 10px 10px 12px; border-radius: 10px;
     background: rgba(185,203,255,.08); border: 1px solid var(--line-2); font-size: .78rem; line-height: 1.7; color: #cfd4ea; }
   .tip p { margin: 0; flex: 1; }
+  .tip-open { width: 32px; height: 32px; font-size: .95rem; }
   .tip-icon { flex: none; }
   .tip .tip-close { flex: none; width: 26px; height: 26px; font-size: .8rem; margin: -4px -2px 0 0; }
   .pinfo { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
@@ -392,6 +393,7 @@
             <div class="author" id="plAuthor" hidden></div>
           </div>
           <div class="pactions">
+            <button class="icon tip-open" type="button" id="plTipOpen" hidden title="使い方のヒントを表示" aria-label="使い方のヒントを表示">💡</button>
             <button class="btn small" type="button" id="dupMine" hidden>複製</button>
             <button class="btn small" type="button" id="editToggle">編集</button>
             <button class="btn small" type="button" id="dupEdit" hidden title="このプレイリストは編集できません。コピーを作って編集します">複製して編集</button>
@@ -970,7 +972,8 @@ function renderAll() {
   $('catTools').hidden = pl().id !== CATALOG_ID; renderCatBar(); renderTip();
 }
 // 案内は「×」で閉じるまで表示（閉じた状態は保存して、次から出さない）
-function renderTip() { $('plTip').hidden = !!state.hideTip; }
+function renderTip() { $('plTip').hidden = !!state.hideTip; $('plTipOpen').hidden = !state.hideTip; }
+$('plTipOpen').addEventListener('click', () => { state.hideTip = false; save(); renderTip(); });
 $('plTipClose').addEventListener('click', () => { state.hideTip = true; save(); renderTip(); });
 function renderCatBar() {
   const n = catSelected.size;
