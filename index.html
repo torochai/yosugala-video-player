@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#05060f">
+<!-- ホーム画面に追加して開くと、Safari のバーなしで全画面表示になる -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="yosugala">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>yosugala Live Selection</title>
 <meta name="description" content="yosugala の公式ライブ映像から好きな曲だけを集めて、自分だけのセットリストで続けて再生できる非公式プレイヤー">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -43,7 +51,7 @@
   @keyframes twinkle { from { opacity: .15; } to { opacity: .5; } }
   @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
 
-  main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 40px 24px 56px; }
+  main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: calc(40px + env(safe-area-inset-top)) 24px 56px; }
   .hero { margin-bottom: 28px; }
   .eyebrow { margin: 0 0 6px; font-size: .7rem; letter-spacing: .32em; color: var(--muted); }
   h1 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(2.2rem, 6vw, 3.6rem); line-height: 1.05; letter-spacing: .02em; }
@@ -188,7 +196,7 @@
 
   /* スマホ・タブレット */
   @media (max-width: 900px) {
-    main { padding: 20px 0 40px; }
+    main { padding: calc(20px + env(safe-area-inset-top)) 0 40px; }
     .hero, .now, .msg, .banner, footer { margin-left: 16px; margin-right: 16px; }
     .layout { grid-template-columns: 1fr; gap: 16px; }
     /* section の枠を外して、動画をページ全体の範囲で上部固定できるようにする */
@@ -288,6 +296,7 @@
   </div>
 
   <footer>
+    iPhone で全画面表示にしたいときは、Safari の共有ボタン →「ホーム画面に追加」で追加したアイコンから開いてください。<br>
     プレイリストはこのブラウザに保存されます。別の端末で使うときや人に渡すときは「共有リンク」か「書き出し / 読み込み」を使ってください。<br>
     初期のプレイリストの人気順は、YouTube 公式動画の再生数とライブでの演奏率をもとにした個人的な集計です（2026年10月時点）。<br>
     このページは yosugala 公式とは関係のない、ファンによる非公式のページです。映像はすべて YouTube の埋め込みで公式動画を再生しており、権利は
@@ -901,7 +910,10 @@ $('fs').addEventListener('click', async () => {
     try { await screen.orientation.lock('landscape'); } catch {}   // 対応端末では横向きに
   } catch {
     setPseudoFs(true);
-    $('msg').textContent = '画面いっぱいに表示しています。スマホを横向きにすると大きく見られます。もう一度ボタンを押すと戻ります。';
+    const iosSafari = /iPhone|iPod/.test(navigator.userAgent) && !navigator.standalone && !matchMedia('(display-mode: standalone)').matches;
+    $('msg').textContent = iosSafari
+      ? 'iPhone の Safari ではアドレスバーを消せないため、画面いっぱいの表示にしています。完全な全画面にするには、共有ボタン →「ホーム画面に追加」で追加したアイコンから開いてください。'
+      : '画面いっぱいに表示しています。スマホを横向きにすると大きく見られます。もう一度ボタンを押すと戻ります。';
   }
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('stage').classList.contains('pseudo-fs')) setPseudoFs(false); });
