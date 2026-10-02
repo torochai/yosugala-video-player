@@ -205,6 +205,8 @@
   .pdesc { margin-top: 14px; }
   /* 「情報」ボタン（説明までスクロール）はスマホだけ。PC では説明が動画の下に見えているので出さない */
   @media (min-width: 901px) { #infoJump { display: none; } }
+  /* スマホ・iPad では、ボタン列を1行に広げて「情報」だけパネルの左端に置く（ほかのボタンは右寄せのまま） */
+  @media (max-width: 900px) { .pactions { width: 100%; } #infoJump { margin-right: auto; } }
   .pdesc-head { color: var(--moon); font-family: var(--serif); font-style: italic; font-size: .95rem; letter-spacing: .08em; }
   .pdesc-body { margin-top: 8px; padding: 16px 18px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #cfd4ea; font-size: .84rem; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
