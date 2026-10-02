@@ -675,10 +675,10 @@ function showNow() {
   $('nowTitle').textContent = it ? it.title : pl().name;
   // ライブ名と公演日（分かるものだけ）
   const nd = it ? liveDates[`${it.vid}@${it.start}`] : null;
-  // 「公演日: YYYY.MM.DD　ライブ名」（公演日が分からなければライブ名だけ）
+  // 「公演日: YYYY.MM.DD 「ライブ名」」（間は半角スペース。公演日が分からなければライブ名だけ）
   // ライブ名は「」で囲む（中にある「」は『』にする）
   const liveQ = it ? quoteLive(it.live) : '';
-  $('nowLive').textContent = it ? [nd ? `公演日: ${nd.replace(/-/g, '.')}` : '', liveQ].filter(Boolean).join('　') : '';
+  $('nowLive').textContent = it ? [nd ? `公演日: ${nd.replace(/-/g, '.')}` : '', liveQ].filter(Boolean).join(' ') : '';
   $('barTitle').innerHTML = '';
   if (it) { const n = document.createElement('span'); n.className = 'bn'; n.textContent = pad(i + 1);
     $('barTitle').append(n, document.createTextNode(it.title)); }
