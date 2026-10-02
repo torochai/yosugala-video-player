@@ -123,6 +123,13 @@
   .prow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .prow select { flex: 1 1 160px; min-width: 0; background: rgba(5,6,15,.5); border: 1px solid var(--line-2); border-radius: 10px; padding: 8px 10px; }
   .meta { color: var(--muted); font-size: .78rem; letter-spacing: .05em; }
+  .pdesc summary { cursor: pointer; color: var(--moon); font-size: .8rem; letter-spacing: .05em; list-style: none; }
+  .pdesc summary::-webkit-details-marker { display: none; }
+  .pdesc summary::before { content: "▸ "; }
+  .pdesc[open] summary::before { content: "▾ "; }
+  .pdesc-body { margin-top: 8px; padding: 10px 12px; border-radius: 10px; background: rgba(5,6,15,.45); border: 1px solid var(--line);
+    font-size: .8rem; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 40vh; overflow-y: auto; }
+  .pdesc-body a { color: var(--moon); }
   ol { list-style: none; margin: 0; padding: 0; max-height: min(70vh, 760px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
   li { border-bottom: 1px solid var(--line); }
   li:last-child { border-bottom: 0; }
@@ -287,9 +294,14 @@
           <button class="btn small" type="button" id="plDup">複製</button>
           <button class="btn small" type="button" id="plShare">共有リンク</button>
           <button class="btn small" type="button" id="plIO">書き出し / 読み込み</button>
+          <button class="btn small" type="button" id="plDesc">説明を編集</button>
           <button class="btn small danger" type="button" id="plDelete">削除</button>
         </div>
         <div class="meta" id="plMeta"></div>
+        <details class="pdesc" id="pdesc" hidden>
+          <summary>このプレイリストについて</summary>
+          <div class="pdesc-body" id="pdescBody"></div>
+        </details>
       </div>
       <ol id="list" aria-label="曲リスト"></ol>
       <div class="pfoot"><button class="btn" type="button" id="addSong">＋ 曲を追加</button></div>
@@ -334,6 +346,19 @@
   </form>
 </dialog>
 
+<!-- プレイリストの説明 -->
+<dialog id="descDlg">
+  <form method="dialog">
+    <h2>プレイリストの説明</h2>
+    <p class="hint">選曲の意図や並べ方など、自由に書けます。URL はリンクになります。共有リンクにも含まれます。</p>
+    <textarea id="descText" maxlength="5000" style="min-height: 240px; font-family: var(--sans); font-size: .85rem;"></textarea>
+    <div class="actions">
+      <button class="btn" value="cancel">キャンセル</button>
+      <button class="btn primary" type="button" id="descSave">保存</button>
+    </div>
+  </form>
+</dialog>
+
 <!-- 書き出し / 読み込み -->
 <dialog id="ioDlg">
   <form method="dialog">
@@ -370,6 +395,25 @@ const DEFAULT_ITEMS = [
   ['x4nkkUcnD_Q', 0, null, 'きっかけ', 'tour2025 FINAL', 249],
 ];
 const DEFAULT_NAME = '人気曲セレクション 16曲';
+const DEFAULT_DESC = `yosugala official の公式ライブ映像から、人気の高い16曲を人気順に並べたプレイリストです（2026年10月時点の集計）。
+
+■ 人気順の決め方
+公式なファン投票は見つからなかったため、次の2つの順位を平均して総合順位にしました。
+1. YouTube 再生数 … yosugala official チャンネルにある、その曲の公式動画（MV＋個別のライブ映像）の再生数の合計
+2. ライブ演奏率 … LiveFans に登録されたセットリストのうち、その曲が演奏された公演の割合
+同点のときは、ライブでほぼ毎回演奏される定番曲の indigo を上位にするなどして決めています。
+
+■ 映像の選び方
+すべて yosugala official の公式ライブ映像です。フルライブ映像にしか収録されていない曲は、その曲の部分だけを再生します。
+
+■ 数字に表れないこと
+・個別の公式動画がない曲（四葉のクローバーなど）は、再生数の点で不利になっています
+・Spotify などの配信の再生数は含めていません
+・デビュー曲の prologue のような思い入れは反映されていません
+
+出典
+https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q
+https://www.livefans.jp/artist/songlist/155618`;
 
 // ---------- アイコン（SVG） ----------
 const ICON = {
@@ -424,7 +468,7 @@ const itemLen = (it) => it.end != null ? it.end - it.start : (it.len ?? null);
 // ---------- 保存 ----------
 const KEY = 'yosugala-live-selection-v1';
 function defaultPlaylist() {
-  return { id: uid(), name: DEFAULT_NAME, items: DEFAULT_ITEMS.map(([vid, start, end, title, live, len]) =>
+  return { id: uid(), name: DEFAULT_NAME, desc: DEFAULT_DESC, items: DEFAULT_ITEMS.map(([vid, start, end, title, live, len]) =>
     ({ id: uid(), vid, start, end, title, live, len: len ?? null })) };
 }
 function load() {
@@ -432,7 +476,10 @@ function load() {
     const s = JSON.parse(localStorage.getItem(KEY));
     if (s && Array.isArray(s.playlists) && s.playlists.length) {
       s.playlists = s.playlists.filter((p) => p && Array.isArray(p.items));
-      s.playlists.forEach((p) => { p.items = p.items.filter((it) => it && typeof it.vid === 'string'); });
+      s.playlists.forEach((p) => {
+        p.items = p.items.filter((it) => it && typeof it.vid === 'string');
+        if (p.desc == null) p.desc = p.name === DEFAULT_NAME ? DEFAULT_DESC : '';
+      });
       if (s.playlists.length) return s;
     }
   } catch {}
@@ -444,10 +491,10 @@ function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catc
 const pl = () => state.playlists.find((p) => p.id === state.current) || state.playlists[0];
 
 // 共有・書き出し用のコンパクトな形式
-function pack(p) { return { name: p.name, items: p.items.map((it) => [it.vid, it.start, it.end, it.title, it.live || '', it.len ?? null]) }; }
+function pack(p) { return { name: p.name, desc: p.desc || '', items: p.items.map((it) => [it.vid, it.start, it.end, it.title, it.live || '', it.len ?? null]) }; }
 function unpack(o) {
   if (!o || !Array.isArray(o.items)) throw new Error('形式が正しくありません');
-  return { id: uid(), name: String(o.name || '読み込んだプレイリスト').slice(0, 80), items: o.items.map((a) => {
+  return { id: uid(), name: String(o.name || '読み込んだプレイリスト').slice(0, 80), desc: String(o.desc || '').slice(0, 5000), items: o.items.map((a) => {
     if (!Array.isArray(a) || !/^[\w-]{11}$/.test(a[0])) throw new Error('動画IDが正しくありません');
     return { id: uid(), vid: a[0], start: +a[1] || 0, end: a[2] == null ? null : +a[2], title: String(a[3] || '(無題)'),
              live: String(a[4] || ''), len: a[5] == null ? null : +a[5] };
@@ -594,7 +641,17 @@ function renderSelect() {
   });
   sel.value = pl().id;
 }
+// 説明文（URL だけリンクにして、それ以外はテキストのまま表示）
+function renderDesc() {
+  const d = (pl().desc || '').trim(), body = $('pdescBody');
+  $('pdesc').hidden = !d; body.textContent = '';
+  d.split(/(https?:\/\/[^\s]+)/g).forEach((part, i) => {
+    if (i % 2) { const a = document.createElement('a'); a.href = part; a.textContent = part; a.target = '_blank'; a.rel = 'noopener'; body.appendChild(a); }
+    else body.appendChild(document.createTextNode(part));
+  });
+}
 function renderList() {
+  renderDesc();
   const ol = $('list'); ol.textContent = '';
   const list = items();
   const total = list.reduce((a, it) => a + (itemLen(it) || 0), 0);
@@ -737,6 +794,11 @@ $('editToggle').addEventListener('click', () => { editing = !editing; renderAll(
 $('plNew').addEventListener('click', () => {
   const name = prompt('新しいプレイリストの名前', '新しいプレイリスト'); if (!name) return;
   const p = { id: uid(), name: name.trim().slice(0, 80), items: [] }; state.playlists.push(p); switchTo(p.id);
+});
+$('plDesc').addEventListener('click', () => { $('descText').value = pl().desc || ''; $('descDlg').showModal(); });
+$('descSave').addEventListener('click', () => {
+  pl().desc = $('descText').value.trim().slice(0, 5000); save(); renderDesc(); $('descDlg').close();
+  if (pl().desc) $('pdesc').open = true;
 });
 $('plRename').addEventListener('click', () => {
   const name = prompt('プレイリストの名前', pl().name); if (!name) return;
