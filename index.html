@@ -233,7 +233,10 @@
   /* スマホ・iPad では「情報」だけボタン列の左端に置く（ほかのボタンは右寄せのまま） */
   #infoJump { margin-right: auto; }
   /* 「このプレイリストについて」のポップアップ。長い説明（セットリストなど）は中でスクロール */
-  #infoDlg .pdesc-body { margin-top: 0; max-height: min(62vh, 640px); overflow-y: auto; }
+  #infoDlg .pdesc-body { margin-top: 0; max-height: min(62vh, 640px); overflow-y: auto;
+    overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; outline: none; }
+  /* ポップアップを開いている間はページ全体をスクロールさせない（iPhone で背景が動かないように） */
+  html.dlg-open, html.dlg-open body { overflow: hidden; }
   .pdesc-body { margin-top: 8px; padding: 16px 18px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #cfd4ea; font-size: .84rem; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
   .pdesc-body a { color: var(--moon); }
@@ -512,7 +515,7 @@
   <form method="dialog">
     <h2 id="infoTitle"></h2>
     <div class="author" id="infoAuthor" hidden></div>
-    <div class="pdesc-body" id="pdescBody"></div>
+    <div class="pdesc-body" id="pdescBody" tabindex="-1"></div>
     <div class="actions"><button class="btn primary" value="close">閉じる</button></div>
   </form>
 </dialog>
@@ -1324,7 +1327,11 @@ $('infoJump').addEventListener('click', () => {
   $('infoDlg').style.width = wide ? `${document.querySelector('.stage').offsetWidth}px` : '';
   $('infoDlg').style.maxWidth = wide ? 'calc(100vw - 32px)' : '';
   $('pdescBody').scrollTop = 0; $('infoDlg').showModal();
+  // 開いたときに最初のリンクへ操作対象が移って枠が出ないように、説明欄そのものに置く
+  $('pdescBody').focus({ preventScroll: true });
+  document.documentElement.classList.add('dlg-open');
 });
+$('infoDlg').addEventListener('close', () => document.documentElement.classList.remove('dlg-open'));
 // ポップアップの外（背景）を押しても閉じる
 $('infoDlg').addEventListener('click', (e) => { if (e.target === $('infoDlg')) $('infoDlg').close(); });
 $('selectToggle').addEventListener('click', () => { selecting = !selecting; if (!selecting) catSelected.clear(); renderAll(); });
