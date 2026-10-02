@@ -1184,7 +1184,9 @@ document.addEventListener('keydown', (e) => {
   const tgt = e.target instanceof Element ? e.target : null;
   // 文字入力中やダイアログ内では何もしない（ボタンにフォーカスがあってもスペースは再生/停止に使う）
   if ((tgt && tgt.closest('input:not([type=range]), textarea, select, dialog')) || e.metaKey || e.ctrlKey || e.altKey) return;
-  if (e.key === ' ' || e.key === 'k') { e.preventDefault(); if (tgt && tgt.blur) tgt.blur(); togglePlay(); }
+  // 日本語入力中や大文字でも効くよう、文字ではなくキーの位置（e.code）で判定する
+  const code = e.code;
+  if (code === 'Space' || code === 'KeyK') { e.preventDefault(); if (tgt && tgt.blur) tgt.blur(); togglePlay(); }
   else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
     if (!player || !ready || !started && !previewing) return;
     e.preventDefault(); const { s, e: end } = segment();
@@ -1200,8 +1202,8 @@ document.addEventListener('keydown', (e) => {
     if (player.getCurrentTime() - s > 3 || i <= 0) player.seekTo(s, true);
     else playIndex(i - 1);
   }
-  else if (e.key === 'm') $('mute').click();
-  else if (e.key === 'f') $('fs').click();
+  else if (code === 'KeyM') { e.preventDefault(); $('mute').click(); }
+  else if (code === 'KeyF') { e.preventDefault(); $('fs').click(); }   // もう一度押すと元に戻る
 });
 // 動画（YouTube の枠）をクリックするとキー入力がそちらに行ってしまうので、ページにフォーカスを戻す
 window.addEventListener('blur', () => setTimeout(() => {
@@ -1227,7 +1229,9 @@ $('fs').addEventListener('click', async () => {
   const req = st.requestFullscreen || st.webkitRequestFullscreen;
   try {
     if (!req) throw new Error('unsupported');
-    await req.call(st);
+    // ブラウザが応答しないまま止まることがあるので、1.5秒で見切りをつけて画面いっぱい表示にする
+    await Promise.race([req.call(st), new Promise((_, ng) => setTimeout(() => ng(new Error('timeout')), 1500))]);
+    if (!fsEl()) throw new Error('not fullscreen');
     try { await screen.orientation.lock('landscape'); } catch {}   // 対応端末では横向きに
   } catch {
     setPseudoFs(true);
