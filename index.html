@@ -657,9 +657,9 @@ function load() {
 let state = load();
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 // catalog.json（tools/update_catalog.py で作る）から作る読み取り専用のプレイリスト
-//   すべてのライブ映像 - 曲順（曲名順）/ すべてのライブ映像 - 公演日順 / Official Live Video - 公開日順
+//   すべてのライブ映像 - 曲名順 / すべてのライブ映像 - 公演日順 / Official Live Video - 公開日順
 //   / 公演ごと（YYYY.MM.DD「公演名」・セットリスト順）
-const CATALOG_ID = '__catalog__';             // すべてのライブ映像 - 曲順（以前からの ID のまま）
+const CATALOG_ID = '__catalog__';             // すべてのライブ映像 - 曲名順（以前からの ID のまま）
 const CATALOG_DATE_ID = '__catalog_date__';   // すべてのライブ映像 - 公演日順
 const SINGLES_ID = '__catalog_singles__';     // Official Live Video - 公開日順（単独で公開された映像だけ・古い順）
 const LIVE_ID = '__live__:';                  // 公演ごと: LIVE_ID + 公演日 + '|' + 公演名
@@ -695,7 +695,7 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   const byDate = [...visible].sort(byLive).map(toItem);
   const about = `yosugala official の公式ライブ映像を、曲ごとに分けた一覧です（${catalogAll.length} 件・${c.updated} 時点）。新しい公式ライブ映像が出たら追加していきます。`;
   catalogPls = [
-    catalogPlaylist(CATALOG_ID, 'すべてのライブ映像 - 曲順', catalogAll, `${about}\n曲名の順に並べています。${CAT_HELP}`),
+    catalogPlaylist(CATALOG_ID, 'すべてのライブ映像 - 曲名順', catalogAll, `${about}\n曲名の順に並べています。${CAT_HELP}`),
     catalogPlaylist(CATALOG_DATE_ID, 'すべてのライブ映像 - 公演日順', byDate, `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。${CAT_HELP}`),
   ];
   // Official Live Video: 1曲ずつ公開された映像（フルライブ映像から切り出したものは入れない）を公開日の古い順に
@@ -1235,7 +1235,7 @@ async function copyLink(url, done) {
 $('plShare').addEventListener('click', () => copyLink(`${location.origin}${location.pathname}#pl=${b64enc(JSON.stringify(pack(pl())))}`,
   '共有リンクをコピーしました。開いた人は、このプレイリストを保存して再生できます。'));
 // ライブラリのプレイリストは曲を埋め込まず「#lib=名前」の短いリンクにする（開くといつも最新の内容）
-//   toro = トロ's セレクション / songs = すべてのライブ映像 - 曲順 / dates = すべてのライブ映像 - 公演日順
+//   toro = トロ's セレクション / songs = すべてのライブ映像 - 曲名順 / dates = すべてのライブ映像 - 公演日順
 //   singles = Official Live Video - 公開日順 / YYYY-MM-DD = その日の公演
 function libKey(p) {
   if (p.id === BUILTIN_ID) return 'toro';
