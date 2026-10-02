@@ -377,8 +377,7 @@
     iPhone で全画面表示にしたいときは、Safari の共有ボタン →「ホーム画面に追加」で追加したアイコンから開いてください。<br>
     プレイリストはこのブラウザに保存されます。別の端末で使うときや人に渡すときは「共有リンク」か「書き出し / 読み込み」を使ってください。<br>
     このページは yosugala 公式とは関係のない、ファンによる非公式のページです。映像はすべて YouTube の埋め込みで公式動画を再生しており、権利は
-    <a href="https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q" target="_blank" rel="noopener">yosugala official</a> および各権利者に帰属します。<br>
-    このページの制作：トロ（<a href="https://x.com/torosugala" target="_blank" rel="noopener">@torosugala</a>）
+    <a href="https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q" target="_blank" rel="noopener">yosugala official</a> および各権利者に帰属します。
   </footer>
 </main>
 
@@ -415,11 +414,11 @@
 <dialog id="descDlg">
   <form method="dialog">
     <h2>説明・作成者</h2>
-    <label>作成者（任意。例：トロ（@torosugala））
-      <input type="text" id="authorText" maxlength="80" autocomplete="off">
+    <label>作成者（任意・名前のみ。@ID や URL は入れられません）
+      <input type="text" id="authorText" maxlength="40" autocomplete="off" placeholder="例：トロ">
     </label>
     <label>説明（選曲の意図や並べ方など、自由に）</label>
-    <p class="hint">URL と X のアカウント名（@名前）はリンクになります。どちらも共有リンクに含まれます。</p>
+    <p class="hint">説明では、URL と X のアカウント名（@名前）がリンクになります。作成者と説明は共有リンクにも含まれます。</p>
     <textarea id="descText" maxlength="5000" style="min-height: 240px; font-family: var(--sans); font-size: .85rem;"></textarea>
     <div class="actions">
       <button class="btn" value="cancel">キャンセル</button>
@@ -478,9 +477,9 @@ const DEFAULT_ITEMS = [
   ['x4nkkUcnD_Q', 0, null, 'きっかけ', 'tour2025 FINAL', 249],
 ];
 const DEFAULT_NAME = "トロ's セレクション";
-const DEFAULT_AUTHOR = 'トロ（@torosugala）';
+const DEFAULT_AUTHOR = 'トロ';
 const OLD_DEFAULT_NAMES = ['人気曲セレクション 16曲', 'ライブ映像セレクション 16曲', "トロ's ライブ映像セレクション (16)", "トロ's ライブ映像セレクション"];   // 以前の名前（保存済みのものを新しい名前に変える）
-const DEFAULT_DESC = `トロ（@torosugala）が個人的に選んだ、yosugala の公式ライブ映像16曲のセレクションです。yosugala 公式のものではありません。
+const DEFAULT_DESC = `トロが個人的に選んだ、yosugala の公式ライブ映像16曲のセレクションです。yosugala 公式のものではありません。
 
 ■ 選び方
 公式のライブ映像（単独の動画、またはフルライブ映像の中の1曲）がある曲から選んでいます。MV しかない曲（No Border、マスカレイドナイト、ハルカカナタなど）は入れていません。
@@ -641,7 +640,7 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
 function pack(p) { return { name: p.name, author: p.author || '', desc: p.desc || '', items: p.items.map((it) => [it.vid, it.start, it.end, it.title, it.live || '', it.len ?? null]) }; }
 function unpack(o) {
   if (!o || !Array.isArray(o.items)) throw new Error('形式が正しくありません');
-  return { id: uid(), name: String(o.name || '読み込んだプレイリスト').slice(0, 80), author: String(o.author || '').slice(0, 80), desc: String(o.desc || '').slice(0, 5000), items: o.items.map((a) => {
+  return { id: uid(), name: String(o.name || '読み込んだプレイリスト').slice(0, 80), author: authorName(o.author), desc: String(o.desc || '').slice(0, 5000), items: o.items.map((a) => {
     if (!Array.isArray(a) || !/^[\w-]{11}$/.test(a[0])) throw new Error('動画IDが正しくありません');
     return { id: uid(), vid: a[0], start: +a[1] || 0, end: a[2] == null ? null : +a[2], title: String(a[3] || '(無題)'),
              live: String(a[4] || ''), len: a[5] == null ? null : +a[5] };
@@ -808,6 +807,11 @@ function renderSelect() {
   sel.value = pl().id;
 }
 // 説明文（URL だけリンクにして、それ以外はテキストのまま表示）
+// 作成者は名前だけ: URL・@ID・空になったカッコを取り除く
+function authorName(x) {
+  return String(x || '').replace(/https?:\/\/\S+/g, '').replace(/@[A-Za-z0-9_]{1,15}/g, '')
+    .replace(/[（(]\s*[）)]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40);
+}
 // URL と X のアカウント名（@名前）をリンクにして el に入れる
 function linkify(el, text) {
   el.textContent = '';
@@ -820,10 +824,10 @@ function linkify(el, text) {
   });
 }
 function renderDesc() {
-  const d = (pl().desc || '').trim(), au = (pl().author || '').trim();
+  const d = (pl().desc || '').trim(), au = authorName(pl().author);
   $('pdesc').hidden = !d; linkify($('pdescBody'), d);
   $('plAuthor').hidden = !au;
-  if (au) { linkify($('plAuthor'), au); $('plAuthor').prepend('作成：'); }
+  if (au) $('plAuthor').textContent = '作成：' + au;
 }
 function renderList() {
   renderSelect();
@@ -1044,7 +1048,7 @@ $('plDesc').addEventListener('click', () => {
   $('authorText').value = pl().author || ''; $('descText').value = pl().desc || ''; $('descDlg').showModal();
 });
 $('descSave').addEventListener('click', () => {
-  pl().author = $('authorText').value.trim().slice(0, 80);
+  pl().author = authorName($('authorText').value);
   pl().desc = $('descText').value.trim().slice(0, 5000); save(); renderDesc(); $('descDlg').close();
 });
 $('plRename').addEventListener('click', () => {
@@ -1084,7 +1088,7 @@ let shared = null;
   const m = location.hash.match(/#pl=([\w-]+)/);
   if (!m) return;
   try { shared = unpack(JSON.parse(b64dec(m[1]))); } catch { $('msg').textContent = '共有リンクを読み込めませんでした。'; return; }
-  $('shareText').textContent = `共有されたプレイリスト「${shared.name}」（${shared.items.length} 曲${shared.author ? '・作成：' + shared.author : ''}）を開いています。`;
+  $('shareText').textContent = `共有されたプレイリスト「${shared.name}」（${shared.items.length} 曲${shared.author ? '・作成：' + authorName(shared.author) : ''}）を開いています。`;
   $('shareBanner').hidden = false;
   state.playlists.push(shared); state.current = shared.id;   // 保存はボタンを押したときだけ
 })();
