@@ -675,7 +675,8 @@ function showNow() {
   $('nowTitle').textContent = it ? it.title : pl().name;
   // ライブ名と公演日（分かるものだけ）
   const nd = it ? liveDates[`${it.vid}@${it.start}`] : null;
-  $('nowLive').textContent = it ? [it.live, nd ? nd.replace(/-/g, '.') : ''].filter(Boolean).join(' ・ ') : '';
+  // 「公演日: YYYY.MM.DD　ライブ名」（公演日が分からなければライブ名だけ）
+  $('nowLive').textContent = it ? [nd ? `公演日: ${nd.replace(/-/g, '.')}` : '', it.live].filter(Boolean).join('　') : '';
   $('barTitle').innerHTML = '';
   if (it) { const n = document.createElement('span'); n.className = 'bn'; n.textContent = pad(i + 1);
     $('barTitle').append(n, document.createTextNode(it.title)); }
