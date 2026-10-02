@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#05060f">
 <title>yosugala Live Selection</title>
-<meta name="description" content="YouTube の公式ライブ映像を、曲の頭から終わりまで順番に再生するプレイリストプレイヤー">
+<meta name="description" content="yosugala の公式ライブ映像から好きな曲だけを集めて、自分だけのセットリストで続けて再生できる非公式プレイヤー">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
@@ -65,9 +65,19 @@
 
   /* プレイヤー */
   .stage-wrap { position: relative; }
-  .stage { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 14px; overflow: hidden;
+  .stage { position: relative; width: 100%; display: flex; flex-direction: column; background: #000; border-radius: 14px; overflow: hidden;
     border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.55), 0 0 80px rgba(110,130,255,.12); }
-  .stage > div, .stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .screen { position: relative; width: 100%; aspect-ratio: 16 / 9; }
+  .screen > #player, .screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .bar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: linear-gradient(180deg, #0b1030, #070a1c);
+    border-top: 1px solid var(--line); }
+  .bicon { background: none; border: 0; color: var(--text); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1rem;
+    display: grid; place-items: center; flex: none; }
+  .bicon:hover { background: var(--glass-2); color: #fff; box-shadow: 0 0 12px rgba(185,203,255,.25); }
+  .time { font-variant-numeric: tabular-nums; font-size: .78rem; color: var(--muted); min-width: 3.2em; text-align: center; flex: none; }
+  .bar input[type=range] { accent-color: var(--moon); cursor: pointer; height: 4px; }
+  #seek { flex: 1; min-width: 60px; }
+  #vol { width: 90px; flex: none; }
   .start { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
     color: #fff; border: 0; cursor: pointer; z-index: 2; font-family: var(--serif); font-size: 1.15rem; letter-spacing: .25em;
     background: radial-gradient(60% 80% at 50% 120%, rgba(243,183,195,.25), transparent 70%), radial-gradient(80% 90% at 50% 0%, #1b2560, #05060f 75%); }
@@ -140,7 +150,8 @@
   .btn[aria-pressed="true"] { border-color: var(--moon); color: #fff; box-shadow: 0 0 14px rgba(185,203,255,.3); }
   .controls { flex-wrap: wrap; }
   /* フルスクリーン */
-  .stage:fullscreen, .stage:-webkit-full-screen { border-radius: 0; border: 0; width: 100vw; height: 100vh; aspect-ratio: auto; background: #000; }
+  .stage:fullscreen, .stage:-webkit-full-screen { border-radius: 0; border: 0; width: 100vw; height: 100vh; background: #000; }
+  .stage:fullscreen .screen, .stage:-webkit-full-screen .screen { flex: 1; aspect-ratio: auto; }
   .fs-title { display: none; position: absolute; left: 0; right: 0; top: 0; z-index: 3; padding: 22px 28px 40px; pointer-events: none;
     background: linear-gradient(rgba(0,0,0,.6), transparent); opacity: 0; transition: opacity .8s; }
   .stage:fullscreen .fs-title, .stage:-webkit-full-screen .fs-title { display: block; }
@@ -160,6 +171,9 @@
     /* 動画は画面上部に固定し、リストをスクロールしても見えるようにする */
     .stage-wrap { position: sticky; top: 0; z-index: 5; background: var(--night-0); }
     .stage { border-radius: 0; border-left: 0; border-right: 0; }
+    /* スマホは本体の音量ボタンで調整するので音量バーは出さない */
+    #vol { display: none; }
+    .bar { gap: 6px; padding: 6px 8px; }
     .panel { margin: 0 12px; }
     ol { max-height: none; }
     .row { padding: 12px 14px; }
@@ -174,7 +188,7 @@
   <header class="hero">
     <p class="eyebrow">UNOFFICIAL FAN-MADE PLAYER</p>
     <h1>yosugala<span class="sub">Live Selection</span></h1>
-    <p class="lead">公式ライブ映像を、曲の頭から終わりまで順番に。プレイリストは自由に作成・編集できます。</p>
+    <p class="lead">フルライブ映像の中の1曲だけでも、好きな曲を集めて、自分だけのセットリストで続けて再生。</p>
   </header>
 
   <div class="banner" id="shareBanner" hidden>
@@ -186,11 +200,23 @@
   <div class="layout">
     <section>
       <div class="stage-wrap"><div class="stage" id="stage">
-        <div id="player"></div>
-        <div class="fs-title" id="fsTitle" aria-hidden="true"><span class="fs-num"></span><span class="fs-t"></span></div>
-        <button class="start" id="start" type="button" aria-label="再生">
-          <span class="play" aria-hidden="true"></span><span>PLAY</span>
-        </button>
+        <div class="screen">
+          <div id="player"></div>
+          <div class="fs-title" id="fsTitle" aria-hidden="true"><span class="fs-num"></span><span class="fs-t"></span></div>
+          <button class="start" id="start" type="button" aria-label="再生">
+            <span class="play" aria-hidden="true"></span><span>PLAY</span>
+          </button>
+        </div>
+        <!-- 操作バー（YouTube の操作バーは非表示にして、こちらで操作する） -->
+        <div class="bar">
+          <button class="bicon" type="button" id="pp" aria-label="再生">▶</button>
+          <span class="time" id="tcur">0:00</span>
+          <input type="range" id="seek" min="0" max="1" step="0.1" value="0" aria-label="再生位置">
+          <span class="time" id="tdur">0:00</span>
+          <button class="bicon" type="button" id="mute" aria-label="ミュート">🔊</button>
+          <input type="range" id="vol" min="0" max="100" step="1" value="100" aria-label="音量">
+          <button class="bicon" type="button" id="fs" aria-label="全画面">⛶</button>
+        </div>
       </div></div>
       <div class="now">
         <div class="label">
@@ -202,7 +228,6 @@
           <button class="btn" type="button" id="prev">◀︎ 前へ</button>
           <button class="btn" type="button" id="next">次へ ▶︎</button>
           <button class="btn" type="button" id="repeat" aria-label="リピート">リピート：オフ</button>
-          <button class="btn" type="button" id="fs" aria-label="フルスクリーン">⛶ 全画面</button>
           <button class="btn" type="button" id="cc" aria-label="字幕">字幕：オフ</button>
         </div>
       </div>
@@ -432,9 +457,9 @@ window.onYouTubeIframeAPIReady = function () {
   const first = items()[0];
   player = new YT.Player('player', {
     videoId: first ? first.vid : undefined,
-    playerVars: { rel: 0, playsinline: 1, cc_load_policy: 0, iv_load_policy: 3, start: first ? Math.floor(first.start) : 0 },
+    playerVars: { rel: 0, playsinline: 1, controls: 0, cc_load_policy: 0, iv_load_policy: 3, start: first ? Math.floor(first.start) : 0 },
     events: {
-      onReady: () => { ready = true; watch(); applyCaptions(); },
+      onReady: () => { ready = true; watch(); applyCaptions(); applyVolume(); },
       // 字幕モジュールが読み込まれたタイミングで、設定に合わせてオン/オフし直す
       onApiChange: () => applyCaptions(),
       onStateChange: (e) => {
@@ -685,6 +710,54 @@ function setCaptions(on) {
   applyCaptions();
 }
 $('cc').addEventListener('click', () => setCaptions(!state.captions));
+
+// ---------- 操作バー ----------
+// シークバーは曲の範囲（開始〜終了）だけを表す
+function segment() {
+  const it = items()[curIndex()], dur = player && player.getDuration ? player.getDuration() : 0;
+  const vid = player && player.getVideoData ? player.getVideoData().video_id : null;
+  if (started && it && it.vid === vid) return { s: it.start, e: it.end != null ? it.end : dur };
+  return { s: 0, e: dur };
+}
+let seeking = false;
+setInterval(() => {
+  if (!player || !ready || !player.getCurrentTime) return;
+  const { s, e } = segment(), len = Math.max(0, e - s), t = Math.min(len, Math.max(0, player.getCurrentTime() - s));
+  if (!seeking) { $('seek').max = len || 1; $('seek').value = t; $('tcur').textContent = fmt(t); }
+  $('tdur').textContent = fmt(len);
+  const playing = player.getPlayerState() === YT.PlayerState.PLAYING;
+  $('pp').textContent = playing ? '❚❚' : '▶';
+  $('pp').setAttribute('aria-label', playing ? '一時停止' : '再生');
+}, 250);
+function togglePlay() {
+  if (!ready) return;
+  if (!$('start').hidden) return playIndex(Math.max(0, curIndex()));
+  player.getPlayerState() === YT.PlayerState.PLAYING ? player.pauseVideo() : player.playVideo();
+}
+$('pp').addEventListener('click', togglePlay);
+$('seek').addEventListener('input', () => { seeking = true; $('tcur').textContent = fmt(+$('seek').value); });
+$('seek').addEventListener('change', () => { player.seekTo(segment().s + +$('seek').value, true); seeking = false; });
+function applyVolume() {
+  if (!player || !ready) return;
+  player.setVolume(state.volume ?? 100);
+  state.muted ? player.mute() : player.unMute();
+  $('vol').value = state.volume ?? 100;
+  $('mute').textContent = state.muted || state.volume === 0 ? '🔇' : '🔊';
+}
+$('vol').addEventListener('input', () => { state.volume = +$('vol').value; state.muted = false; save(); applyVolume(); });
+$('mute').addEventListener('click', () => { state.muted = !state.muted; save(); applyVolume(); });
+// キーボード: スペース=再生/一時停止、←→=5秒移動、M=ミュート、F=全画面
+document.addEventListener('keydown', (e) => {
+  const tgt = e.target instanceof Element ? e.target : null;
+  if ((tgt && tgt.closest('input, textarea, select, dialog, button')) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === ' ' || e.key === 'k') { e.preventDefault(); togglePlay(); }
+  else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    e.preventDefault(); const { s, e: end } = segment();
+    player.seekTo(Math.min(end, Math.max(s, player.getCurrentTime() + (e.key === 'ArrowRight' ? 5 : -5))), true);
+  }
+  else if (e.key === 'm') $('mute').click();
+  else if (e.key === 'f') $('fs').click();
+});
 setCaptions(!!state.captions);
 
 // フルスクリーン（曲が切り替わってもフルスクリーンのまま続けて再生する）

@@ -1,6 +1,6 @@
 # yosugala video player
 
-yosugala official の公式ライブ映像（YouTube）を、曲の頭から終わりまで順番に再生する非公式のファンメイドプレイヤーです。
+yosugala official の公式ライブ映像（YouTube）から好きな曲だけを集めて、自分だけのセットリストで続けて再生できる非公式のファンメイドプレイヤーです。フルライブ映像の中の1曲だけを切り出して再生することもできます。
 
 https://torochai.github.io/yosugala-video-player/
 
