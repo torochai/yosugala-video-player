@@ -425,6 +425,7 @@
             <button class="btn small" type="button" id="infoJump" hidden title="このプレイリストについての説明を表示">情報</button>
             <button class="btn small tip-open" type="button" id="plTipOpen" hidden title="使い方のヒントを表示" aria-label="使い方のヒントを表示">💡</button>
             <button class="btn small" type="button" id="dupMine" hidden>複製</button>
+            <button class="btn small" type="button" id="dupCancel" hidden title="いま作ったコピーを削除して、元のプレイリストに戻ります">キャンセル</button>
             <button class="btn small" type="button" id="selectToggle" title="曲を選んで、まとめてプレイリストに追加します">選択</button>
             <button class="btn small" type="button" id="editToggle">編集</button>
             <button class="btn small" type="button" id="libShare" hidden title="このプレイリストを開くリンクをコピーします">共有</button>
@@ -1202,7 +1203,11 @@ function renderAll() {
   // スマホ: 説明があるときだけ「情報」（公演ごとのプレイリストは「公演情報」）で説明までスクロールできる
   $('infoJump').hidden = !(pl().desc || '').trim();
   $('infoJump').textContent = pl().live ? '公演情報' : '情報';
-  $('dupMine').hidden = ro;
+  // 複製した直後は「複製」の位置に「キャンセル」。編集中は編集用ボタンの中に「複製」があるので、ここには出さない
+  const canCancel = !!dupFrom && dupFrom.copyId === pl().id;
+  $('dupCancel').hidden = !canCancel;
+  $('dupMine').hidden = ro || editing || canCancel;
+  $('plDup').hidden = canCancel;   // 複製したばかりのものはさらに複製しない（キャンセルか完了のあとで出す）
   $('selectToggle').hidden = editing; $('selectToggle').textContent = selecting ? '選択をやめる' : '選択';
   $('selectToggle').classList.toggle('primary', selecting);
   $('catTools').hidden = !pl().catalog; $('pickTools').hidden = !selecting; renderCatBar(); renderTip();
@@ -1259,13 +1264,24 @@ $('infoJump').addEventListener('click', () => {
   window.scrollTo({ top, behavior: 'smooth' });
 });
 $('selectToggle').addEventListener('click', () => { selecting = !selecting; if (!selecting) catSelected.clear(); renderAll(); });
+// 複製した直後だけ「キャンセル」できるように、コピーと元のプレイリストを覚えておく（完了・切り替えで確定）
+let dupFrom = null;   // { copyId, srcId }
+function afterDup(copyId, srcId) { dupFrom = { copyId, srcId }; renderAll(); }
 $('dupMine').addEventListener('click', () => { $('plDup').click(); });
 $('dupEdit').addEventListener('click', () => {
+  const src = pl().id;
   const p = unpack(pack(pl()));   // すべてのライブ映像では、検索で絞り込んだ表示中の曲だけがコピーされる
   p.name = pl().name + (pl().catalog && catQuery.trim() ? `「${catQuery.trim()}」` : '') + ' (コピー)';
   p.author = ''; p.desc = '';
-  state.playlists.push(p); editing = true; switchTo(p.id);
-  $('msg').textContent = 'コピーを作りました。このブラウザに保存されます。';
+  state.playlists.push(p); editing = true; switchTo(p.id); afterDup(p.id, src);
+  $('msg').textContent = 'コピーを作りました。このブラウザに保存されます。やめるときは「キャンセル」を押してください。';
+});
+$('dupCancel').addEventListener('click', () => {
+  if (!dupFrom) return;
+  const { copyId, srcId } = dupFrom;
+  state.playlists = state.playlists.filter((p) => p.id !== copyId);
+  editing = false; switchTo(srcId);
+  $('msg').textContent = '複製を取り消しました。';
 });
 $('addFromCatalog').addEventListener('click', () => { lastTarget = pl().id; editing = false; switchTo(CATALOG_ID); });
 
@@ -1398,6 +1414,7 @@ async function createPlaylist() {
 function switchTo(id) {
   // ライブ映像の一覧を切り替えたら、絞り込みと選択は解除する
   if (id !== state.current) { catQuery = ''; $('catSearch').value = ''; catSelected.clear(); selecting = false; }
+  if (dupFrom && id !== dupFrom.copyId) dupFrom = null;   // 別のプレイリストに切り替えたらコピーは確定
   state.current = id; save(); curId = null; resumeAt = null;
   started = false; previewing = false; cueIndex(0);
   $('msg').textContent = ''; renderAll();
@@ -1409,7 +1426,10 @@ $('plSelect').addEventListener('change', (e) => {
   e.target.value = pl().id;
   createPlaylist();
 });
-$('editToggle').addEventListener('click', () => { editing = !editing; catSelected.clear(); renderAll(); });
+$('editToggle').addEventListener('click', () => {
+  if (editing) dupFrom = null;   // 「完了」でコピーは確定
+  editing = !editing; catSelected.clear(); renderAll();
+});
 $('plDesc').addEventListener('click', () => {
   $('authorText').value = pl().author || ''; $('descText').value = pl().desc || ''; $('descDlg').showModal();
 });
@@ -1422,7 +1442,8 @@ $('plRename').addEventListener('click', async () => {
   pl().name = name; save(); renderAll();
 });
 $('plDup').addEventListener('click', () => {
-  const p = unpack(pack(pl())); p.name = pl().name + ' (コピー)'; state.playlists.push(p); switchTo(p.id);
+  const src = pl().id;
+  const p = unpack(pack(pl())); p.name = pl().name + ' (コピー)'; state.playlists.push(p); switchTo(p.id); afterDup(p.id, src);
 });
 $('plDelete').addEventListener('click', async () => {
   if (pl().readonly) return;
