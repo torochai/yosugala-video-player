@@ -677,7 +677,7 @@ function showNow() {
   const nd = it ? liveDates[`${it.vid}@${it.start}`] : null;
   // 「公演日: YYYY.MM.DD　ライブ名」（公演日が分からなければライブ名だけ）
   // ライブ名は「」で囲む（中にある「」は『』にする）
-  const liveQ = it && it.live ? `「${it.live.replace(/「/g, '『').replace(/」/g, '』')}」` : '';
+  const liveQ = it ? quoteLive(it.live) : '';
   $('nowLive').textContent = it ? [nd ? `公演日: ${nd.replace(/-/g, '.')}` : '', liveQ].filter(Boolean).join('　') : '';
   $('barTitle').innerHTML = '';
   if (it) { const n = document.createElement('span'); n.className = 'bn'; n.textContent = pad(i + 1);
@@ -849,6 +849,8 @@ function renderDesc() {
   $('plAuthor').hidden = !au;
   if (au) $('plAuthor').textContent = '作成：' + au;
 }
+// ライブ名を「」で囲む（中にある「」は『』にする）
+const quoteLive = (live) => live ? `「${live.replace(/「/g, '『').replace(/」/g, '』')}」` : '';
 // PC では曲リストを20曲分の高さまでにして、それ以上は枠の中でスクロールする
 const LIST_MAX_ROWS = 20;
 function fitListHeight() {
@@ -887,7 +889,7 @@ function renderList() {
     const t = document.createElement('span'); t.className = 't'; t.textContent = it.title;
     const s = document.createElement('span'); s.className = 's';
     const ld = liveDates[`${it.vid}@${it.start}`];
-    const liveText = [it.live, ld ? `（${ld.replace(/-/g, '.')}）` : ''].join('');
+    const liveText = (ld ? ld.replace(/-/g, '.') : '') + quoteLive(it.live);   // YYYY.MM.DD「ライブ名」
     s.textContent = [liveText, it.start || it.end != null ? `${fmt(it.start)}〜${it.end != null ? fmt(it.end) : '最後'}` : ''].filter(Boolean).join(' ・ ');
     main.append(t, s);
     main.addEventListener('click', () => editing ? openSong(it.id) : playIndex(i));
