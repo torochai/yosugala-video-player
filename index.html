@@ -890,7 +890,9 @@ function renderList() {
     const s = document.createElement('span'); s.className = 's';
     const ld = liveDates[`${it.vid}@${it.start}`];
     const liveText = (ld ? ld.replace(/-/g, '.') : '') + quoteLive(it.live);   // YYYY.MM.DD「ライブ名」
-    s.textContent = [liveText, it.start || it.end != null ? `${fmt(it.start)}〜${it.end != null ? fmt(it.end) : '最後'}` : ''].filter(Boolean).join(' ・ ');
+    // 元動画のどこからどこまでか（時間の範囲）は、編集モードのときだけ表示する
+    const range = editing && (it.start || it.end != null) ? `${fmt(it.start)}〜${it.end != null ? fmt(it.end) : '最後'}` : '';
+    s.textContent = [liveText, range].filter(Boolean).join(' ・ ');
     main.append(t, s);
     main.addEventListener('click', () => editing ? openSong(it.id) : playIndex(i));
     const d = document.createElement('span'); d.className = 'd'; d.textContent = fmt(itemLen(it));
