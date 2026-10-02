@@ -658,7 +658,9 @@ function showNow() {
   const list = items(), i = curIndex(), it = list[i];
   $('nowNum').textContent = it ? `${pad(i + 1)} / ${list.length}` : `${list.length} 曲`;
   $('nowTitle').textContent = it ? it.title : pl().name;
-  $('nowLive').textContent = it ? it.live : '';
+  // ライブ名と公演日（分かるものだけ）
+  const nd = it ? liveDates[`${it.vid}@${it.start}`] : null;
+  $('nowLive').textContent = it ? [it.live, nd ? nd.replace(/-/g, '.') : ''].filter(Boolean).join(' ・ ') : '';
   $('barTitle').innerHTML = '';
   if (it) { const n = document.createElement('span'); n.className = 'bn'; n.textContent = pad(i + 1);
     $('barTitle').append(n, document.createTextNode(it.title)); }
