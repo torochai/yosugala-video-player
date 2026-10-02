@@ -651,9 +651,10 @@ const KEY = 'yosugala-live-selection-v1';
 // トロのプレイリストは組み込み（読み取り専用）。毎回ここに書いた内容で作り直す
 const BUILTIN_ID = 'builtin-toro';
 function defaultPlaylist() {
-  return { id: BUILTIN_ID, builtin: true, readonly: true, name: DEFAULT_NAME, author: DEFAULT_AUTHOR, desc: DEFAULT_DESC, items: DEFAULT_ITEMS.map(([vid, start, end, title, live, len], i) =>
-    // 曲の ID は「何曲目か＋動画 ID＋開始秒」で固定する（開くたびに変わると、続きから再生する曲を覚えられない）
-    ({ id: `toro:${i}:${vid}@${start}`, vid, start, end, title, live, len: len ?? null })) };
+  return { id: BUILTIN_ID, builtin: true, readonly: true, name: DEFAULT_NAME, author: DEFAULT_AUTHOR, desc: DEFAULT_DESC, items: DEFAULT_ITEMS.map(([vid, start, end, title, live, len]) =>
+    // 曲の ID は「動画 ID＋開始秒」で固定する（開くたびに変わると、続きから再生する曲を覚えられない。
+    // 何曲目かは入れないので、曲を追加・並べ替えしても ID は変わらない）
+    ({ id: `toro:${vid}@${start}`, vid, start, end, title, live, len: len ?? null })) };
 }
 function load() {
   try {
@@ -837,32 +838,45 @@ function cueIndex(i) {
 }
 // 曲を再生したプレイリストを覚えておき、次にページを開いたときはそこから始める（試聴は除く）
 function rememberPlayed() { if (state.lastPlayed !== pl().id) { state.lastPlayed = pl().id; save(); } }
-// 続きから再生: 再生中の位置（プレイリスト・曲・秒）を state.resume に覚えておき、次に開いたときはその曲を選んでおく。
+// 続きから再生: 再生中の位置（プレイリスト・曲・秒）を 別のキー（RESUME_KEY）に覚えておき、次に開いたときはその曲を選んでおく。
 // 自動再生はブラウザに止められるので、PLAY（その曲の再生）を押したときに、覚えておいた秒から始める
+// 続きの位置はプレイリストとは別のキーに保存する（5秒ごとに全部のプレイリストを書き直さないように）
+const RESUME_KEY = 'yosugala-live-resume-v1';
+let resume = null;   // { pl, id, t }
+try { resume = JSON.parse(localStorage.getItem(RESUME_KEY)); } catch {}
+function storeResume(r) {
+  resume = r;
+  try { r ? localStorage.setItem(RESUME_KEY, JSON.stringify(r)) : localStorage.removeItem(RESUME_KEY); } catch {}
+}
+// 続きから始める秒。曲の範囲の外か、終わり5秒以内なら曲の頭から（dur: 終了位置がない曲の動画の長さ）
+function resumeTime(it, t, dur) {
+  const end = it.end != null ? it.end : dur;
+  return t > it.start && (!end || t < end - 5) ? t : it.start;
+}
 let resumeAt = null;   // { id, t }: 次にこの曲を再生するときの開始秒
-const startOf = (it) => (resumeAt && resumeAt.id === it.id ? resumeAt.t : it.start);
+// 編集で曲の範囲が変わっていても、使うときにもう一度範囲を確かめる
+const startOf = (it) => (resumeAt && resumeAt.id === it.id ? resumeTime(it, resumeAt.t) : it.start);
 let lastResumeSave = 0;
 function saveResume(force) {
   if (!player || !ready || !started || previewing || !player.getCurrentTime) return;
+  // 共有リンクで開いた保存前のプレイリストは、開くたびに ID が変わるので覚えない
+  if (shared && pl() === shared) return;
   if (!force && Date.now() - lastResumeSave < 5000) return;
   const it = items()[curIndex()];
   if (!it || player.getVideoData().video_id !== it.vid) return;
   lastResumeSave = Date.now();
-  const t = Math.floor(player.getCurrentTime()), end = it.end != null ? it.end : player.getDuration();
-  // 曲の終わり5秒以内なら、次は曲の頭から
-  state.resume = { pl: pl().id, id: it.id, t: end && t >= end - 5 ? it.start : Math.max(it.start, t) };
-  save();
+  storeResume({ pl: pl().id, id: it.id, t: resumeTime(it, Math.floor(player.getCurrentTime()), player.getDuration()) });
 }
-// 起動時（とカタログを読み込んだあと）: 前回のプレイリストを開いていれば、続きの曲を選んでおく
+// 起動時（とカタログを読み込んだあと）: 前回のプレイリストを開いていれば、続きの曲を選んでおく。
+// まだ何も選んでいない・再生していない・試聴していないときだけ（ほかの操作やメッセージを上書きしない）
 function applyResume() {
-  const r = state.resume;
-  if (!r || started || r.pl !== pl().id) return;
+  const r = resume;
+  if (!r || started || previewing || curId != null || r.pl !== state.current || pl().id !== state.current) return;
   const i = items().findIndex((it) => it.id === r.id);
   if (i < 0) return;
-  // 曲の範囲の外（終了位置が変わったなど）なら曲の頭から
-  const it = items()[i], t = r.t > it.start && (it.end == null || r.t < it.end - 5) ? r.t : it.start;
+  const it = items()[i], t = resumeTime(it, r.t);
   resumeAt = { id: r.id, t }; curId = r.id; showNow();
-  if (t > it.start) $('msg').textContent = `前回の続き（${fmt(t - it.start)}）から再生します。`;
+  if (t > it.start && !$('msg').textContent) $('msg').textContent = `前回の続き（${fmt(t - it.start)}）から再生します。`;
 }
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveResume(true); });
 window.addEventListener('pagehide', () => saveResume(true));
@@ -898,7 +912,7 @@ function next(auto) {
   if (auto && state.repeat === 'one' && i >= 0) return playIndex(i);
   if (i >= 0 && i < n - 1) return playIndex(i + 1);
   if (state.repeat === 'all' && n) return playIndex(0);
-  if (state.resume && state.resume.pl === pl().id) { delete state.resume; save(); }
+  if (resume && resume.pl === pl().id) storeResume(null);
   started = false; cueIndex(0);
 }
 function watch() {

@@ -104,6 +104,8 @@ def main():
         except RuntimeError as e:
             if tab == 'videos':
                 sys.exit(f'動画一覧を取得できませんでした: {e}')
+    # 「動画」と「ライブ」の両方の一覧に載っている動画は1本にまとめる（曲が二重に登録されないように）
+    entries = list({e['id']: e for e in entries}.values())
     lives = [e for e in entries if LIVE_RE.search(e.get('title', '')) and e['id'] not in exclude_videos]
     print(f'ライブ映像: {len(lives)} 本（うち新しく情報を取得するもの: {sum(1 for e in lives if e["id"] not in cache)} 本）')
 
@@ -177,6 +179,14 @@ def main():
     for x in out:
         x['date'] = live_dates.get(x['live']) or x.pop('tdate', '') or ''
         x.pop('tdate', None)
+    # 同じ公演でタイトルに日付がない映像は、ほかの映像の日付にそろえる（公演ごとのプレイリストから漏れないように）
+    date_of = {}
+    for x in out:
+        if x['live'] and x['date']:
+            date_of.setdefault(x['live'], x['date'])
+    for x in out:
+        if x['live'] and not x['date']:
+            x['date'] = date_of.get(x['live'], '')
     # 会場名: 補正ファイルの live_venues（ライブ名 → 会場名）
     live_venues = ov.get('live_venues', {})
     for x in out:
