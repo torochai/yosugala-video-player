@@ -660,6 +660,9 @@ function load() {
   return { current: p.id, playlists: [p] };
 }
 let state = load();
+// ページを開いたときは、前に開いていたプレイリストではなく、いつもトロ's セレクションから始める
+// （共有リンク #pl= / #lib= から開いたときは、このあとでリンク先のプレイリストに切り替える）
+state.current = BUILTIN_ID;
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 // catalog.json（tools/update_catalog.py で作る）から作る読み取り専用のプレイリスト
 //   すべてのライブ映像 - 曲名順 / すべてのライブ映像 - 公演日順 / Official Live Video - 公開日順
