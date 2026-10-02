@@ -74,6 +74,8 @@
   h1 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(2.2rem, 6vw, 3.6rem); line-height: 1.05; letter-spacing: .02em; }
   h1 .sub { display: block; font-style: italic; font-size: .5em; letter-spacing: .12em;
     background: linear-gradient(90deg, var(--moon), var(--dawn) 60%, var(--dawn-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .xshare { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; }
+  .xshare svg { width: 14px; height: 14px; }
   .lead { margin: 14px 0 0; color: var(--muted); font-size: .9rem; max-width: 40em; }
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 24px; align-items: start; }
   button, select, input, textarea { font: inherit; color: inherit; }
@@ -285,7 +287,11 @@
   <header class="hero">
     <p class="eyebrow">UNOFFICIAL FAN-MADE PLAYER</p>
     <h1>yosugala<span class="sub">Live Video Player</span></h1>
-    <p class="lead">フルライブ映像の中の1曲だけでも、好きな曲を集めて、自分だけのセットリストで続けて再生。</p>
+    <p class="lead" id="lead">フルライブ映像の中の1曲だけでも、好きな曲を集めて、自分だけのセットリストで続けて再生。</p>
+    <button class="btn small xshare" type="button" id="xShare" aria-label="X で共有">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>
+      X で共有
+    </button>
   </header>
 
   <div class="banner" id="shareBanner" hidden>
@@ -1076,6 +1082,16 @@ async function removeSong(id) {
   save(); renderList();
 }
 $('addSong').addEventListener('click', () => openSong(null));
+
+// ---------- X で共有 ----------
+// 本文はページのタイトルと、ページ上部の説明文。URL には共有用の印（?ref=x）を付けて、X に新しいカード情報を読ませる
+$('xShare').addEventListener('click', () => {
+  const url = `${location.origin}${location.pathname}?ref=x`;
+  // 1行目にページのタイトル（再生中はタブ名が曲名に変わるので固定の名前を使う）、2行目に説明文
+  const text = `yosugala Live Video Player\n${$('lead').textContent.trim()}`;
+  const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+  window.open(intent, '_blank', 'noopener,width=600,height=520');
+});
 
 // ---------- 入力・確認ダイアログ ----------
 // input: true なら名前を入力させて文字列を返す。false なら確認だけで true を返す。キャンセルは null
