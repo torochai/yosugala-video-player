@@ -46,7 +46,8 @@
     --sans: "Zen Kaku Gothic New", -apple-system, "Hiragino Sans", sans-serif;
   }
   * { box-sizing: border-box; }
-  html { background: var(--night-0); }
+  /* iPhone の Safari は横画面にすると長い文章（下の注意書きなど）だけ文字を自動で大きくするので、それを止める */
+  html { background: var(--night-0); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   /* 画面外へのはみ出しで横スクロールが出ないように（clip は上部固定の sticky を壊さない） */
   html, body { overflow-x: clip; }
   body { margin: 0; min-height: 100vh; color: var(--text); font-family: var(--sans); line-height: 1.6; background: var(--night-0); }
