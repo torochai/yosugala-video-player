@@ -1089,7 +1089,7 @@ $('xShare').addEventListener('click', () => {
   const url = `${location.origin}${location.pathname}?ref=x`;
   // 「ページのタイトル - 説明文」の1行（再生中はタブ名が曲名に変わるので、タイトルは固定の名前を使う）
   const text = `yosugala Live Video Player - ${$('lead').textContent.trim()}`;
-  const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+  const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=yosugala`;   // #yosugala を付ける
   window.open(intent, '_blank', 'noopener,width=600,height=520');
 });
 
