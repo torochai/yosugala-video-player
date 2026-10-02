@@ -784,8 +784,13 @@ function renderSelect() {
     const g = document.createElement('optgroup'); g.label = label;
     list.forEach(([id, name]) => g.appendChild(opt(id, name))); sel.appendChild(g);
   };
-  // マイライブラリ: 自分で作った（編集できる）プレイリスト。まだなければ見出しごと出さない
-  group('マイライブラリ', state.playlists.filter((p) => !p.readonly).map((p) => [p.id, p.name]));
+  // マイライブラリ: 自分で作った（編集できる）プレイリスト。空でも見出しは出して「なし」と表示する
+  const mine = state.playlists.filter((p) => !p.readonly).map((p) => [p.id, p.name]);
+  if (mine.length) group('マイライブラリ', mine);
+  else {
+    const g = document.createElement('optgroup'); g.label = 'マイライブラリ';
+    const o = opt('', 'なし'); o.disabled = true; g.appendChild(o); sel.appendChild(g);
+  }
   // ライブラリ: 組み込みのプレイリスト（トロのセレクションなど）。編集はできないが複製できる
   group('ライブラリ', state.playlists.filter((p) => p.readonly).map((p) => [p.id, p.name]));
   // すべてのライブ映像: 特別扱いの全曲一覧（検索して選んで追加する）
