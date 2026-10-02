@@ -660,9 +660,10 @@ function load() {
   return { current: p.id, playlists: [p] };
 }
 let state = load();
-// ページを開いたときは、前に開いていたプレイリストではなく、いつもトロ's セレクションから始める
+// ページを開いたときは、最後に曲を再生したプレイリストから始める（開いただけのものは覚えない）。
+// まだ何も再生していなければトロ's セレクション。見つからないプレイリストなら pl() がトロ's セレクションにする
 // （共有リンク #pl= / #lib= から開いたときは、このあとでリンク先のプレイリストに切り替える）
-state.current = BUILTIN_ID;
+state.current = state.lastPlayed || BUILTIN_ID;
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 // catalog.json（tools/update_catalog.py で作る）から作る読み取り専用のプレイリスト
 //   すべてのライブ映像 - 曲名順 / すべてのライブ映像 - 公演日順 / Official Live Video - 公開日順
@@ -780,10 +781,12 @@ function cueIndex(i) {
   if (it.end != null) opts.endSeconds = it.end;
   player.cueVideoById(opts);
 }
+// 曲を再生したプレイリストを覚えておき、次にページを開いたときはそこから始める（試聴は除く）
+function rememberPlayed() { if (state.lastPlayed !== pl().id) { state.lastPlayed = pl().id; save(); } }
 function playIndex(i) {
   const list = items();
   if (i < 0 || i >= list.length) return;
-  curId = list[i].id; $('msg').textContent = '';
+  curId = list[i].id; $('msg').textContent = ''; rememberPlayed();
   showNow();
   if (!ready) { if (!player) pendingPlay = i; return whenReady(() => playIndex(i)); }
   started = true; previewing = false;
@@ -867,6 +870,7 @@ function createPlayer() {
         // 動画を直接クリックして再生が始まったときも、プレイリスト再生として扱う
         if (e.data === YT.PlayerState.PLAYING && /自動再生/.test($('msg').textContent)) $('msg').textContent = '';
         if (e.data === YT.PlayerState.PLAYING && !started && !previewing && curIndex() >= 0) { started = true; showNow(); }
+        if (e.data === YT.PlayerState.PLAYING && started && !previewing) rememberPlayed();
         if (e.data === YT.PlayerState.PLAYING && started) {
           const it = items()[curIndex()];
           if (it && it.end == null && it.len == null && player.getVideoData().video_id === it.vid) {
