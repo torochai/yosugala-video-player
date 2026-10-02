@@ -936,7 +936,7 @@ function applyResume() {
   const i = items().findIndex((it) => it.id === r.id);
   if (i < 0) return;
   const it = items()[i], t = resumeTime(it, r.t);
-  resumeAt = { id: r.id, t }; curId = r.id; showNow();
+  resumeAt = { id: r.id, t }; curId = r.id; showNow(); scrollCurToTop();
   if (t > it.start && !$('msg').textContent) $('msg').textContent = `前回の続き（${fmt(t - it.start)}）から再生します。`;
 }
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveResume(true); });
@@ -945,7 +945,7 @@ function playIndex(i) {
   const list = items();
   if (i < 0 || i >= list.length) return;
   curId = list[i].id; $('msg').textContent = ''; rememberPlayed();
-  showNow();
+  showNow(); scrollCurToTop();
   if (!ready) { if (!player) pendingPlay = i; return whenReady(() => playIndex(i)); }
   started = true; previewing = false;
   const it = list[i], opts = { videoId: it.vid, startSeconds: startOf(it) };
@@ -1199,6 +1199,15 @@ function fitListHeight() {
   if (ol.scrollHeight > h + 1) { ol.style.maxHeight = `${h}px`; ol.style.overflowY = 'auto'; }
 }
 window.addEventListener('resize', () => fitListHeight());
+// 再生する曲が変わったら、その曲の行が曲リストの一番上に来るようにリストの中をスクロールする
+// （リストが中でスクロールするとき＝PC・iPad 横向きだけ。スマホはページごと動いてしまうのでしない）
+function scrollCurToTop() {
+  const ol = $('list');
+  if (ol.style.overflowY !== 'auto' || curId == null) return;
+  const row = [...ol.children].find((li) => li.dataset.id === curId);
+  if (!row) return;
+  ol.scrollTo({ top: ol.scrollTop + row.getBoundingClientRect().top - ol.getBoundingClientRect().top, behavior: 'smooth' });
+}
 function renderList() {
   renderSelect();
   renderDesc();
