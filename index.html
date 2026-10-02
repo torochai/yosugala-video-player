@@ -1087,8 +1087,8 @@ $('addSong').addEventListener('click', () => openSong(null));
 // 本文はページのタイトルと、ページ上部の説明文。URL には共有用の印（?ref=x）を付けて、X に新しいカード情報を読ませる
 $('xShare').addEventListener('click', () => {
   const url = `${location.origin}${location.pathname}?ref=x`;
-  // 1行目にページのタイトル（再生中はタブ名が曲名に変わるので固定の名前を使う）、2行目に説明文
-  const text = `yosugala Live Video Player\n${$('lead').textContent.trim()}`;
+  // 「ページのタイトル - 説明文」の1行（再生中はタブ名が曲名に変わるので、タイトルは固定の名前を使う）
+  const text = `yosugala Live Video Player - ${$('lead').textContent.trim()}`;
   const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
   window.open(intent, '_blank', 'noopener,width=600,height=520');
 });
