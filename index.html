@@ -301,7 +301,7 @@
         <!-- 操作バー（YouTube の操作バーは非表示にして、こちらで操作する） -->
         <div class="bar">
           <button class="bicon" type="button" id="prev" aria-label="前の曲" title="前の曲"></button>
-          <button class="bicon main" type="button" id="pp" aria-label="再生" title="再生 / 一時停止（スペース）・ ←→ で10秒移動 ・ ↑↓ で前後の曲"></button>
+          <button class="bicon main" type="button" id="pp" aria-label="再生" title="再生 / 一時停止（スペース）・ ←→ で10秒移動 ・ 全画面では ↑↓ で前後の曲"></button>
           <button class="bicon" type="button" id="next" aria-label="次の曲" title="次の曲"></button>
           <span class="bar-title" id="barTitle"></span>
           <input type="range" id="seek" min="0" max="1" step="0.1" value="0" aria-label="再生位置">
@@ -1178,7 +1178,7 @@ function applyVolume() {
 }
 $('vol').addEventListener('input', () => { state.volume = +$('vol').value; state.muted = false; save(); applyVolume(); });
 $('mute').addEventListener('click', () => { state.muted = !state.muted; save(); applyVolume(); });
-// キーボード: スペース=再生/一時停止（再生前なら再生開始）、←→=10秒移動、↑=曲の先頭/前の曲、↓=次の曲、M=ミュート、F=全画面
+// キーボード: スペース=再生/一時停止（再生前なら再生開始）、←→=10秒移動、↑=曲の先頭/前の曲・↓=次の曲（全画面のときだけ）、M=ミュート、F=全画面
 const SKIP_SEC = 10;
 document.addEventListener('keydown', (e) => {
   const tgt = e.target instanceof Element ? e.target : null;
@@ -1191,8 +1191,9 @@ document.addEventListener('keydown', (e) => {
     player.seekTo(Math.min(end, Math.max(s, player.getCurrentTime() + (e.key === 'ArrowRight' ? SKIP_SEC : -SKIP_SEC))), true);
   }
   // ↑: 曲の頭から3秒以上たっていれば先頭へ、3秒以内なら前の曲へ ／ ↓: 次の曲へ
+  // （全画面のときだけ。通常の画面ではページのスクロールに使う）
   else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-    if (!player || !ready || !started) return;
+    if (!player || !ready || !started || !isFs()) return;
     e.preventDefault();
     if (e.key === 'ArrowDown') return next(false);
     const { s } = segment(), i = curIndex();
