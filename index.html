@@ -17,7 +17,6 @@
 <meta property="og:image:alt" content="yosugala Live Selection — 非公式ファンメイドプレイヤー">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:creator" content="@torosugala">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -43,25 +42,23 @@
   }
   * { box-sizing: border-box; }
   html { background: var(--night-0); }
-  body { margin: 0; min-height: 100vh; color: var(--text); font-family: var(--sans); line-height: 1.6;
-    background: radial-gradient(120% 70% at 50% 115%, rgba(243,183,195,.20), transparent 60%),
-                radial-gradient(90% 60% at 85% -10%, rgba(80,100,220,.25), transparent 60%),
-                linear-gradient(180deg, var(--night-0) 0%, var(--night-1) 45%, var(--night-2) 100%);
-    background-attachment: fixed; }
+  body { margin: 0; min-height: 100vh; color: var(--text); font-family: var(--sans); line-height: 1.6; background: var(--night-0); }
   /* 星 */
   body::before, body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-  body::before { background-image:
-      radial-gradient(1px 1px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 28% 72%, #dfe6ff, transparent),
-      radial-gradient(1.5px 1.5px at 44% 32%, #fff, transparent), radial-gradient(1px 1px at 63% 12%, #cfd9ff, transparent),
-      radial-gradient(1px 1px at 78% 54%, #fff, transparent), radial-gradient(1.5px 1.5px at 91% 26%, #e8ecff, transparent),
-      radial-gradient(1px 1px at 6% 88%, #fff, transparent), radial-gradient(1px 1px at 55% 90%, #dfe6ff, transparent),
-      radial-gradient(1px 1px at 35% 8%, #fff, transparent), radial-gradient(1px 1px at 86% 82%, #fff, transparent);
-    background-size: 420px 420px; opacity: .55; }
+  /* 星空の背景画像（サムネイルと同じ作り方）。iPhone でも固定されるよう擬似要素で敷く */
+  body::before { background: linear-gradient(rgba(5,6,15,.22), rgba(5,6,15,.22)), #05060f url(bg.jpg) center / cover no-repeat; }
+  /* 星の上でも文字が読めるように、ほんのり影をつける */
+  .hero, .now, .pdesc-head, footer { text-shadow: 0 0 10px rgba(5,6,15,.95), 0 0 2px rgba(5,6,15,.9); }
+  h1 .sub { text-shadow: none; filter: drop-shadow(0 0 8px rgba(5,6,15,.9)); }
+  /* タイトルまわりの背景をほんのり暗くして、星と文字が重なっても読めるように */
+  .hero { position: relative; }
+  .hero::before { content: ""; position: absolute; inset: -40px -80px -30px -60px; z-index: -1; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(5,6,15,.75), rgba(5,6,15,.35) 60%, transparent); }
   body::after { background-image:
       radial-gradient(1px 1px at 20% 40%, #fff, transparent), radial-gradient(1px 1px at 70% 30%, #fff, transparent),
       radial-gradient(1.5px 1.5px at 50% 65%, #cfd9ff, transparent), radial-gradient(1px 1px at 90% 70%, #fff, transparent);
     background-size: 260px 260px; opacity: .35; animation: twinkle 6s ease-in-out infinite alternate; }
-  @keyframes twinkle { from { opacity: .15; } to { opacity: .5; } }
+  @keyframes twinkle { from { opacity: .05; } to { opacity: .35; } }
   @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
 
   main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: calc(40px + env(safe-area-inset-top)) 24px 56px; }
@@ -137,6 +134,8 @@
   .prow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .prow select { flex: 1 1 160px; min-width: 0; background: rgba(5,6,15,.5); border: 1px solid var(--line-2); border-radius: 10px; padding: 8px 10px; }
   .meta { color: var(--muted); font-size: .78rem; letter-spacing: .05em; }
+  .author { color: var(--muted); font-size: .78rem; }
+  .author a { color: var(--moon); }
   .pdesc { margin-top: 14px; }
   .pdesc-head { color: var(--moon); font-family: var(--serif); font-style: italic; font-size: .95rem; letter-spacing: .08em; }
   .pdesc-body { margin-top: 8px; padding: 16px 18px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line);
@@ -312,10 +311,11 @@
           <button class="btn small" type="button" id="plDup">複製</button>
           <button class="btn small" type="button" id="plShare">共有リンク</button>
           <button class="btn small" type="button" id="plIO">書き出し / 読み込み</button>
-          <button class="btn small" type="button" id="plDesc">説明を編集</button>
+          <button class="btn small" type="button" id="plDesc">説明・作成者を編集</button>
           <button class="btn small danger" type="button" id="plDelete">削除</button>
         </div>
         <div class="meta" id="plMeta"></div>
+        <div class="author" id="plAuthor" hidden></div>
       </div>
       <ol id="list" aria-label="曲リスト"></ol>
       <div class="pfoot"><button class="btn" type="button" id="addSong">＋ 曲を追加</button></div>
@@ -362,8 +362,12 @@
 <!-- プレイリストの説明 -->
 <dialog id="descDlg">
   <form method="dialog">
-    <h2>プレイリストの説明</h2>
-    <p class="hint">選曲の意図や並べ方など、自由に書けます。URL と X のアカウント名（@名前）はリンクになります。共有リンクにも含まれます。</p>
+    <h2>説明・作成者</h2>
+    <label>作成者（任意。例：トロ（@torosugala））
+      <input type="text" id="authorText" maxlength="80" autocomplete="off">
+    </label>
+    <label>説明（選曲の意図や並べ方など、自由に）</label>
+    <p class="hint">URL と X のアカウント名（@名前）はリンクになります。どちらも共有リンクに含まれます。</p>
     <textarea id="descText" maxlength="5000" style="min-height: 240px; font-family: var(--sans); font-size: .85rem;"></textarea>
     <div class="actions">
       <button class="btn" value="cancel">キャンセル</button>
@@ -408,6 +412,7 @@ const DEFAULT_ITEMS = [
   ['x4nkkUcnD_Q', 0, null, 'きっかけ', 'tour2025 FINAL', 249],
 ];
 const DEFAULT_NAME = 'ライブ映像セレクション 16曲';
+const DEFAULT_AUTHOR = 'トロ（@torosugala）';
 const OLD_DEFAULT_NAMES = ['人気曲セレクション 16曲'];   // 以前の名前（保存済みのものを新しい名前に変える）
 const DEFAULT_DESC = `トロ（@torosugala）が個人的に選んだ、yosugala の公式ライブ映像16曲のセレクションです。yosugala 公式のものではありません。
 
@@ -498,7 +503,7 @@ const itemLen = (it) => it.end != null ? it.end - it.start : (it.len ?? null);
 // ---------- 保存 ----------
 const KEY = 'yosugala-live-selection-v1';
 function defaultPlaylist() {
-  return { id: uid(), name: DEFAULT_NAME, desc: DEFAULT_DESC, items: DEFAULT_ITEMS.map(([vid, start, end, title, live, len]) =>
+  return { id: uid(), name: DEFAULT_NAME, author: DEFAULT_AUTHOR, desc: DEFAULT_DESC, items: DEFAULT_ITEMS.map(([vid, start, end, title, live, len]) =>
     ({ id: uid(), vid, start, end, title, live, len: len ?? null })) };
 }
 function load() {
@@ -511,6 +516,7 @@ function load() {
         if (OLD_DEFAULT_NAMES.includes(p.name)) p.name = DEFAULT_NAME;
         if (p.desc == null) p.desc = p.name === DEFAULT_NAME ? DEFAULT_DESC : '';
         if (OLD_DEFAULT_DESCS.includes(p.desc)) p.desc = DEFAULT_DESC;
+        if (p.author == null) p.author = p.name === DEFAULT_NAME ? DEFAULT_AUTHOR : '';
         p.items.forEach((it) => { if (it.vid === 'nd6EJzBDS60' && it.start === 4508 && it.end === 4771) { it.end = 4739; it.len = null; } });
       });
       if (s.playlists.length) return s;
@@ -524,10 +530,10 @@ function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catc
 const pl = () => state.playlists.find((p) => p.id === state.current) || state.playlists[0];
 
 // 共有・書き出し用のコンパクトな形式
-function pack(p) { return { name: p.name, desc: p.desc || '', items: p.items.map((it) => [it.vid, it.start, it.end, it.title, it.live || '', it.len ?? null]) }; }
+function pack(p) { return { name: p.name, author: p.author || '', desc: p.desc || '', items: p.items.map((it) => [it.vid, it.start, it.end, it.title, it.live || '', it.len ?? null]) }; }
 function unpack(o) {
   if (!o || !Array.isArray(o.items)) throw new Error('形式が正しくありません');
-  return { id: uid(), name: String(o.name || '読み込んだプレイリスト').slice(0, 80), desc: String(o.desc || '').slice(0, 5000), items: o.items.map((a) => {
+  return { id: uid(), name: String(o.name || '読み込んだプレイリスト').slice(0, 80), author: String(o.author || '').slice(0, 80), desc: String(o.desc || '').slice(0, 5000), items: o.items.map((a) => {
     if (!Array.isArray(a) || !/^[\w-]{11}$/.test(a[0])) throw new Error('動画IDが正しくありません');
     return { id: uid(), vid: a[0], start: +a[1] || 0, end: a[2] == null ? null : +a[2], title: String(a[3] || '(無題)'),
              live: String(a[4] || ''), len: a[5] == null ? null : +a[5] };
@@ -675,17 +681,22 @@ function renderSelect() {
   sel.value = pl().id;
 }
 // 説明文（URL だけリンクにして、それ以外はテキストのまま表示）
-function renderDesc() {
-  const d = (pl().desc || '').trim(), body = $('pdescBody');
-  $('pdesc').hidden = !d; body.textContent = '';
-  // URL と X のアカウント名（@名前）をリンクにする
-  d.split(/(https?:\/\/[^\s]+|@[A-Za-z0-9_]{1,15}\b)/g).forEach((part, i) => {
+// URL と X のアカウント名（@名前）をリンクにして el に入れる
+function linkify(el, text) {
+  el.textContent = '';
+  text.split(/(https?:\/\/[^\s]+|@[A-Za-z0-9_]{1,15}\b)/g).forEach((part, i) => {
     if (i % 2) {
       const a = document.createElement('a'); a.textContent = part; a.target = '_blank'; a.rel = 'noopener';
       a.href = part.startsWith('@') ? `https://x.com/${part.slice(1)}` : part;
-      body.appendChild(a);
-    } else body.appendChild(document.createTextNode(part));
+      el.appendChild(a);
+    } else el.appendChild(document.createTextNode(part));
   });
+}
+function renderDesc() {
+  const d = (pl().desc || '').trim(), au = (pl().author || '').trim();
+  $('pdesc').hidden = !d; linkify($('pdescBody'), d);
+  $('plAuthor').hidden = !au;
+  if (au) { linkify($('plAuthor'), au); $('plAuthor').prepend('作成：'); }
 }
 function renderList() {
   renderDesc();
@@ -832,8 +843,11 @@ $('plNew').addEventListener('click', () => {
   const name = prompt('新しいプレイリストの名前', '新しいプレイリスト'); if (!name) return;
   const p = { id: uid(), name: name.trim().slice(0, 80), items: [] }; state.playlists.push(p); switchTo(p.id);
 });
-$('plDesc').addEventListener('click', () => { $('descText').value = pl().desc || ''; $('descDlg').showModal(); });
+$('plDesc').addEventListener('click', () => {
+  $('authorText').value = pl().author || ''; $('descText').value = pl().desc || ''; $('descDlg').showModal();
+});
 $('descSave').addEventListener('click', () => {
+  pl().author = $('authorText').value.trim().slice(0, 80);
   pl().desc = $('descText').value.trim().slice(0, 5000); save(); renderDesc(); $('descDlg').close();
 });
 $('plRename').addEventListener('click', () => {
@@ -872,7 +886,7 @@ let shared = null;
   const m = location.hash.match(/#pl=([\w-]+)/);
   if (!m) return;
   try { shared = unpack(JSON.parse(b64dec(m[1]))); } catch { $('msg').textContent = '共有リンクを読み込めませんでした。'; return; }
-  $('shareText').textContent = `共有されたプレイリスト「${shared.name}」（${shared.items.length} 曲）を開いています。`;
+  $('shareText').textContent = `共有されたプレイリスト「${shared.name}」（${shared.items.length} 曲${shared.author ? '・作成：' + shared.author : ''}）を開いています。`;
   $('shareBanner').hidden = false;
   state.playlists.push(shared); state.current = shared.id;   // 保存はボタンを押したときだけ
 })();
@@ -909,7 +923,7 @@ state.captions = false;
 // シークバーは曲の範囲（開始〜終了）だけを表す
 function segment() {
   const it = items()[curIndex()], dur = player && player.getDuration ? player.getDuration() : 0;
-  const vid = player && player.getVideoData ? player.getVideoData().video_id : null;
+  const vd = player && player.getVideoData ? player.getVideoData() : null, vid = vd ? vd.video_id : null;
   const cur = it || items()[0];
   if (cur && cur.vid === vid && !previewing) return { s: cur.start, e: cur.end != null ? cur.end : dur };
   return { s: 0, e: dur };
@@ -949,7 +963,7 @@ function wake() {
   $('stage').classList.remove('idle'); clearTimeout(idleTimer);
   // タッチ端末は動画をタップしてもページに伝わらず、隠すと戻せなくなるので隠さない
   if (isFs() && !matchMedia('(pointer: coarse)').matches) idleTimer = setTimeout(() => {
-    if (isFs() && player.getPlayerState() === YT.PlayerState.PLAYING && !seeking)
+    if (isFs() && player && ready && player.getPlayerState() === YT.PlayerState.PLAYING && !seeking)
       $('stage').classList.add('idle');
   }, 3000);
 }
