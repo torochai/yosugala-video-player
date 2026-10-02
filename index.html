@@ -10,7 +10,7 @@
 <meta property="og:site_name" content="yosugala Live Video Player">
 <meta property="og:title" content="yosugala Live Video Player">
 <meta property="og:description" content="yosugala の公式ライブ映像から好きな曲を集めて、自分だけのセットリストで続けて再生できる非公式ファンメイドプレイヤー">
-<meta property="og:image" content="https://torochai.github.io/yosugala-video-player/ogp-v3.png">
+<meta property="og:image" content="https://torochai.github.io/yosugala-video-player/ogp-v4.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -19,7 +19,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="yosugala Live Video Player">
 <meta name="twitter:description" content="yosugala の公式ライブ映像から好きな曲を集めて、自分だけのセットリストで続けて再生できる非公式ファンメイドプレイヤー">
-<meta name="twitter:image" content="https://torochai.github.io/yosugala-video-player/ogp-v3.png">
+<meta name="twitter:image" content="https://torochai.github.io/yosugala-video-player/ogp-v4.png">
 <meta name="twitter:image:alt" content="yosugala Live Video Player — 非公式ファンメイドプレイヤー">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-v2-180.png">
@@ -88,12 +88,15 @@
     .xshare svg { width: 14px; height: 14px; }
     .eyebrow { letter-spacing: .2em; }   /* 右端のボタンと重ならないよう、少し詰める */
   }
-  .lead { margin: 14px 0 0; color: var(--muted); font-size: .9rem; max-width: 40em; }
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 24px; align-items: start; }
   /* PC・iPad 横向き: プレイリスト欄をページの一番上（タイトルの右）から始める。タイトル・共有の案内・動画は左の列。
      曲リストに使える高さを増やして、動画を見ながらリストの中だけをスクロールできるようにする */
   @media (min-width: 901px) {
-    main { display: grid; grid-template-columns: minmax(0, 1fr) 390px; column-gap: 24px; align-items: start; }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) 390px; column-gap: 24px; align-items: start;
+      /* ブラウザの幅に合わせて動画を大きくする。ただしページを開いたときに、タイトル・動画・操作バー・その下の曲名と
+         キャプションまでが画面の高さに収まる大きさまで（動画の高さ＝画面の高さ−366px のときの横幅＋右の列・余白ぶん）。
+         画面が低くても、今までの 1180px までは広げる */
+      max-width: max(1180px, calc((100vh - 366px) * 16 / 9 + 390px + 24px + 48px)); }
     .layout { display: contents; }
     .hero, .banner, .layout > section { grid-column: 1; }
     .layout > aside { grid-column: 2; grid-row: 1 / span 3; margin-top: 52px; }   /* 右上の「共有する」ボタンの下から始める */
@@ -367,7 +370,6 @@
   <header class="hero">
     <p class="eyebrow">UNOFFICIAL FAN-MADE PLAYER</p>
     <h1>yosugala<span class="sub">Live Video Player</span></h1>
-    <p class="lead" id="lead">好きなライブ映像を集めて、自分だけのセットリストを再生</p>
     <a class="btn xshare" id="xShare" href="https://x.com/intent/tweet?text=yosugala%20Live%20Video%20Player%20-%20%E5%A5%BD%E3%81%8D%E3%81%AA%E3%83%A9%E3%82%A4%E3%83%96%E6%98%A0%E5%83%8F%E3%82%92%E9%9B%86%E3%82%81%E3%81%A6%E3%80%81%E8%87%AA%E5%88%86%E3%81%A0%E3%81%91%E3%81%AE%E3%82%BB%E3%83%83%E3%83%88%E3%83%AA%E3%82%B9%E3%83%88%E3%82%92%E5%86%8D%E7%94%9F%20%23yosugala&url=https%3A%2F%2Ftorochai.github.io%2Fyosugala-video-player%2F%3Fref%3Dx" target="_blank" rel="noopener" aria-label="このプレーヤーを X で共有する">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>
       共有する
@@ -1353,10 +1355,12 @@ $('catAll').addEventListener('click', () => { items().forEach((it) => catSelecte
 $('catNone').addEventListener('click', () => { catSelected.clear(); renderList(); renderCatBar(); });
 $('catAdd').addEventListener('click', () => openAdd((pl().all || pl().items).filter((it) => catSelected.has(it.id))));
 // 「情報」「公演情報」: このプレイリストについて（説明・セットリスト）をポップアップで開く
-// PC・iPad 横向きでは、ポップアップを動画の欄と同じ幅にする（スマホはほかのダイアログと同じく画面下から出す）
+// PC・iPad 横向きでは、ポップアップを動画の欄と同じ幅にする。ただし大きい画面で動画が広がっても、
+// 読みやすいように以前の動画の欄の幅（718px）までにする（スマホはほかのダイアログと同じく画面下から出す）
+const INFO_DLG_MAX_W = 718;
 $('infoJump').addEventListener('click', () => {
   const wide = matchMedia('(min-width: 901px)').matches;
-  $('infoDlg').style.width = wide ? `${document.querySelector('.stage').offsetWidth}px` : '';
+  $('infoDlg').style.width = wide ? `${Math.min(document.querySelector('.stage').offsetWidth, INFO_DLG_MAX_W)}px` : '';
   $('infoDlg').style.maxWidth = wide ? 'calc(100vw - 32px)' : '';
   $('pdescBody').scrollTop = 0; $('infoDlg').showModal();
   // 開いたときに最初のリンクへ操作対象が移って枠が出ないように、説明欄そのものに置く
