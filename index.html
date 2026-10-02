@@ -319,6 +319,7 @@
         <div class="prow">
           <select id="plSelect" aria-label="プレイリスト"></select>
           <button class="btn" type="button" id="editToggle">編集</button>
+          <button class="btn" type="button" id="dupEdit" hidden title="このプレイリストは編集できません。コピーを作って編集します">複製して編集</button>
         </div>
         <!-- 「すべてのライブ映像」を開いているときの検索と追加 -->
         <div class="cattools" id="catTools" hidden>
@@ -543,8 +544,10 @@ const itemLen = (it) => it.end != null ? it.end - it.start : (it.len ?? null);
 
 // ---------- 保存 ----------
 const KEY = 'yosugala-live-selection-v1';
+// トロのプレイリストは組み込み（読み取り専用）。毎回ここに書いた内容で作り直す
+const BUILTIN_ID = 'builtin-toro';
 function defaultPlaylist() {
-  return { id: uid(), name: DEFAULT_NAME, author: DEFAULT_AUTHOR, desc: DEFAULT_DESC, items: DEFAULT_ITEMS.map(([vid, start, end, title, live, len]) =>
+  return { id: BUILTIN_ID, builtin: true, readonly: true, name: DEFAULT_NAME, author: DEFAULT_AUTHOR, desc: DEFAULT_DESC, items: DEFAULT_ITEMS.map(([vid, start, end, title, live, len]) =>
     ({ id: uid(), vid, start, end, title, live, len: len ?? null })) };
 }
 function load() {
@@ -560,7 +563,19 @@ function load() {
         if (p.author == null) p.author = p.name === DEFAULT_NAME ? DEFAULT_AUTHOR : '';
         p.items.forEach((it) => { if (it.vid === 'nd6EJzBDS60' && it.start === 4508 && it.end === 4771) { it.end = 4739; it.len = null; } });
       });
-      if (s.playlists.length) return s;
+      // 組み込みプレイリストを正しい内容に置き換える（以前に編集していた場合は、その内容をコピーとして残す）
+      const sig = (p) => p.items.map((it) => `${it.vid}@${it.start}@${it.end}`).join(',');
+      const fresh = defaultPlaylist();
+      const out = [];
+      s.playlists.forEach((p) => {
+        const isDefault = p.builtin || p.id === BUILTIN_ID || p.name === DEFAULT_NAME;
+        if (!isDefault) return out.push(p);
+        if (!p.builtin && p.items.length && sig(p) !== sig(fresh))
+          out.push({ ...p, id: uid(), name: p.name + '（編集したコピー）', builtin: undefined, readonly: undefined });
+        if (s.current === p.id) s.current = BUILTIN_ID;
+      });
+      s.playlists = [fresh, ...out];
+      return s;
     }
   } catch {}
   const p = defaultPlaylist();
@@ -777,11 +792,11 @@ function renderList() {
   const list = items();
   const total = list.reduce((a, it) => a + (itemLen(it) || 0), 0);
   const unknown = list.some((it) => itemLen(it) == null);
-  const ro = !!pl().readonly;
-  $('plMeta').textContent = `${list.length} ${ro ? '件' : '曲'}` + (list.length ? ` ・ 約 ${fmt(total)}${unknown ? ' 以上' : ''}` : '');
+  const cat = pl().id === CATALOG_ID;
+  $('plMeta').textContent = `${list.length} ${cat ? '件' : '曲'}` + (list.length ? ` ・ 約 ${fmt(total)}${unknown ? ' 以上' : ''}` : '');
   if (!list.length) {
     const li = document.createElement('li'); li.className = 'empty';
-    li.textContent = ro ? '見つかりませんでした。' : editing ? '「＋ ライブ映像から選ぶ」か「＋ URL で追加」から曲を追加してください。' : '曲がありません。「編集」から曲を追加できます。';
+    li.textContent = cat ? '見つかりませんでした。' : editing ? '「＋ ライブ映像から選ぶ」か「＋ URL で追加」から曲を追加してください。' : '曲がありません。「編集」から曲を追加できます。';
     ol.appendChild(li);
   }
   list.forEach((it, i) => {
@@ -789,7 +804,7 @@ function renderList() {
     const row = document.createElement('div'); row.className = 'row'; row.dataset.id = it.id;
     let n = document.createElement('span'); n.className = 'n'; n.textContent = editing ? '⠿' : pad(i + 1);
     if (editing) n.classList.add('handle');
-    if (ro) {   // カタログ: 番号の代わりにチェック
+    if (cat) {   // カタログ: 番号の代わりにチェック
       n = document.createElement('input'); n.type = 'checkbox'; n.className = 'pick'; n.checked = catSelected.has(it.id);
       n.setAttribute('aria-label', `${it.title} を選択`);
       n.addEventListener('change', () => { n.checked ? catSelected.add(it.id) : catSelected.delete(it.id); renderCatBar(); });
@@ -813,7 +828,7 @@ function renderList() {
       mk('✕', '削除', () => removeSong(it.id)),
     );
     const right = document.createElement('span'); right.append(d, tools);
-    if (ro) {
+    if (cat) {
       const add = document.createElement('button'); add.type = 'button'; add.className = 'icon addone'; add.textContent = '＋';
       add.title = 'プレイリストに追加'; add.setAttribute('aria-label', `${it.title} をプレイリストに追加`);
       add.addEventListener('click', () => openAdd([it]));
@@ -830,7 +845,8 @@ function renderAll() {
   renderSelect(); renderList(); $('plTools').hidden = !editing;
   $('panel').classList.toggle('editing', editing); $('panel').classList.toggle('catalog', ro);
   $('editToggle').textContent = editing ? '完了' : '編集'; $('editToggle').hidden = ro;
-  $('catTools').hidden = !ro; renderCatBar();
+  $('dupEdit').hidden = !(ro && pl().id !== CATALOG_ID);
+  $('catTools').hidden = pl().id !== CATALOG_ID; renderCatBar();
 }
 function renderCatBar() {
   const n = catSelected.size;
@@ -846,7 +862,7 @@ function openAdd(list) {
   $('addInfo').textContent = list.length === 1 ? `「${list[0].title}」（${list[0].live}）を追加するプレイリストを選んでください。`
                                                : `${list.length} 曲を追加するプレイリストを選んでください。`;
   const box = $('addTargets'); box.textContent = '';
-  state.playlists.forEach((p) => {
+  state.playlists.filter((p) => !p.readonly).forEach((p) => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (p.id === lastTarget ? ' last' : '');
     b.textContent = p.name;
     const c = document.createElement('span'); c.className = 'c'; c.textContent = `${p.items.length} 曲`; b.appendChild(c);
@@ -871,6 +887,11 @@ $('catSearch').addEventListener('input', () => { catQuery = $('catSearch').value
 $('catAll').addEventListener('click', () => { items().forEach((it) => catSelected.add(it.id)); renderList(); renderCatBar(); });
 $('catNone').addEventListener('click', () => { catSelected.clear(); renderList(); renderCatBar(); });
 $('catAdd').addEventListener('click', () => openAdd(catalogAll.filter((it) => catSelected.has(it.id))));
+$('dupEdit').addEventListener('click', () => {
+  const p = unpack(pack(pl()));
+  p.name = pl().name + ' (コピー)'; p.author = ''; p.desc = '';
+  state.playlists.push(p); editing = true; switchTo(p.id);
+});
 $('addFromCatalog').addEventListener('click', () => { lastTarget = pl().id; editing = false; switchTo(CATALOG_ID); });
 
 // ---------- 並べ替え ----------
@@ -986,9 +1007,10 @@ $('plRename').addEventListener('click', () => {
   pl().name = name.trim().slice(0, 80); save(); renderAll();
 });
 $('plDup').addEventListener('click', () => {
-  const p = unpack(pack(pl())); p.name = pl().name + ' のコピー'; state.playlists.push(p); switchTo(p.id);
+  const p = unpack(pack(pl())); p.name = pl().name + ' (コピー)'; state.playlists.push(p); switchTo(p.id);
 });
 $('plDelete').addEventListener('click', () => {
+  if (pl().readonly) return;
   if (!confirm(`プレイリスト「${pl().name}」を削除しますか？（元に戻せません）`)) return;
   state.playlists = state.playlists.filter((p) => p.id !== pl().id);
   if (!state.playlists.length) state.playlists.push(defaultPlaylist());
