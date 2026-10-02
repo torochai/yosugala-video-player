@@ -96,7 +96,9 @@
     main { display: grid; grid-template-columns: minmax(0, 1fr) 390px; column-gap: 24px; align-items: start; }
     .layout { display: contents; }
     .hero, .banner, .layout > section { grid-column: 1; }
-    .layout > aside { grid-column: 2; grid-row: 1 / span 3; }
+    .layout > aside { grid-column: 2; grid-row: 1 / span 3; margin-top: 52px; }   /* 右上の「共有する」ボタンの下から始める */
+    /* 「共有する」ボタンはタイトル（左の列）の右端ではなく、ページの右上端に置く（右の列の幅＋列の間ぶん右へ） */
+    .xshare { right: calc(-390px - 24px); }
     footer { grid-column: 1 / -1; }
   }
   button, select, input, textarea { font: inherit; color: inherit; }
