@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05060f">
+<title>yosugala Live Selection</title>
+<meta name="description" content="YouTube の公式ライブ映像を、曲の頭から終わりまで順番に再生するプレイリストプレイヤー">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* 夜想ロック: 深い藍の夜空、星、夜明けの光 */
+  :root {
+    --night-0: #05060f; --night-1: #0a0e24; --night-2: #121a3d;
+    --glass: rgba(18, 24, 54, .58); --glass-2: rgba(30, 40, 84, .55);
+    --line: rgba(170, 190, 255, .14); --line-2: rgba(170, 190, 255, .28);
+    --text: #e9ecf8; --muted: #8e96b8; --moon: #b9cbff; --dawn: #f3b7c3; --dawn-2: #ffd8a8;
+    --danger: #ff8a9a; --warn: #ffcf8a;
+    --serif: "Cormorant Garamond", "Hiragino Mincho ProN", serif;
+    --sans: "Zen Kaku Gothic New", -apple-system, "Hiragino Sans", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--night-0); }
+  body { margin: 0; min-height: 100vh; color: var(--text); font-family: var(--sans); line-height: 1.6;
+    background: radial-gradient(120% 70% at 50% 115%, rgba(243,183,195,.20), transparent 60%),
+                radial-gradient(90% 60% at 85% -10%, rgba(80,100,220,.25), transparent 60%),
+                linear-gradient(180deg, var(--night-0) 0%, var(--night-1) 45%, var(--night-2) 100%);
+    background-attachment: fixed; }
+  /* 星 */
+  body::before, body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  body::before { background-image:
+      radial-gradient(1px 1px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 28% 72%, #dfe6ff, transparent),
+      radial-gradient(1.5px 1.5px at 44% 32%, #fff, transparent), radial-gradient(1px 1px at 63% 12%, #cfd9ff, transparent),
+      radial-gradient(1px 1px at 78% 54%, #fff, transparent), radial-gradient(1.5px 1.5px at 91% 26%, #e8ecff, transparent),
+      radial-gradient(1px 1px at 6% 88%, #fff, transparent), radial-gradient(1px 1px at 55% 90%, #dfe6ff, transparent),
+      radial-gradient(1px 1px at 35% 8%, #fff, transparent), radial-gradient(1px 1px at 86% 82%, #fff, transparent);
+    background-size: 420px 420px; opacity: .55; }
+  body::after { background-image:
+      radial-gradient(1px 1px at 20% 40%, #fff, transparent), radial-gradient(1px 1px at 70% 30%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 50% 65%, #cfd9ff, transparent), radial-gradient(1px 1px at 90% 70%, #fff, transparent);
+    background-size: 260px 260px; opacity: .35; animation: twinkle 6s ease-in-out infinite alternate; }
+  @keyframes twinkle { from { opacity: .15; } to { opacity: .5; } }
+  @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
+
+  main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 40px 24px 56px; }
+  .hero { margin-bottom: 28px; }
+  .eyebrow { margin: 0 0 6px; font-size: .7rem; letter-spacing: .32em; color: var(--muted); }
+  h1 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(2.2rem, 6vw, 3.6rem); line-height: 1.05; letter-spacing: .02em; }
+  h1 .sub { display: block; font-style: italic; font-size: .5em; letter-spacing: .12em;
+    background: linear-gradient(90deg, var(--moon), var(--dawn) 60%, var(--dawn-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead { margin: 14px 0 0; color: var(--muted); font-size: .9rem; max-width: 40em; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 24px; align-items: start; }
+  button, select, input, textarea { font: inherit; color: inherit; }
+
+  .btn { background: var(--glass-2); color: var(--text); border: 1px solid var(--line-2); border-radius: 999px;
+    padding: 7px 14px; font-size: .84rem; cursor: pointer; white-space: nowrap; transition: border-color .2s, background .2s, box-shadow .2s; }
+  .btn:hover { border-color: var(--moon); box-shadow: 0 0 14px rgba(185,203,255,.25); }
+  .btn.primary { background: linear-gradient(90deg, #6f86ff, #b48cff 55%, var(--dawn)); border-color: transparent; color: #0a0e24; font-weight: 700; }
+  .btn.danger { color: var(--danger); }
+  .btn.small { padding: 5px 11px; font-size: .78rem; }
+  .icon { background: none; border: 0; color: var(--muted); cursor: pointer; width: 32px; height: 32px; border-radius: 50%; font-size: .95rem; }
+  .icon:hover { color: var(--text); background: var(--glass-2); }
+  .icon:disabled { opacity: .25; cursor: default; background: none; }
+
+  /* プレイヤー */
+  .stage-wrap { position: relative; }
+  .stage { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 14px; overflow: hidden;
+    border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.55), 0 0 80px rgba(110,130,255,.12); }
+  .stage > div, .stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .start { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    color: #fff; border: 0; cursor: pointer; z-index: 2; font-family: var(--serif); font-size: 1.15rem; letter-spacing: .25em;
+    background: radial-gradient(60% 80% at 50% 120%, rgba(243,183,195,.25), transparent 70%), radial-gradient(80% 90% at 50% 0%, #1b2560, #05060f 75%); }
+  .start .play { width: 78px; height: 78px; border-radius: 50%; border: 1px solid rgba(255,255,255,.45); display: grid; place-items: center;
+    box-shadow: 0 0 30px rgba(185,203,255,.35), inset 0 0 20px rgba(185,203,255,.15); transition: transform .2s; }
+  .start:hover .play { transform: scale(1.06); }
+  .start .play::before { content: ""; border-left: 20px solid #fff; border-top: 12px solid transparent; border-bottom: 12px solid transparent; margin-left: 6px; }
+  .now { display: flex; align-items: flex-end; gap: 14px; margin-top: 18px; flex-wrap: wrap; }
+  .now .label { flex: 1 1 240px; min-width: 0; }
+  .now .num { font-family: var(--serif); font-style: italic; color: var(--moon); font-size: 1rem; letter-spacing: .1em; }
+  .now .title { font-size: 1.45rem; font-weight: 700; letter-spacing: .04em; overflow-wrap: anywhere; line-height: 1.3; }
+  .now .live { color: var(--muted); font-size: .82rem; }
+  .controls { display: flex; gap: 8px; }
+  .msg { margin-top: 10px; color: var(--warn); font-size: .82rem; min-height: 1.2em; }
+
+  /* プレイリスト */
+  .panel { background: var(--glass); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 20px 50px rgba(0,0,0,.4); }
+  .phead { padding: 14px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+  .prow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .prow select { flex: 1 1 160px; min-width: 0; background: rgba(5,6,15,.5); border: 1px solid var(--line-2); border-radius: 10px; padding: 8px 10px; }
+  .meta { color: var(--muted); font-size: .78rem; letter-spacing: .05em; }
+  ol { list-style: none; margin: 0; padding: 0; max-height: min(70vh, 760px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+  li { border-bottom: 1px solid var(--line); }
+  li:last-child { border-bottom: 0; }
+  li.dragging { opacity: .4; }
+  li.dropbefore { box-shadow: inset 0 2px 0 var(--moon); }
+  .row { position: relative; display: grid; grid-template-columns: 2.4em 1fr auto; gap: 8px; align-items: center; padding: 10px 14px; transition: background .2s; }
+  .row:hover { background: rgba(120,140,255,.06); }
+  .row.cur { background: linear-gradient(90deg, rgba(120,140,255,.18), rgba(243,183,195,.06)); }
+  .row.cur::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 3px;
+    background: linear-gradient(var(--moon), var(--dawn)); box-shadow: 0 0 10px var(--moon); }
+  .row.cur .t { color: #fff; font-weight: 700; }
+  .row .n { font-family: var(--serif); font-style: italic; color: var(--muted); font-size: 1rem; }
+  .row.cur .n { color: var(--moon); }
+  .row .main { min-width: 0; text-align: left; background: none; border: 0; padding: 0; cursor: pointer; }
+  .row .t { display: block; overflow-wrap: anywhere; letter-spacing: .02em; }
+  .row .s { display: block; color: var(--muted); font-size: .74rem; overflow-wrap: anywhere; }
+  .row .d { color: var(--muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
+  .row .tools { display: none; gap: 0; align-items: center; }
+  .editing .row .tools { display: flex; }
+  .editing .row .d { display: none; }
+  .handle { color: var(--muted); cursor: grab; user-select: none; font-style: normal !important; }
+  .empty { padding: 24px 14px; color: var(--muted); font-size: .88rem; }
+  .pfoot { padding: 12px 14px; border-top: 1px solid var(--line); display: none; }
+  .editing .pfoot { display: block; }
+  .banner { background: var(--glass); border: 1px solid var(--moon); border-radius: 14px; padding: 12px 16px; margin-bottom: 20px;
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap; backdrop-filter: blur(10px); }
+  .banner span { flex: 1 1 260px; }
+
+  /* ダイアログ */
+  dialog { border: 1px solid var(--line-2); border-radius: 18px; background: rgba(14,18,44,.96); color: var(--text);
+    padding: 0; width: min(540px, calc(100vw - 32px)); box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+  dialog::backdrop { background: rgba(3,4,12,.7); backdrop-filter: blur(4px); }
+  dialog form { padding: 22px; display: grid; gap: 12px; }
+  dialog h2 { font-family: var(--serif); font-weight: 500; font-size: 1.5rem; margin: 0; letter-spacing: .04em; }
+  label { display: grid; gap: 4px; font-size: .82rem; color: var(--muted); }
+  input[type=text], textarea { width: 100%; background: rgba(5,6,15,.6); border: 1px solid var(--line-2); border-radius: 10px; padding: 9px 11px; color: var(--text); }
+  input[type=text]:focus, textarea:focus, select:focus { outline: none; border-color: var(--moon); box-shadow: 0 0 0 3px rgba(185,203,255,.15); }
+  textarea { min-height: 150px; font-family: ui-monospace, Menlo, monospace; font-size: .78rem; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .timefield { display: flex; gap: 6px; }
+  .timefield input { flex: 1; min-width: 0; }
+  .hint { font-size: .76rem; color: var(--muted); margin: 0; }
+  .err { color: var(--danger); font-size: .8rem; min-height: 1.1em; margin: 0; }
+  .actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: .76rem; line-height: 1.8; }
+  footer a { color: var(--moon); }
+  [hidden] { display: none !important; }
+  .btn[aria-pressed="true"] { border-color: var(--moon); color: #fff; box-shadow: 0 0 14px rgba(185,203,255,.3); }
+  .controls { flex-wrap: wrap; }
+  /* フルスクリーン */
+  .stage:fullscreen, .stage:-webkit-full-screen { border-radius: 0; border: 0; width: 100vw; height: 100vh; aspect-ratio: auto; background: #000; }
+  .fs-title { display: none; position: absolute; left: 0; right: 0; top: 0; z-index: 3; padding: 22px 28px 40px; pointer-events: none;
+    background: linear-gradient(rgba(0,0,0,.6), transparent); opacity: 0; transition: opacity .8s; }
+  .stage:fullscreen .fs-title, .stage:-webkit-full-screen .fs-title { display: block; }
+  .fs-title.show { opacity: 1; }
+  .fs-num { display: block; font-family: var(--serif); font-style: italic; color: var(--moon); letter-spacing: .1em; }
+  .fs-t { font-size: 1.6rem; font-weight: 700; letter-spacing: .04em; }
+
+  /* スマホ・タブレット */
+  @media (max-width: 900px) {
+    main { padding: 20px 0 40px; }
+    .hero, .now, .msg, .banner, footer { margin-left: 16px; margin-right: 16px; }
+    .layout { grid-template-columns: 1fr; gap: 16px; }
+    /* section の枠を外して、動画をページ全体の範囲で上部固定できるようにする */
+    .layout > section { display: contents; }
+    .stage-wrap { align-self: start; }
+    .now { margin-top: 0; }
+    /* 動画は画面上部に固定し、リストをスクロールしても見えるようにする */
+    .stage-wrap { position: sticky; top: 0; z-index: 5; background: var(--night-0); }
+    .stage { border-radius: 0; border-left: 0; border-right: 0; }
+    .panel { margin: 0 12px; }
+    ol { max-height: none; }
+    .row { padding: 12px 14px; }
+    .icon { width: 40px; height: 40px; }
+    .two { grid-template-columns: 1fr; }
+    dialog { width: 100vw; max-width: 100vw; margin: auto 0 0; border-radius: 18px 18px 0 0; max-height: 92vh; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <p class="eyebrow">UNOFFICIAL FAN-MADE PLAYER</p>
+    <h1>yosugala<span class="sub">Live Selection</span></h1>
+    <p class="lead">公式ライブ映像を、曲の頭から終わりまで順番に。プレイリストは自由に作成・編集できます。</p>
+  </header>
+
+  <div class="banner" id="shareBanner" hidden>
+    <span id="shareText"></span>
+    <button class="btn primary" type="button" id="shareSave">マイプレイリストに保存</button>
+    <button class="btn" type="button" id="shareDismiss">保存しない</button>
+  </div>
+
+  <div class="layout">
+    <section>
+      <div class="stage-wrap"><div class="stage" id="stage">
+        <div id="player"></div>
+        <div class="fs-title" id="fsTitle" aria-hidden="true"><span class="fs-num"></span><span class="fs-t"></span></div>
+        <button class="start" id="start" type="button" aria-label="再生">
+          <span class="play" aria-hidden="true"></span><span>PLAY</span>
+        </button>
+      </div></div>
+      <div class="now">
+        <div class="label">
+          <div class="num" id="nowNum"></div>
+          <div class="title" id="nowTitle"></div>
+          <div class="live" id="nowLive"></div>
+        </div>
+        <div class="controls">
+          <button class="btn" type="button" id="prev">◀︎ 前へ</button>
+          <button class="btn" type="button" id="next">次へ ▶︎</button>
+          <button class="btn" type="button" id="repeat" aria-label="リピート">リピート：オフ</button>
+          <button class="btn" type="button" id="fs" aria-label="フルスクリーン">⛶ 全画面</button>
+        </div>
+      </div>
+      <div class="msg" id="msg" role="status"></div>
+    </section>
+
+    <aside class="panel" id="panel">
+      <div class="phead">
+        <div class="prow">
+          <select id="plSelect" aria-label="プレイリスト"></select>
+          <button class="btn" type="button" id="editToggle">編集</button>
+        </div>
+        <div class="prow" id="plTools" hidden>
+          <button class="btn small" type="button" id="plNew">＋ 新規</button>
+          <button class="btn small" type="button" id="plRename">名前変更</button>
+          <button class="btn small" type="button" id="plDup">複製</button>
+          <button class="btn small" type="button" id="plShare">共有リンク</button>
+          <button class="btn small" type="button" id="plIO">書き出し / 読み込み</button>
+          <button class="btn small danger" type="button" id="plDelete">削除</button>
+        </div>
+        <div class="meta" id="plMeta"></div>
+      </div>
+      <ol id="list" aria-label="曲リスト"></ol>
+      <div class="pfoot"><button class="btn" type="button" id="addSong">＋ 曲を追加</button></div>
+    </aside>
+  </div>
+
+  <footer>
+    プレイリストはこのブラウザに保存されます。別の端末で使うときや人に渡すときは「共有リンク」か「書き出し / 読み込み」を使ってください。<br>
+    初期のプレイリストの人気順は、YouTube 公式動画の再生数とライブでの演奏率をもとにした個人的な集計です（2026年10月時点）。<br>
+    このページは yosugala 公式とは関係のない、ファンによる非公式のページです。映像はすべて YouTube の埋め込みで公式動画を再生しており、権利は
+    <a href="https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q" target="_blank" rel="noopener">yosugala official</a> および各権利者に帰属します。
+  </footer>
+</main>
+
+<!-- 曲の追加・編集 -->
+<dialog id="songDlg">
+  <form method="dialog" id="songForm">
+    <h2 id="songDlgTitle">曲を追加</h2>
+    <label>YouTube の URL（時刻付きリンクなら開始時刻も読み取ります）
+      <input type="text" id="fUrl" placeholder="https://youtu.be/... または https://www.youtube.com/watch?v=..." autocomplete="off">
+    </label>
+    <label>曲名<input type="text" id="fTitle" autocomplete="off"></label>
+    <label>ライブ名など（任意）<input type="text" id="fLive" autocomplete="off"></label>
+    <div class="two">
+      <label>開始（例 1:15:08）
+        <span class="timefield"><input type="text" id="fStart" placeholder="0:00" autocomplete="off">
+        <button class="btn small" type="button" id="fStartNow" title="プレイヤーの今の再生位置を入れる">今</button></span>
+      </label>
+      <label>終了（空欄＝動画の最後まで）
+        <span class="timefield"><input type="text" id="fEnd" placeholder="" autocomplete="off">
+        <button class="btn small" type="button" id="fEndNow" title="プレイヤーの今の再生位置を入れる">今</button></span>
+      </label>
+    </div>
+    <p class="hint">「今」はプレイヤーで同じ動画を再生中のときに、その再生位置を入れます。フルライブから1曲だけ切り出すときに便利です。</p>
+    <p class="err" id="fErr"></p>
+    <div class="actions">
+      <button class="btn" type="button" id="fPreview">この範囲を試聴</button>
+      <button class="btn" value="cancel" formnovalidate>キャンセル</button>
+      <button class="btn primary" type="button" id="fSave">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 書き出し / 読み込み -->
+<dialog id="ioDlg">
+  <form method="dialog">
+    <h2>書き出し / 読み込み</h2>
+    <p class="hint">下の内容をコピーして保存しておくと、別のブラウザで「読み込み」から復元できます。読み込むと新しいプレイリストとして追加されます。</p>
+    <textarea id="ioText" spellcheck="false"></textarea>
+    <p class="err" id="ioErr"></p>
+    <div class="actions">
+      <button class="btn" type="button" id="ioCopy">コピー</button>
+      <button class="btn" type="button" id="ioImport">貼り付けた内容を読み込み</button>
+      <button class="btn" value="cancel">閉じる</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+// ---------- 初期プレイリスト ----------
+const DEFAULT_ITEMS = [
+  ['nd6EJzBDS60', 4508, 4771, 'indigo', 'progress the night -LIQUIDROOM-'],
+  ['zFgFUba5RKE', 0, null, 'アステリズム', 'tour2024 aki「春に廻れなかった場所編」Final', 273],
+  ['K5DhUNxzjtI', 0, null, 'コノユビトマレ', 'progress the night -LINE CUBE SHIBUYA-', 196],
+  ['nd6EJzBDS60', 3490, 3709, '夜明けの唄', 'progress the night -LIQUIDROOM-'],
+  ['Tv7KrUG9C0Q', 105, 352, '何億分の1を', 'tour2025 FINAL'],
+  ['Pz0yIRvzOXM', 0, null, 'My Dear', 'tour2024 Final at Spotify O-EAST', 278],
+  ['CwXrM5fKfhk', 0, null, 'aspiration', 'QUATTRO tour2023 at SHIBUYA CLUB QUATTRO', 243],
+  ['cZm8gx38xNk', 0, null, 'ろーるぷれいんぐ', 'progress the night -LIQUIDROOM-', 216],
+  ['lo2W_n4YV8Q', 0, null, 'Sparkle', 'QUATTRO tour2023 at SHIBUYA CLUB QUATTRO', 254],
+  ['psMx676P7DQ', 0, null, 'ソラノナミダ', 'progress the night -LIQUIDROOM-', 323],
+  ['nd6EJzBDS60', 107, 336, '僕に願いを', 'progress the night -LIQUIDROOM-'],
+  ['Tv7KrUG9C0Q', 4630, 4927, 'prologue', 'tour2025 FINAL'],
+  ['qtnGksfbgIA', 0, null, 'オトギバナシ', 'tour2025 FINAL', 240],
+  ['HD8zoRz9Ufw', 0, null, 'sailing!!', 'tour2024 Final at Spotify O-EAST', 215],
+  ['Tv7KrUG9C0Q', 3096, 3348, '四葉のクローバー', 'tour2025 FINAL'],
+  ['x4nkkUcnD_Q', 0, null, 'きっかけ', 'tour2025 FINAL', 249],
+];
+const DEFAULT_NAME = '人気曲セレクション 16曲';
+
+// ---------- ユーティリティ ----------
+const $ = (id) => document.getElementById(id);
+const pad = (n) => String(n).padStart(2, '0');
+const uid = () => Math.random().toString(36).slice(2, 10);
+function fmt(sec) {
+  if (sec == null || isNaN(sec)) return '';
+  sec = Math.max(0, Math.round(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
+  return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+// "1:15:08" "75:08" "4508" "4508s" "1h15m8s" → 秒
+function parseTime(str) {
+  str = String(str ?? '').trim();
+  if (!str) return null;
+  let m = str.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+(?:\.\d+)?)s?)?$/i);
+  if (m && (m[1] || m[2] || m[3])) return (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0);
+  if (/^\d+(:\d{1,2}){1,2}(\.\d+)?$/.test(str)) return str.split(':').reduce((a, v) => a * 60 + parseFloat(v), 0);
+  return NaN;
+}
+function parseYouTube(url) {
+  url = String(url ?? '').trim();
+  if (/^[\w-]{11}$/.test(url)) return { id: url, t: null };
+  let u;
+  try { u = new URL(url.startsWith('http') ? url : 'https://' + url); } catch { return null; }
+  let id = null;
+  if (/youtu\.be$/.test(u.hostname)) id = u.pathname.slice(1, 12);
+  else if (/youtube\.com$|youtube-nocookie\.com$/.test(u.hostname)) {
+    id = u.searchParams.get('v') || (u.pathname.match(/\/(?:embed|shorts|live|v)\/([\w-]{11})/) || [])[1];
+  }
+  if (!id || !/^[\w-]{11}$/.test(id)) return null;
+  const t = u.searchParams.get('t') || u.searchParams.get('start');
+  return { id, t: t ? parseTime(t) : null };
+}
+const itemLen = (it) => it.end != null ? it.end - it.start : (it.len ?? null);
+
+// ---------- 保存 ----------
+const KEY = 'yosugala-live-selection-v1';
+function defaultPlaylist() {
+  return { id: uid(), name: DEFAULT_NAME, items: DEFAULT_ITEMS.map(([vid, start, end, title, live, len]) =>
+    ({ id: uid(), vid, start, end, title, live, len: len ?? null })) };
+}
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (s && Array.isArray(s.playlists) && s.playlists.length) return s;
+  } catch {}
+  const p = defaultPlaylist();
+  return { current: p.id, playlists: [p] };
+}
+let state = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+const pl = () => state.playlists.find((p) => p.id === state.current) || state.playlists[0];
+
+// 共有・書き出し用のコンパクトな形式
+function pack(p) { return { name: p.name, items: p.items.map((it) => [it.vid, it.start, it.end, it.title, it.live || '', it.len ?? null]) }; }
+function unpack(o) {
+  if (!o || !Array.isArray(o.items)) throw new Error('形式が正しくありません');
+  return { id: uid(), name: String(o.name || '読み込んだプレイリスト').slice(0, 80), items: o.items.map((a) => {
+    if (!Array.isArray(a) || !/^[\w-]{11}$/.test(a[0])) throw new Error('動画IDが正しくありません');
+    return { id: uid(), vid: a[0], start: +a[1] || 0, end: a[2] == null ? null : +a[2], title: String(a[3] || '(無題)'),
+             live: String(a[4] || ''), len: a[5] == null ? null : +a[5] };
+  }) };
+}
+const b64enc = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const b64dec = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)));
+
+// ---------- 再生 ----------
+let player = null, ready = false, started = false, curId = null, watchTimer = null;
+const items = () => pl().items;
+const curIndex = () => items().findIndex((it) => it.id === curId);
+
+function showNow() {
+  const list = items(), i = curIndex(), it = list[i];
+  $('nowNum').textContent = it ? `${pad(i + 1)} / ${list.length}` : `${list.length} 曲`;
+  $('nowTitle').textContent = it ? it.title : pl().name;
+  $('nowLive').textContent = it ? it.live : '';
+  document.title = it && started ? `${it.title} - yosugala Live Selection` : 'yosugala Live Selection';
+  document.querySelectorAll('#list .row').forEach((r) => r.classList.toggle('cur', r.dataset.id === curId));
+}
+function playIndex(i) {
+  const list = items();
+  if (i < 0 || i >= list.length) return;
+  curId = list[i].id; $('msg').textContent = '';
+  showNow();
+  if (!ready) return;
+  started = true; $('start').hidden = true;
+  if (fsEl()) flashTitle();
+  const it = list[i], opts = { videoId: it.vid, startSeconds: it.start };
+  if (it.end != null) opts.endSeconds = it.end;
+  player.loadVideoById(opts);
+}
+// 曲の終わりは ENDED イベントと再生位置の監視の両方で検知するので、二重に進まないようにする
+let lastAuto = 0;
+function autoNext() {
+  if (Date.now() - lastAuto < 2000) return;
+  lastAuto = Date.now(); next(true);
+}
+// リピート: off = 最後の曲で止まる / all = プレイリストを最初から繰り返す / one = 今の曲を繰り返す
+const REPEAT_LABEL = { off: 'リピート：オフ', all: 'リピート：全曲', one: 'リピート：1曲' };
+function setRepeat(mode) {
+  state.repeat = mode; save();
+  $('repeat').textContent = REPEAT_LABEL[mode];
+  $('repeat').setAttribute('aria-pressed', mode !== 'off');
+}
+function next(auto) {
+  const i = curIndex(), n = items().length;
+  if (auto && state.repeat === 'one' && i >= 0) return playIndex(i);
+  if (i >= 0 && i < n - 1) return playIndex(i + 1);
+  if (state.repeat === 'all' && n) return playIndex(0);
+  started = false; player && player.stopVideo(); $('start').hidden = false; showNow();
+}
+function watch() {
+  clearInterval(watchTimer);
+  watchTimer = setInterval(() => {
+    if (!player || !started || !player.getCurrentTime) return;
+    const it = items()[curIndex()];
+    if (it && it.end != null && player.getPlayerState() === YT.PlayerState.PLAYING &&
+        player.getVideoData().video_id === it.vid && player.getCurrentTime() >= it.end - 0.2) autoNext();
+  }, 500);
+}
+window.onYouTubeIframeAPIReady = function () {
+  const first = items()[0];
+  player = new YT.Player('player', {
+    videoId: first ? first.vid : undefined,
+    playerVars: { rel: 0, playsinline: 1, start: first ? Math.floor(first.start) : 0 },
+    events: {
+      onReady: () => { ready = true; watch(); },
+      onStateChange: (e) => {
+        if (e.data === YT.PlayerState.ENDED && started) autoNext();
+        // 最後まで再生する曲は長さを覚えておく（リストの表示用）
+        if (e.data === YT.PlayerState.PLAYING && started) {
+          const it = items()[curIndex()];
+          if (it && it.end == null && it.len == null && player.getVideoData().video_id === it.vid) {
+            const d = player.getDuration();
+            if (d > 0) { it.len = Math.round(d - it.start); save(); renderList(); }
+          }
+        }
+      },
+      onError: (e) => {
+        if (!started) return;
+        const it = items()[curIndex()];
+        $('msg').textContent = `「${it ? it.title : ''}」を再生できませんでした（エラー ${e.data}）。次の曲へ進みます。`;
+        setTimeout(autoNext, 2500);
+      },
+    },
+  });
+};
+
+// ---------- プレイリスト表示 ----------
+let editing = false;
+function renderSelect() {
+  const sel = $('plSelect'); sel.textContent = '';
+  state.playlists.forEach((p) => {
+    const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o);
+  });
+  sel.value = pl().id;
+}
+function renderList() {
+  const ol = $('list'); ol.textContent = '';
+  const list = items();
+  const total = list.reduce((a, it) => a + (itemLen(it) || 0), 0);
+  const unknown = list.some((it) => itemLen(it) == null);
+  $('plMeta').textContent = `${list.length} 曲` + (list.length ? ` ・ 約 ${fmt(total)}${unknown ? ' 以上' : ''}` : '');
+  if (!list.length) {
+    const li = document.createElement('li'); li.className = 'empty';
+    li.textContent = editing ? '「＋ 曲を追加」から曲を追加してください。' : '曲がありません。「編集」から曲を追加できます。';
+    ol.appendChild(li);
+  }
+  list.forEach((it, i) => {
+    const li = document.createElement('li'); li.dataset.id = it.id; li.draggable = editing;
+    const row = document.createElement('div'); row.className = 'row'; row.dataset.id = it.id;
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = editing ? '⠿' : pad(i + 1);
+    if (editing) n.classList.add('handle');
+    const main = document.createElement('button'); main.type = 'button'; main.className = 'main';
+    const t = document.createElement('span'); t.className = 't'; t.textContent = it.title;
+    const s = document.createElement('span'); s.className = 's';
+    s.textContent = [it.live, it.start || it.end != null ? `${fmt(it.start)}〜${it.end != null ? fmt(it.end) : '最後'}` : ''].filter(Boolean).join(' ・ ');
+    main.append(t, s);
+    main.addEventListener('click', () => editing ? openSong(it.id) : playIndex(i));
+    const d = document.createElement('span'); d.className = 'd'; d.textContent = fmt(itemLen(it));
+    const tools = document.createElement('span'); tools.className = 'tools';
+    const mk = (label, title, fn, disabled) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'icon'; b.textContent = label;
+      b.title = title; b.setAttribute('aria-label', title); b.disabled = !!disabled; b.addEventListener('click', fn); return b;
+    };
+    tools.append(
+      mk('↑', '上へ', () => move(i, i - 1), i === 0),
+      mk('↓', '下へ', () => move(i, i + 1), i === list.length - 1),
+      mk('✎', '編集', () => openSong(it.id)),
+      mk('✕', '削除', () => removeSong(it.id)),
+    );
+    const right = document.createElement('span'); right.append(d, tools);
+    row.append(n, main, right); li.appendChild(row); ol.appendChild(li);
+    if (editing) addDrag(li);
+  });
+  showNow();
+}
+function renderAll() { renderSelect(); renderList(); $('plTools').hidden = !editing;
+  $('panel').classList.toggle('editing', editing); $('editToggle').textContent = editing ? '完了' : '編集'; }
+
+// ---------- 並べ替え ----------
+function move(from, to) {
+  const list = items(); if (from < 0 || from >= list.length || to < 0 || to >= list.length) return;
+  const [x] = list.splice(from, 1); list.splice(to, 0, x); save(); renderList();
+}
+let dragId = null;
+function addDrag(li) {
+  li.addEventListener('dragstart', (e) => { dragId = li.dataset.id; li.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+  li.addEventListener('dragend', () => { dragId = null; document.querySelectorAll('#list li').forEach((x) => x.classList.remove('dragging', 'dropbefore')); });
+  li.addEventListener('dragover', (e) => { if (!dragId) return; e.preventDefault();
+    document.querySelectorAll('#list li').forEach((x) => x.classList.remove('dropbefore')); li.classList.add('dropbefore'); });
+  li.addEventListener('drop', (e) => {
+    e.preventDefault(); if (!dragId || dragId === li.dataset.id) return;
+    const list = items(), from = list.findIndex((x) => x.id === dragId);
+    const [x] = list.splice(from, 1); const to = list.findIndex((y) => y.id === li.dataset.id);
+    list.splice(to, 0, x); save(); renderList();
+  });
+}
+
+// ---------- 曲の追加・編集 ----------
+let editingSongId = null;
+function openSong(id) {
+  editingSongId = id;
+  const it = id ? items().find((x) => x.id === id) : null;
+  $('songDlgTitle').textContent = it ? '曲を編集' : '曲を追加';
+  $('fUrl').value = it ? `https://www.youtube.com/watch?v=${it.vid}` : '';
+  $('fTitle').value = it ? it.title : '';
+  $('fLive').value = it ? it.live : '';
+  $('fStart').value = it ? fmt(it.start) : '';
+  $('fEnd').value = it && it.end != null ? fmt(it.end) : '';
+  $('fErr').textContent = '';
+  $('songDlg').showModal();
+}
+function readSongForm() {
+  const y = parseYouTube($('fUrl').value);
+  if (!y) throw new Error('YouTube の URL を正しく入力してください。');
+  const start = $('fStart').value.trim() ? parseTime($('fStart').value) : (y.t ?? 0);
+  const end = parseTime($('fEnd').value);
+  if (start == null || isNaN(start)) throw new Error('開始時刻の形式が正しくありません（例 1:15:08）。');
+  if (end != null && (isNaN(end) || end <= start)) throw new Error('終了時刻は開始時刻より後にしてください。');
+  const title = $('fTitle').value.trim();
+  if (!title) throw new Error('曲名を入力してください。');
+  return { vid: y.id, start, end, title, live: $('fLive').value.trim() };
+}
+$('fUrl').addEventListener('change', () => {
+  const y = parseYouTube($('fUrl').value);
+  if (y && y.t != null && !$('fStart').value.trim()) $('fStart').value = fmt(y.t);
+});
+function nowFor(field) {
+  const y = parseYouTube($('fUrl').value);
+  if (!player || !ready || !player.getVideoData) return;
+  const vd = player.getVideoData();
+  if (!y || vd.video_id !== y.id) { $('fErr').textContent = 'プレイヤーで同じ動画を再生しているときに使えます（「この範囲を試聴」で再生できます）。'; return; }
+  $(field).value = fmt(player.getCurrentTime()); $('fErr').textContent = '';
+}
+$('fStartNow').addEventListener('click', () => nowFor('fStart'));
+$('fEndNow').addEventListener('click', () => nowFor('fEnd'));
+$('fPreview').addEventListener('click', () => {
+  try {
+    const f = readSongForm(); $('fErr').textContent = '';
+    if (!ready) return;
+    started = false; $('start').hidden = true;
+    const opts = { videoId: f.vid, startSeconds: f.start }; if (f.end != null) opts.endSeconds = f.end;
+    player.loadVideoById(opts);
+    $('songDlg').close();
+    $('msg').textContent = '試聴中です。位置を決めたら、曲の「✎」から開き直して「今」で時刻を入れられます。';
+  } catch (e) { $('fErr').textContent = e.message; }
+});
+$('fSave').addEventListener('click', () => {
+  try {
+    const f = readSongForm();
+    const list = items();
+    if (editingSongId) {
+      const it = list.find((x) => x.id === editingSongId);
+      if (it.vid !== f.vid || it.start !== f.start || it.end !== f.end) it.len = null;
+      Object.assign(it, f);
+    } else list.push({ id: uid(), len: null, ...f });
+    save(); renderList(); $('songDlg').close();
+  } catch (e) { $('fErr').textContent = e.message; }
+});
+function removeSong(id) {
+  const it = items().find((x) => x.id === id);
+  if (!confirm(`「${it.title}」をこのプレイリストから削除しますか？`)) return;
+  pl().items = items().filter((x) => x.id !== id);
+  save(); renderList();
+}
+$('addSong').addEventListener('click', () => openSong(null));
+
+// ---------- プレイリスト操作 ----------
+function switchTo(id) {
+  state.current = id; save(); curId = null;
+  if (started) { started = false; player && player.stopVideo(); $('start').hidden = false; }
+  $('msg').textContent = ''; renderAll();
+}
+$('plSelect').addEventListener('change', (e) => switchTo(e.target.value));
+$('editToggle').addEventListener('click', () => { editing = !editing; renderAll(); });
+$('plNew').addEventListener('click', () => {
+  const name = prompt('新しいプレイリストの名前', '新しいプレイリスト'); if (!name) return;
+  const p = { id: uid(), name: name.trim().slice(0, 80), items: [] }; state.playlists.push(p); switchTo(p.id);
+});
+$('plRename').addEventListener('click', () => {
+  const name = prompt('プレイリストの名前', pl().name); if (!name) return;
+  pl().name = name.trim().slice(0, 80); save(); renderAll();
+});
+$('plDup').addEventListener('click', () => {
+  const p = unpack(pack(pl())); p.name = pl().name + ' のコピー'; state.playlists.push(p); switchTo(p.id);
+});
+$('plDelete').addEventListener('click', () => {
+  if (!confirm(`プレイリスト「${pl().name}」を削除しますか？（元に戻せません）`)) return;
+  state.playlists = state.playlists.filter((p) => p.id !== pl().id);
+  if (!state.playlists.length) state.playlists.push(defaultPlaylist());
+  switchTo(state.playlists[0].id);
+});
+$('plShare').addEventListener('click', async () => {
+  const url = `${location.origin}${location.pathname}#pl=${b64enc(JSON.stringify(pack(pl())))}`;
+  try { await navigator.clipboard.writeText(url); $('msg').textContent = '共有リンクをコピーしました。開いた人は、このプレイリストを保存して再生できます。'; }
+  catch { prompt('このリンクをコピーしてください', url); }
+});
+$('plIO').addEventListener('click', () => {
+  $('ioText').value = JSON.stringify(pack(pl()), null, 1); $('ioErr').textContent = ''; $('ioDlg').showModal();
+});
+$('ioCopy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('ioText').value); $('ioErr').textContent = 'コピーしました。'; }
+  catch { $('ioText').select(); $('ioErr').textContent = '選択した状態にしました。コピーしてください。'; }
+});
+$('ioImport').addEventListener('click', () => {
+  try { const p = unpack(JSON.parse($('ioText').value)); state.playlists.push(p); $('ioDlg').close(); switchTo(p.id); }
+  catch (e) { $('ioErr').textContent = '読み込めませんでした：' + e.message; }
+});
+
+// ---------- 共有リンクから開いたとき ----------
+let shared = null;
+(function readHash() {
+  const m = location.hash.match(/#pl=([\w-]+)/);
+  if (!m) return;
+  try { shared = unpack(JSON.parse(b64dec(m[1]))); } catch { $('msg').textContent = '共有リンクを読み込めませんでした。'; return; }
+  $('shareText').textContent = `共有されたプレイリスト「${shared.name}」（${shared.items.length} 曲）を開いています。`;
+  $('shareBanner').hidden = false;
+  state.playlists.push(shared); state.current = shared.id;   // 保存はボタンを押したときだけ
+})();
+// 開いているページで共有リンクを開いた（# 以降だけが変わった）ときも読み込み直す
+window.addEventListener('hashchange', () => { if (/#pl=/.test(location.hash)) location.reload(); });
+function clearHash() { history.replaceState(null, '', location.pathname + location.search); }
+$('shareSave').addEventListener('click', () => { shared = null; save(); $('shareBanner').hidden = true; clearHash(); renderAll(); });
+$('shareDismiss').addEventListener('click', () => {
+  state.playlists = state.playlists.filter((p) => p.id !== shared.id); shared = null;
+  state = Object.assign(load(), {}); $('shareBanner').hidden = true; clearHash(); switchTo(state.current);
+});
+const _save = save;
+save = function () { if (shared) { const keep = state.playlists; state = { ...state, playlists: keep.filter((p) => p !== shared) };
+  _save(); state = { ...state, playlists: keep }; } else _save(); };
+
+// ---------- 起動 ----------
+$('start').addEventListener('click', () => playIndex(Math.max(0, curIndex())));
+$('prev').addEventListener('click', () => playIndex(Math.max(0, curIndex() - 1)));
+$('next').addEventListener('click', () => next(false));
+$('repeat').addEventListener('click', () => setRepeat({ off: 'all', all: 'one', one: 'off' }[state.repeat || 'off']));
+setRepeat(state.repeat || 'off');
+
+// フルスクリーン（曲が切り替わってもフルスクリーンのまま続けて再生する）
+const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+$('fs').addEventListener('click', () => {
+  const st = $('stage');
+  if (fsEl()) return (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  const req = st.requestFullscreen || st.webkitRequestFullscreen;
+  if (req) { req.call(st); flashTitle(); }
+  else $('msg').textContent = 'この端末ではページからの全画面に対応していません。動画右下の全画面ボタンを使ってください（iPhone は曲が変わると全画面が解除されることがあります）。';
+});
+let fsTimer = null;
+function flashTitle() {
+  const it = items()[curIndex()]; if (!it) return;
+  $('fsTitle').querySelector('.fs-num').textContent = `${pad(curIndex() + 1)} / ${items().length}`;
+  $('fsTitle').querySelector('.fs-t').textContent = it.title;
+  $('fsTitle').classList.add('show'); clearTimeout(fsTimer);
+  fsTimer = setTimeout(() => $('fsTitle').classList.remove('show'), 4000);
+}
+renderAll();
+const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
+</script>
+</body>
+</html>
