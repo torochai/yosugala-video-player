@@ -396,6 +396,7 @@
             <button class="btn small tip-open" type="button" id="plTipOpen" hidden title="使い方のヒントを表示" aria-label="使い方のヒントを表示">💡</button>
             <button class="btn small" type="button" id="dupMine" hidden>複製</button>
             <button class="btn small" type="button" id="editToggle">編集</button>
+            <button class="btn small" type="button" id="libShare" hidden title="このプレイリストを開くリンクをコピーします">共有リンク</button>
             <button class="btn small" type="button" id="dupEdit" hidden title="このプレイリストは編集できません。コピーを作って編集します">複製して編集</button>
           </div>
         </div>
@@ -707,8 +708,8 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
     catalogPls.push(catalogPlaylist(LIVE_ID + k, `${dotDate(date)}${quoteLive(live)}`, [...list].sort(byLive).map(toItem),
       `${dotDate(date)}${quoteLive(live)}${venue ? ` @ ${venue}` : ''} の公式ライブ映像を、セットリストの順に並べています（公開されている映像の曲だけです）。\n${CAT_HELP}`));
   });
-  renderAll();
-}).catch(() => {});
+  renderAll(); openSharedLib();
+}).catch(() => { if (sharedLib) { sharedLib = null; $('msg').textContent = 'ライブ映像の一覧を読み込めませんでした。'; } });
 
 // 共有・書き出し用のコンパクトな形式
 function pack(p) { return { name: p.name, author: p.author || '', desc: p.desc || '', items: p.items.map((it) => [it.vid, it.start, it.end, it.title, it.live || '', it.len ?? null]) }; }
@@ -996,7 +997,7 @@ function renderAll() {
   renderSelect(); renderList(); $('plTools').hidden = !editing;
   $('panel').classList.toggle('editing', editing); $('panel').classList.toggle('catalog', ro);
   $('editToggle').textContent = editing ? '完了' : '編集'; $('editToggle').hidden = ro;
-  $('dupEdit').hidden = !ro;
+  $('dupEdit').hidden = !ro; $('libShare').hidden = !ro;
   $('dupMine').hidden = ro;
   $('catTools').hidden = !pl().catalog; renderCatBar(); renderTip();
 }
@@ -1215,11 +1216,31 @@ $('plDelete').addEventListener('click', async () => {
   if (!state.playlists.length) state.playlists.push(defaultPlaylist());
   switchTo(state.playlists[0].id);
 });
-$('plShare').addEventListener('click', async () => {
-  const url = `${location.origin}${location.pathname}#pl=${b64enc(JSON.stringify(pack(pl())))}`;
-  try { await navigator.clipboard.writeText(url); $('msg').textContent = '共有リンクをコピーしました。開いた人は、このプレイリストを保存して再生できます。'; }
+async function copyLink(url, done) {
+  try { await navigator.clipboard.writeText(url); $('msg').textContent = done; }
   catch { ask({ title: '共有リンク', message: '自動でコピーできなかったので、下のリンクを選択してコピーしてください。', input: true, value: url, ok: '閉じる' }); }
-});
+}
+$('plShare').addEventListener('click', () => copyLink(`${location.origin}${location.pathname}#pl=${b64enc(JSON.stringify(pack(pl())))}`,
+  '共有リンクをコピーしました。開いた人は、このプレイリストを保存して再生できます。'));
+// ライブラリのプレイリストは曲を埋め込まず「#lib=名前」の短いリンクにする（開くといつも最新の内容）
+//   toro = トロ's セレクション / songs = すべてのライブ映像 - 曲順 / dates = すべてのライブ映像 - 公演日順 / YYYY-MM-DD = その日の公演
+function libKey(p) {
+  if (p.id === BUILTIN_ID) return 'toro';
+  if (p.id === CATALOG_ID) return 'songs';
+  if (p.id === CATALOG_DATE_ID) return 'dates';
+  const k = p.id.slice(LIVE_ID.length), date = k.split('|')[0];
+  // 同じ日に公演が2つあるときだけ、公演名まで入れる
+  return catalogPls.filter((x) => x.id.startsWith(LIVE_ID + date + '|')).length > 1 ? encodeURIComponent(k) : date;
+}
+function libId(key) {
+  key = decodeURIComponent(key);
+  const fixed = { toro: BUILTIN_ID, songs: CATALOG_ID, dates: CATALOG_DATE_ID }[key];
+  if (fixed) return fixed;
+  const p = catalogPls.find((x) => x.id === LIVE_ID + key) || catalogPls.find((x) => x.id.startsWith(LIVE_ID + key + '|'));
+  return p ? p.id : null;
+}
+$('libShare').addEventListener('click', () => copyLink(`${location.origin}${location.pathname}#lib=${libKey(pl())}`,
+  `「${pl().name}」の共有リンクをコピーしました。開いた人は、このプレイリストをそのまま再生できます。`));
 $('plIO').addEventListener('click', () => {
   $('ioText').value = JSON.stringify(pack(pl()), null, 1); $('ioErr').textContent = ''; $('ioDlg').showModal();
 });
@@ -1242,8 +1263,17 @@ let shared = null;
   $('shareBanner').hidden = false;
   state.playlists.push(shared); state.current = shared.id;   // 保存はボタンを押したときだけ
 })();
+// ライブラリの共有リンク（#lib=）: カタログを読み込んでから、そのプレイリストを開く
+let sharedLib = (location.hash.match(/#lib=([^&]+)/) || [])[1] || null;
+function openSharedLib() {
+  if (!sharedLib) return;
+  const key = sharedLib, id = libId(key);
+  if (!catalog && id !== BUILTIN_ID) return;   // トロ's セレクション以外はカタログの読み込みを待つ
+  sharedLib = null; clearHash();
+  if (id) switchTo(id); else $('msg').textContent = '共有リンクのプレイリストが見つかりませんでした。';
+}
 // 開いているページで共有リンクを開いた（# 以降だけが変わった）ときも読み込み直す
-window.addEventListener('hashchange', () => { if (/#pl=/.test(location.hash)) location.reload(); });
+window.addEventListener('hashchange', () => { if (/#(pl|lib)=/.test(location.hash)) location.reload(); });
 function clearHash() { history.replaceState(null, '', location.pathname + location.search); }
 $('shareSave').addEventListener('click', () => { shared = null; save(); $('shareBanner').hidden = true; clearHash(); renderAll(); });
 $('shareDismiss').addEventListener('click', () => {
@@ -1398,7 +1428,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('stage
 window.addEventListener('popstate', () => { if ($('stage').classList.contains('pseudo-fs')) setPseudoFs(false, true); });
 if (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
   document.documentElement.classList.add('ios');
-renderAll();
+renderAll(); openSharedLib();
 const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
 </script>
 </body>
