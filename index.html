@@ -801,7 +801,8 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
     if (!list.length) return;
     const { date, live, venue } = list[0];
     catalogPls.push(catalogPlaylist(LIVE_ID + k, `${dotDate(date)}${quoteLive(live)}`, list.map(toItem),
-      `${dotDate(date)}${quoteLive(live)}${venue ? ` @ ${venue}` : ''} の公式ライブ映像を、セットリストの順に並べています（${full.length ? 'フルライブ映像から曲ごとに分けています' : '公開されている映像の曲だけです'}）。`
+      // 公演情報: 公演名・公演日・会場のあとにセットリスト（プレイリストの説明文は入れない）
+      [`公演名: ${live}`, `公演日: ${dotDate(date)}`, venue ? `会場: ${venue}` : ''].filter(Boolean).join('\n')
       + setlistText((c.lives || {})[live], full.length ? null : new Set(list.map((x) => x.song))), false, true));
   });
   renderAll(); openSharedLib(); applyResume();
