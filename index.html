@@ -77,8 +77,10 @@
   /* X で共有: ページ右上に大きめに置く */
   .xshare { position: absolute; top: 0; right: 0; display: inline-flex; align-items: center; gap: 8px;
     padding: 10px 18px; font-size: .95rem; font-weight: 700; z-index: 2;
-    background: #000; color: #fff; border: 1px solid rgba(255,255,255,.28); }   /* X らしい黒地に白 */
-  .xshare:hover { background: #16181c; border-color: rgba(255,255,255,.55); box-shadow: 0 0 14px rgba(255,255,255,.15); }
+  }
+  .btn.xshare { background: #000; color: #fff; border: 1px solid rgba(255,255,255,.28); }   /* X らしい黒地に白（通常のボタンより優先） */
+  a.xshare { text-decoration: none; }
+  .btn.xshare:hover { background: #16181c; border-color: rgba(255,255,255,.55); box-shadow: 0 0 14px rgba(255,255,255,.15); }
   .xshare svg { width: 18px; height: 18px; }
   @media (max-width: 900px) {
     .xshare { top: -6px; padding: 8px 14px; font-size: .85rem; }
@@ -297,10 +299,10 @@
     <p class="eyebrow">UNOFFICIAL FAN-MADE PLAYER</p>
     <h1>yosugala<span class="sub">Live Video Player</span></h1>
     <p class="lead" id="lead">フルライブ映像の中の1曲だけでも、好きな曲を集めて、自分だけのセットリストで続けて再生。</p>
-    <button class="btn xshare" type="button" id="xShare" aria-label="X で共有">
+    <a class="btn xshare" id="xShare" href="https://x.com/intent/tweet?text=yosugala%20Live%20Video%20Player%20-%20%E3%83%95%E3%83%AB%E3%83%A9%E3%82%A4%E3%83%96%E6%98%A0%E5%83%8F%E3%81%AE%E4%B8%AD%E3%81%AE1%E6%9B%B2%E3%81%A0%E3%81%91%E3%81%A7%E3%82%82%E3%80%81%E5%A5%BD%E3%81%8D%E3%81%AA%E6%9B%B2%E3%82%92%E9%9B%86%E3%82%81%E3%81%A6%E3%80%81%E8%87%AA%E5%88%86%E3%81%A0%E3%81%91%E3%81%AE%E3%82%BB%E3%83%83%E3%83%88%E3%83%AA%E3%82%B9%E3%83%88%E3%81%A7%E7%B6%9A%E3%81%91%E3%81%A6%E5%86%8D%E7%94%9F%E3%80%82%20%23yosugala&url=https%3A%2F%2Ftorochai.github.io%2Fyosugala-video-player%2F%3Fref%3Dx" target="_blank" rel="noopener" aria-label="X で共有">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>
       X で共有
-    </button>
+    </a>
   </header>
 
   <div class="banner" id="shareBanner" hidden>
@@ -1091,16 +1093,6 @@ async function removeSong(id) {
   save(); renderList();
 }
 $('addSong').addEventListener('click', () => openSong(null));
-
-// ---------- X で共有 ----------
-// 本文はページのタイトルと、ページ上部の説明文。URL には共有用の印（?ref=x）を付けて、X に新しいカード情報を読ませる
-$('xShare').addEventListener('click', () => {
-  const url = `${location.origin}${location.pathname}?ref=x`;
-  // 「ページのタイトル - 説明文」の1行（再生中はタブ名が曲名に変わるので、タイトルは固定の名前を使う）
-  const text = `yosugala Live Video Player - ${$('lead').textContent.trim()} #yosugala`;   // ハッシュタグは本文の末尾（URL の前）
-  const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-  window.open(intent, '_blank', 'noopener,width=600,height=520');
-});
 
 // ---------- 入力・確認ダイアログ ----------
 // input: true なら名前を入力させて文字列を返す。false なら確認だけで true を返す。キャンセルは null
