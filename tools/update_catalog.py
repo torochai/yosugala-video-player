@@ -4,6 +4,7 @@
 使い方（player フォルダで）:
     python3 tools/update_catalog.py
     python3 tools/update_catalog.py --cookies-from-browser chrome   # YouTube にボット確認で止められたとき
+    python3 tools/update_catalog.py --offline   # YouTube に接続せず、video_cache.json だけで作り直す（補正ファイルを直したとき）
 
 - 公式チャンネルの動画一覧から、ライブ映像（単独の Official Live Video とフルライブ）を拾う
 - フルライブはチャプターで曲ごとに分ける（MC・SE などは除く）
@@ -19,7 +20,8 @@ CHANNEL = 'https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q'
 CACHE = os.path.join(HERE, 'video_cache.json')
 OVERRIDES = os.path.join(HERE, 'catalog_overrides.json')
 OUT = os.path.join(ROOT, 'catalog.json')
-EXTRA = sys.argv[1:]          # yt-dlp にそのまま渡す追加オプション（--cookies-from-browser など）
+OFFLINE = '--offline' in sys.argv[1:]
+EXTRA = [a for a in sys.argv[1:] if a != '--offline']   # yt-dlp にそのまま渡す追加オプション（--cookies-from-browser など）
 
 LIVE_RE = re.compile(r'live video|full live|【full】|oneman', re.I)
 SKIP_CHAPTER_RE = re.compile(r'^(se|mc.*|.*\bmc\b.*|バンド紹介|ending.*|opening|オープニング|encore|アンコール|intro)$', re.I)
@@ -86,11 +88,16 @@ def main():
     exclude_entries = set(ov.get('exclude_entries', []))
     seg_fix = ov.get('segments', {})
     live_rules = [(re.compile(p, re.I), name) for p, name in ov.get('live_rules', [])]
+    video_lives = ov.get('video_lives', {})
     cache = load(CACHE, {})
 
-    print('公式チャンネルの動画一覧を取得中…')
     entries = []
-    for tab in ('videos', 'streams'):
+    if OFFLINE:
+        print('--offline: video_cache.json の動画だけで作り直します')
+        entries = [{'id': vid, 'title': info['title']} for vid, info in cache.items()]
+    else:
+        print('公式チャンネルの動画一覧を取得中…')
+    for tab in ('videos', 'streams') if not OFFLINE else ():
         try:
             d = ytdlp_json(['--flat-playlist', f'{CHANNEL}/{tab}'])
             entries += [e for e in (d.get('entries') or []) if e]
@@ -132,9 +139,9 @@ def main():
         if single and not (info['chapters'] and (info['duration'] or 0) > 1200):
             song, live = single
             songs.append({'song': song, 'vid': vid, 'start': 0, 'end': None, 'len': info['duration'],
-                          'live': live_by_rule(live_rules, title, live), 'tdate': title_date(title), 'published': published, 'kind': 'single'})
+                          'live': video_lives.get(vid) or live_by_rule(live_rules, title, live), 'tdate': title_date(title), 'published': published, 'kind': 'single'})
         elif info['chapters']:
-            live = live_by_rule(live_rules, title, parse_full_live(title))
+            live = video_lives.get(vid) or live_by_rule(live_rules, title, parse_full_live(title))
             for c in info['chapters']:
                 name = c['title'].strip()
                 if SKIP_CHAPTER_RE.match(name):
@@ -170,6 +177,29 @@ def main():
     for x in out:
         x['date'] = live_dates.get(x['live']) or x.pop('tdate', '') or ''
         x.pop('tdate', None)
+    # 会場名: 補正ファイルの live_venues（ライブ名 → 会場名）
+    live_venues = ov.get('live_venues', {})
+    for x in out:
+        x['venue'] = live_venues.get(x['live'], '')
+    # 公演の中の曲順 no（1 から）: 表示するものだけに付ける
+    #   フルライブのチャプター → 開始時刻の順。単独映像 → 非表示にした同じ曲のチャプターの位置
+    #   フルライブ映像がない公演 → 補正ファイルの setlists（曲名の並び）。どれでも分からなければ最後に公開日順
+    setlists = ov.get('setlists', {})
+    for live in {x['live'] for x in out if x['live']}:
+        group = [x for x in out if x['live'] == live]
+        chapter_at = {(x['duplicate_of'], x['song']): x['start'] for x in group if x.get('duplicate_of')}
+        setlist = setlists.get(live, [])
+
+        def pos(x):
+            if x['kind'] == 'full':
+                return (0, x['start'], '')
+            if (x['vid'], x['song']) in chapter_at:
+                return (0, chapter_at[(x['vid'], x['song'])], '')
+            if x['song'] in setlist:
+                return (1, setlist.index(x['song']), '')
+            return (2, 0, x['published'])
+        for i, x in enumerate(sorted((x for x in group if not x.get('hidden')), key=pos)):
+            x['no'] = i + 1
     # 同じ曲の中は公演日の古い順（公演日が分からないものは公開日で比べる）
     out.sort(key=lambda s: (s['song'].casefold(), s['date'] or s['published']))
 
