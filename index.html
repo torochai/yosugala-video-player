@@ -188,7 +188,7 @@
   .row .t { display: block; overflow-wrap: anywhere; letter-spacing: .02em; }
   .row .s { display: block; color: var(--muted); font-size: .74rem; overflow-wrap: anywhere; }
   /* 「フルライブ映像より」バッジ */
-  .row .tag { display: inline-block; margin-left: 6px; padding: 0 6px; border: 1px solid var(--line-2); border-radius: 999px;
+  .tag { display: inline-block; margin-left: 6px; padding: 0 6px; border: 1px solid var(--line-2); border-radius: 999px;
     font-size: .66rem; font-weight: 400; line-height: 1.5; color: var(--moon); vertical-align: 1px; white-space: nowrap; }
   .row .d { color: var(--muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
   .row .tools { display: none; gap: 0; align-items: center; }
@@ -682,6 +682,10 @@ function showNow() {
   // ライブ名は「」で囲む（中にある「」は『』にする）
   const liveQ = it ? quoteLive(it.live) : '';
   $('nowLive').textContent = it ? [nd ? `公演日: ${nd.replace(/-/g, '.')}` : '', liveQ].filter(Boolean).join(' ') : '';
+  if (it && (it.start || it.end != null)) {   // フルライブ映像から切り出した曲にはバッジ
+    const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'フルライブ映像より';
+    $('nowLive').appendChild(tag);
+  }
   $('barTitle').innerHTML = '';
   if (it) { const n = document.createElement('span'); n.className = 'bn'; n.textContent = pad(i + 1);
     $('barTitle').append(n, document.createTextNode(it.title)); }
