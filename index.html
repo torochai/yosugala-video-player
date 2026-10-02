@@ -697,16 +697,21 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
     catalogPlaylist(CATALOG_DATE_ID, 'すべてのライブ映像 - 公演日順', byDate, `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。${CAT_HELP}`),
   ];
   // 公演ごと（公演日が分かるものだけ）。新しい公演が上
+  //   フルライブ映像がある公演は、フルライブ映像のチャプターだけをその順に（単独映像と重なるチャプターも使う）
+  //   フルライブ映像がない公演は、単独映像をセットリスト順に
   const lives = new Map();
-  visible.filter((x) => x.date && x.live).forEach((x) => {
+  c.songs.filter((x) => x.date && x.live).forEach((x) => {
     const k = `${x.date}|${x.live}`;
     if (!lives.has(k)) lives.set(k, []);
     lives.get(k).push(x);
   });
-  [...lives.entries()].sort((a, b) => b[0].localeCompare(a[0])).forEach(([k, list]) => {
+  [...lives.entries()].sort((a, b) => b[0].localeCompare(a[0])).forEach(([k, songs]) => {
+    const full = songs.filter((x) => x.kind === 'full');
+    const list = full.length ? full.sort((a, b) => a.vid.localeCompare(b.vid) || a.start - b.start) : songs.filter((x) => !x.hidden).sort(byLive);
+    if (!list.length) return;
     const { date, live, venue } = list[0];
-    catalogPls.push(catalogPlaylist(LIVE_ID + k, `${dotDate(date)}${quoteLive(live)}`, [...list].sort(byLive).map(toItem),
-      `${dotDate(date)}${quoteLive(live)}${venue ? ` @ ${venue}` : ''} の公式ライブ映像を、セットリストの順に並べています（公開されている映像の曲だけです）。\n${CAT_HELP}`));
+    catalogPls.push(catalogPlaylist(LIVE_ID + k, `${dotDate(date)}${quoteLive(live)}`, list.map(toItem),
+      `${dotDate(date)}${quoteLive(live)}${venue ? ` @ ${venue}` : ''} の公式ライブ映像を、セットリストの順に並べています（${full.length ? 'フルライブ映像から曲ごとに分けています' : '公開されている映像の曲だけです'}）。\n${CAT_HELP}`));
   });
   renderAll(); openSharedLib();
 }).catch(() => { if (sharedLib) { sharedLib = null; $('msg').textContent = 'ライブ映像の一覧を読み込めませんでした。'; } });
