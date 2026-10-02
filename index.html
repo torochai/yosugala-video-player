@@ -744,12 +744,12 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
 function setlistText(info, playable) {
   if (!info || !(info.main || []).length) return '';
   const medley = new Set(info.medley || []);
-  const line = (no, song) => `${no}. ${song}${medley.has(song) ? '（メドレー）' : ''}${playable && playable.has(song) ? '  ▶' : ''}`;
-  // ◾️本編 / ◾️アンコール の見出しのあとに、通し番号で曲名（番号はアンコールにも続けて振る）
-  const out = ['', '', '◾️本編'];
+  const line = (no, song) => `　${no}. ${song}${medley.has(song) ? '（メドレー）' : ''}${playable && playable.has(song) ? '  ▶' : ''}`;
+  // ⬜️本編 / ⬜️アンコール の見出しのあとに、字下げして通し番号で曲名（番号はアンコールにも続けて振る）
+  const out = ['', '', '⬜️本編'];
   info.main.forEach((song, i) => out.push(line(i + 1, song)));
   if ((info.encore || []).length) {
-    out.push('', '◾️アンコール');
+    out.push('', '⬜️アンコール');
     info.encore.forEach((song, i) => out.push(line(info.main.length + i + 1, song)));
   }
   if (playable) out.push('', '▶ = このプレイリストで見られる曲');
