@@ -153,18 +153,22 @@
   .btn[aria-pressed="true"] { border-color: var(--moon); color: #fff; box-shadow: 0 0 14px rgba(185,203,255,.3); }
   .controls { flex-wrap: wrap; }
   /* フルスクリーン */
-  .stage:fullscreen, .stage:-webkit-full-screen { border-radius: 0; border: 0; width: 100vw; height: 100vh; background: #000; }
-  .stage:fullscreen .screen, .stage:-webkit-full-screen .screen { flex: 1; aspect-ratio: auto; }
+  .stage.is-fs { border-radius: 0; border: 0; width: 100vw; height: 100vh; background: #000; }
+  .stage.is-fs .screen { flex: 1; aspect-ratio: auto; }
+  /* iPhone などページからの全画面に対応しない端末では、画面いっぱいに広げて代わりにする */
+  .stage.pseudo-fs { position: fixed; inset: 0; z-index: 1000; height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); }
+  html.pseudo-fs-on, html.pseudo-fs-on body { overflow: hidden; }
   /* 全画面では曲名をバーに出す（動画の上には何も重ねない） */
   .bar-title { display: none; min-width: 0; max-width: 32%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     font-size: .9rem; font-weight: 700; letter-spacing: .04em; margin: 0 8px; }
   .bar-title .bn { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--moon); margin-right: 8px; }
-  .stage:fullscreen .bar-title, .stage:-webkit-full-screen .bar-title { display: block; }
+  .stage.is-fs .bar-title { display: block; }
   /* 全画面で3秒操作がないとバーを畳む。下端に細い帯を残し、そこにマウスを持っていくと再表示 */
-  .stage:fullscreen .bar, .stage:-webkit-full-screen .bar { max-height: 80px; overflow: hidden;
+  .stage.is-fs .bar { max-height: 120px; overflow: hidden; padding-bottom: max(8px, env(safe-area-inset-bottom));
     transition: max-height .35s, padding .35s, opacity .35s; }
-  .stage.idle:fullscreen .bar, .stage.idle:-webkit-full-screen .bar { max-height: 10px; padding-top: 0; padding-bottom: 0; opacity: .35; }
-  .stage.idle:fullscreen, .stage.idle:-webkit-full-screen { cursor: none; }
+  .stage.is-fs.idle .bar { max-height: 10px; padding-top: 0; padding-bottom: 0; opacity: .35; }
+  .stage.is-fs.idle { cursor: none; }
 
   /* スマホ・タブレット */
   @media (max-width: 900px) {
@@ -183,6 +187,10 @@
     /* スマホはシークバーを1段目に、ボタンを2段目に並べる */
     .bar { gap: 2px 4px; padding: 6px 8px 8px; flex-wrap: wrap; justify-content: space-between; }
     #seek { order: -1; flex-basis: 100%; margin: 4px 4px 2px; }
+  }
+  @media (max-width: 600px) {
+    /* 縦向きのスマホでは全画面時の曲名を出さない（横向きでは表示） */
+    .stage.is-fs .bar-title { display: none; }
     .panel { margin: 0 12px; }
     ol { max-height: none; }
     .row { padding: 12px 14px; }
@@ -773,14 +781,18 @@ function togglePlay() {
 $('pp').addEventListener('click', togglePlay);
 $('pp').innerHTML = ICON.play; $('prev').innerHTML = ICON.prev; $('next').innerHTML = ICON.next;
 $('mute').innerHTML = ICON.vol; $('fs').innerHTML = ICON.fs;
-const syncFsIcon = () => { $('fs').innerHTML = fsEl() ? ICON.fsExit : ICON.fs; };
+const isFs = () => !!fsEl() || $('stage').classList.contains('pseudo-fs');
+const syncFsIcon = () => {
+  $('stage').classList.toggle('is-fs', isFs());
+  $('fs').innerHTML = isFs() ? ICON.fsExit : ICON.fs;
+};
 document.addEventListener('fullscreenchange', syncFsIcon);
 document.addEventListener('webkitfullscreenchange', syncFsIcon);
 let idleTimer = null;
 function wake() {
   $('stage').classList.remove('idle'); clearTimeout(idleTimer);
-  if (fsEl()) idleTimer = setTimeout(() => {
-    if (fsEl() && player.getPlayerState() === YT.PlayerState.PLAYING && !seeking)
+  if (isFs()) idleTimer = setTimeout(() => {
+    if (isFs() && player.getPlayerState() === YT.PlayerState.PLAYING && !seeking)
       $('stage').classList.add('idle');
   }, 3000);
 }
@@ -814,13 +826,26 @@ setCaptions(!!state.captions);
 
 // フルスクリーン（曲が切り替わってもフルスクリーンのまま続けて再生する）
 const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
-$('fs').addEventListener('click', () => {
+function setPseudoFs(on) {
+  $('stage').classList.toggle('pseudo-fs', on);
+  document.documentElement.classList.toggle('pseudo-fs-on', on);
+  syncFsIcon(); wake();
+}
+$('fs').addEventListener('click', async () => {
   const st = $('stage');
+  if ($('stage').classList.contains('pseudo-fs')) return setPseudoFs(false);
   if (fsEl()) return (document.exitFullscreen || document.webkitExitFullscreen).call(document);
   const req = st.requestFullscreen || st.webkitRequestFullscreen;
-  if (req) req.call(st);
-  else $('msg').textContent = 'この端末ではページからの全画面に対応していません。動画右下の全画面ボタンを使ってください（iPhone は曲が変わると全画面が解除されることがあります）。';
+  try {
+    if (!req) throw new Error('unsupported');
+    await req.call(st);
+    try { await screen.orientation.lock('landscape'); } catch {}   // 対応端末では横向きに
+  } catch {
+    setPseudoFs(true);
+    $('msg').textContent = '画面いっぱいに表示しています。スマホを横向きにすると大きく見られます。もう一度ボタンを押すと戻ります。';
+  }
 });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('stage').classList.contains('pseudo-fs')) setPseudoFs(false); });
 renderAll();
 const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
 </script>
