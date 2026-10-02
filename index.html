@@ -794,10 +794,12 @@ function renderSelect() {
   };
   // マイライブラリ: 自分で作った（編集できる）プレイリスト。空でも見出しは出して「なし」と表示する
   const mine = state.playlists.filter((p) => !p.readonly).map((p) => [p.id, withCount(p)]);
-  if (mine.length) group('マイライブラリ', mine);
-  else {
+  {
     const g = document.createElement('optgroup'); g.label = 'マイライブラリ';
-    const o = opt('', 'なし'); o.disabled = true; g.appendChild(o); sel.appendChild(g);
+    if (mine.length) mine.forEach(([id, name]) => g.appendChild(opt(id, name)));
+    else { const o = opt('', 'なし'); o.disabled = true; g.appendChild(o); }
+    g.appendChild(opt(NEW_ID, '＋ 新規作成'));   // いちばん下に「新規作成」
+    sel.appendChild(g);
   }
   // ライブラリ: 組み込みのプレイリスト（トロのセレクションなど）。編集はできないが複製できる
   // ライブラリ: 組み込みのプレイリスト（トロ's セレクションなど）と、いちばん下に「すべてのライブ映像」
@@ -1038,7 +1040,15 @@ function switchTo(id) {
   started = false; previewing = false; cueIndex(0);
   $('msg').textContent = ''; renderAll();
 }
-$('plSelect').addEventListener('change', (e) => switchTo(e.target.value));
+const NEW_ID = '__new__';
+$('plSelect').addEventListener('change', (e) => {
+  if (e.target.value !== NEW_ID) return switchTo(e.target.value);
+  // 「＋ 新規作成」: 名前を聞いて空のプレイリストを作り、そのまま編集モードにする
+  const name = prompt('新しいプレイリストの名前', '新しいプレイリスト');
+  if (!name || !name.trim()) { e.target.value = pl().id; return; }
+  const p = { id: uid(), name: name.trim().slice(0, 80), author: '', desc: '', items: [] };
+  state.playlists.push(p); editing = true; switchTo(p.id);
+});
 $('editToggle').addEventListener('click', () => { editing = !editing; renderAll(); });
 $('plNew').addEventListener('click', () => {
   const name = prompt('新しいプレイリストの名前', '新しいプレイリスト'); if (!name) return;
