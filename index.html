@@ -346,7 +346,6 @@
           </div>
         </div>
         <div class="prow" id="plTools" hidden>
-          <button class="btn small" type="button" id="plNew">＋ 新規</button>
           <button class="btn small" type="button" id="plRename">名前変更</button>
           <button class="btn small" type="button" id="plDup">複製</button>
           <button class="btn small" type="button" id="plShare">共有リンク</button>
@@ -1099,7 +1098,6 @@ $('plSelect').addEventListener('change', (e) => {
   createPlaylist();
 });
 $('editToggle').addEventListener('click', () => { editing = !editing; renderAll(); });
-$('plNew').addEventListener('click', () => createPlaylist());
 $('plDesc').addEventListener('click', () => {
   $('authorText').value = pl().author || ''; $('descText').value = pl().desc || ''; $('descDlg').showModal();
 });
