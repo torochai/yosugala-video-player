@@ -74,7 +74,7 @@
     "tour2025 FINAL": "Zepp DiverCity (TOKYO)"
   },
   "setlists": {
-    "_memo": "LiveFans のセットリスト（2024.06.22: https://www.livefans.jp/events/1644430 / 2025.06.22: https://www.livefans.jp/events/1767044）",
+    "_memo": "LiveFans のセットリスト（2024.06.22: https://www.livefans.jp/events/1644430 / 2025.06.22: https://www.livefans.jp/events/1767044） / 2023.06.22: SPICE のライブレポート https://spice.eplus.jp/articles/319962 （全曲は載っていないので、分かる曲だけ。indigo は本編とアンコールの2回あり、本編の位置にしている）",
     "tour2024 Final": [
       "嘘とか愛とか",
       "ろーるぷれいんぐ",
@@ -117,6 +117,22 @@
       "indigo",
       "prologue",
       "My Dear"
+    ],
+    "ヨモスエダカラ": [
+      "prologue",
+      "会心の一撃",
+      "バカばかC",
+      "僕のわがまま",
+      "indigo",
+      "オヒメサマ？",
+      "スペードのエース",
+      "エスカレート",
+      "嘘とか愛とか",
+      "ひとりごと",
+      "オトギバナシ",
+      "四葉のクローバー",
+      "夜明けの唄",
+      "canvas"
     ]
   }
 }
