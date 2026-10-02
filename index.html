@@ -193,6 +193,13 @@
   /* 見出しの行の右端の 💡 は、枠も背景もない電球だけ */
   .pl-head .tip-open, .pl-head .tip-open:hover { margin-left: auto; flex: none; border: 0; background: none; box-shadow: none; padding: 0 2px; line-height: 1; }
   .pl-head:has(.tip-open:not([hidden])) .pl-label { margin-bottom: 0; }
+  /* ホバーの説明（data-tip）。ブラウザ標準の title は出るまで1秒前後かかるので、すぐ出るものを自前で出す。
+     右端のボタン用に、ボタンの右端にそろえて下に出す */
+  [data-tip] { position: relative; }
+  [data-tip]::after { content: attr(data-tip); position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; white-space: nowrap;
+    padding: 5px 9px; border-radius: 8px; background: #0e1230; border: 1px solid var(--line-2); color: var(--text);
+    font-size: .74rem; letter-spacing: .02em; line-height: 1.4; pointer-events: none; opacity: 0; transition: opacity .1s; }
+  @media (hover: hover) { [data-tip]:hover::after, [data-tip]:focus-visible::after { opacity: 1; } }
   /* マウスで操作する端末（PC）は「クリック」、それ以外は「タップ」 */
   .by-mouse { display: none; }
   @media (hover: hover) and (pointer: fine) { .by-mouse { display: inline; } .by-touch { display: none; } }
@@ -396,7 +403,7 @@
         <!-- 見出し（スマホ・タブレットは「タップ」、PC は「クリック」）と、その行の右端に 💡（閉じた案内をもう一度出す） -->
         <div class="pl-head">
           <div class="pl-label">プレイリスト（<span class="by-touch">タップ</span><span class="by-mouse">クリック</span>で切り替え）</div>
-          <button class="btn small tip-open" type="button" id="plTipOpen" hidden title="使い方のヒントを表示" aria-label="使い方のヒントを表示">💡</button>
+          <button class="btn small tip-open" type="button" id="plTipOpen" hidden data-tip="使い方のヒントを表示" aria-label="使い方のヒントを表示">💡</button>
         </div>
         <div class="prow">
           <!-- プレイリストの切り替え。iPhone / iPad の標準のメニューは幅が狭いので、ページ側でメニューを開く（中身は隠した select から作る） -->
