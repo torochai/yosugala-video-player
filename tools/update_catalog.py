@@ -156,13 +156,25 @@ def main():
             if s.get('end') is not None:
                 s['len'] = s['end'] - s['start']
         out.append(s)
+    # 同じ公演・同じ曲の単独映像があるときは、フルライブのチャプターに「非表示」の印を付ける（データには残す）
+    if ov.get('prefer_single_over_full', True):
+        singles = {(x['live'], x['song']): x['vid'] for x in out if x['kind'] == 'single' and x['live']}
+        hidden = 0
+        for x in out:
+            key = (x['live'], x['song'])
+            if x['kind'] == 'full' and key in singles:
+                x.update(hidden=True, hidden_reason='単独映像あり', duplicate_of=singles[key]); hidden += 1
+        print(f'単独映像と重なるフルライブのチャプター {hidden} 件に非表示の印を付けました')
     out.sort(key=lambda s: (s['song'].casefold(), s['date']), reverse=False)
 
     with open(OUT, 'w', encoding='utf-8') as f:
-        json.dump({'updated': datetime.date.today().isoformat(), 'count': len(out), 'songs': out},
+        visible = sum(1 for x in out if not x.get('hidden'))
+        json.dump({'updated': datetime.date.today().isoformat(), 'count': visible, 'total': len(out),
+                   'hidden': len(out) - visible, 'songs': out},
                   f, ensure_ascii=False, indent=1)
     names = sorted({s['song'] for s in out}, key=str.casefold)
-    print(f'catalog.json を更新しました: {len(out)} 件（{len(names)} 曲）')
+    vis = sum(1 for x in out if not x.get('hidden'))
+    print(f'catalog.json を更新しました: 全 {len(out)} 件（表示 {vis} 件・非表示 {len(out) - vis} 件／{len(names)} 曲）')
     print('曲名一覧: ' + ' / '.join(names))
 
 

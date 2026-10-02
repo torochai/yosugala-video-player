@@ -1,5 +1,6 @@
 {
-  "_説明": "update_catalog.py が catalog.json を作るときの手直し。aliases=曲名の統一、live_rules=動画タイトル(正規表現)→表示するライブ名、segments=「動画ID@開始秒」ごとの開始・終了の修正、exclude_videos/exclude_entries=除外",
+  "_説明": "update_catalog.py が catalog.json を作るときの手直し。prefer_single_over_full=true なら、単独映像と重なるフルライブのチャプターに hidden の印を付けてプレイヤーで非表示にする（データには残る）。aliases=曲名の統一、live_rules=動画タイトル(正規表現)→表示するライブ名、segments=「動画ID@開始秒」ごとの開始・終了の修正、exclude_videos/exclude_entries=除外",
+  "prefer_single_over_full": true,
   "aliases": {
     "MyDear": "My Dear",
     "sparkle": "Sparkle",

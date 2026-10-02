@@ -1,6 +1,8 @@
 {
  "updated": "2026-10-02",
- "count": 131,
+ "count": 112,
+ "total": 131,
+ "hidden": 19,
  "songs": [
   {
    "song": "aspiration",
@@ -10,7 +12,10 @@
    "len": 242,
    "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
    "date": "2023-10-21",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "CwXrM5fKfhk"
   },
   {
    "song": "aspiration",
@@ -171,7 +176,10 @@
    "len": 232,
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "date": "2025-10-05",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "C1jaUFFHprk"
   },
   {
    "song": "indigo",
@@ -191,7 +199,10 @@
    "len": 233,
    "live": "tour2025 FINAL",
    "date": "2026-05-26",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "gY75OWSIkuE"
   },
   {
    "song": "My Dear",
@@ -281,7 +292,10 @@
    "len": 245,
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "date": "2025-10-05",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "EU9yoFuV-2A"
   },
   {
    "song": "prologue",
@@ -321,7 +335,10 @@
    "len": 267,
    "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
    "date": "2023-10-21",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "lo2W_n4YV8Q"
   },
   {
    "song": "Sparkle",
@@ -381,7 +398,10 @@
    "len": 228,
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "date": "2024-11-01",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "p6yD4k9vtsA"
   },
   {
    "song": "YOSUGAL伝説",
@@ -411,7 +431,10 @@
    "len": 259,
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "date": "2025-10-05",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "WGvs8GS_Who"
   },
   {
    "song": "かくれんぼ",
@@ -441,7 +464,10 @@
    "len": 232,
    "live": "tour2025 FINAL",
    "date": "2026-05-26",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "x4nkkUcnD_Q"
   },
   {
    "song": "ひとりごと",
@@ -491,7 +517,10 @@
    "len": 218,
    "live": "progress the night -LIQUIDROOM-",
    "date": "2024-02-18",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "cZm8gx38xNk"
   },
   {
    "song": "ろーるぷれいんぐ",
@@ -541,7 +570,10 @@
    "len": 272,
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "date": "2024-11-01",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "zFgFUba5RKE"
   },
   {
    "song": "アステリズム",
@@ -581,7 +613,10 @@
    "len": 283,
    "live": "tour2025 FINAL",
    "date": "2026-05-26",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "TLd87vVGwQI"
   },
   {
    "song": "エスカレート",
@@ -631,7 +666,10 @@
    "len": 195,
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "date": "2025-10-05",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "ir9JQdYAY5w"
   },
   {
    "song": "エスカレート",
@@ -701,7 +739,10 @@
    "len": 239,
    "live": "tour2025 FINAL",
    "date": "2026-05-26",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "qtnGksfbgIA"
   },
   {
    "song": "オヒメサマ？",
@@ -751,7 +792,10 @@
    "len": 242,
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "date": "2025-10-05",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "Edp42ExfCQw"
   },
   {
    "song": "オヒメサマ？",
@@ -781,7 +825,10 @@
    "len": 219,
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "date": "2025-10-05",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "K5DhUNxzjtI"
   },
   {
    "song": "コノユビトマレ",
@@ -831,7 +878,10 @@
    "len": 329,
    "live": "progress the night -LIQUIDROOM-",
    "date": "2024-02-18",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "psMx676P7DQ"
   },
   {
    "song": "ソラノナミダ",
@@ -901,7 +951,10 @@
    "len": 180,
    "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
    "date": "2023-10-21",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "MOY2kpSDzzs"
   },
   {
    "song": "マルバツゲーム",
@@ -1191,7 +1244,10 @@
    "len": 208,
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "date": "2024-11-01",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "esuXMAe4_Y4"
   },
   {
    "song": "夜更かしして寝坊するんだ",
@@ -1291,7 +1347,10 @@
    "len": 172,
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "date": "2024-11-01",
-   "kind": "full"
+   "kind": "full",
+   "hidden": true,
+   "hidden_reason": "単独映像あり",
+   "duplicate_of": "sqEjT3sxtms"
   },
   {
    "song": "鬼さんこちらときめく方へ",

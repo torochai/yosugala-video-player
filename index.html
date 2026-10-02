@@ -589,7 +589,8 @@ const pl = () => (state.current === CATALOG_ID && catalog ? catalogPl : null)
   || state.playlists.find((p) => p.id === state.current) || state.playlists[0];
 fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   catalog = c;
-  catalogAll = c.songs.map((x) => ({ id: `c:${x.vid}@${x.start}`, vid: x.vid, start: x.start, end: x.end, title: x.song,
+  // hidden の付いたもの（単独映像と重なるフルライブのチャプターなど）は一覧に出さない
+  catalogAll = c.songs.filter((x) => !x.hidden).map((x) => ({ id: `c:${x.vid}@${x.start}`, vid: x.vid, start: x.start, end: x.end, title: x.song,
     live: x.live || (x.date ? `${x.date} 公開` : ''), len: x.len ?? null }));
   renderAll();
 }).catch(() => {});
