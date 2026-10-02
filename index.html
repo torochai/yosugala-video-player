@@ -258,6 +258,8 @@
   .actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
   footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: .76rem; line-height: 1.8; }
   footer a { color: var(--moon); }
+  footer ul { margin: 0; padding-left: 1.2em; }
+  footer li + li { margin-top: 4px; }
   [hidden] { display: none !important; }
   .btn[aria-pressed="true"] { border-color: var(--moon); color: #fff; box-shadow: 0 0 14px rgba(185,203,255,.3); }
   .controls { flex-wrap: wrap; }
@@ -435,11 +437,13 @@
   </div>
 
   <footer>
-    iPhone で全画面表示にしたいときは、Safari の共有ボタン →「ホーム画面に追加」で追加したアイコンから開いてください。<br>
-    プレイリストはこのブラウザに保存されます。別の端末で使うときや人に渡すときは「共有」か「書き出し / 読み込み」を使ってください。<br>
-    YouTube Premium の方へ：iPhone / iPad の Safari では、Premium でもこのページの再生中に広告が出ることがあります。「設定」→「アプリ」→「Safari」→「サイト越えトラッキングを防ぐ」をオフにして、Safari で youtube.com にログインしてから開き直すと、広告が出なくなる場合があります（この設定は Safari 全体に効きます）。<br>
-    このページは yosugala 公式とは関係のない、ファンによる非公式のページです。映像はすべて YouTube の埋め込みで公式動画を再生しており、権利は
-    <a href="https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q" target="_blank" rel="noopener">yosugala official</a> および各権利者に帰属します。
+    <ul>
+      <li>iPhone で全画面表示にしたいときは、Safari の共有ボタン →「ホーム画面に追加」で追加したアイコンから開いてください。</li>
+      <li>プレイリストはこのブラウザに保存されます。別の端末で使うときや人に渡すときは「共有」か「書き出し / 読み込み」を使ってください。</li>
+      <li>YouTube Premium の方へ：iPhone / iPad の Safari では、Premium でもこのページの再生中に広告が出ることがあります。「設定」→「アプリ」→「Safari」→「サイト越えトラッキングを防ぐ」をオフにして、Safari で youtube.com にログインしてから開き直すと、広告が出なくなる場合があります（この設定は Safari 全体に効きます）。</li>
+      <li>このページは yosugala 公式とは関係のない、ファンによる非公式のページです。映像はすべて YouTube の埋め込みで公式動画を再生しており、権利は
+        <a href="https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q" target="_blank" rel="noopener">yosugala official</a> および各権利者に帰属します。</li>
+    </ul>
   </footer>
 </main>
 
@@ -1010,13 +1014,15 @@ document.addEventListener('keydown', (e) => {
   if (!plMenu) return;
   if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closePlMenu(true); return; }
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-    e.preventDefault();
+    e.preventDefault(); e.stopPropagation();   // メニューを開いている間は、ほかのショートカットに渡さない
     const items = [...plMenu.querySelectorAll('button:not(:disabled)')], i = items.indexOf(document.activeElement);
     items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus();
   }
 }, true);
 window.addEventListener('scroll', () => closePlMenu(false), { passive: true });
-window.addEventListener('resize', () => closePlMenu(false));
+// iPhone / iPad の Safari はアドレスバーの出し入れで高さだけが変わるので、閉じるのは横幅が変わったとき（回転など）だけ
+let menuW = innerWidth;
+window.addEventListener('resize', () => { if (innerWidth !== menuW) { menuW = innerWidth; closePlMenu(false); } });
 // 説明文（URL だけリンクにして、それ以外はテキストのまま表示）
 // 作成者は名前だけ: URL・@ID・空になったカッコを取り除く
 function authorName(x) {
