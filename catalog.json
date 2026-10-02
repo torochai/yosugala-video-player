@@ -29,8 +29,10 @@
     "canvas",
     "夜明けの唄"
    ],
-   "source": "https://tobimaru.hateblo.jp/entry/2023/10/21/000000",
-   "note": "aspiration はこの公演で初披露の新曲。"
+   "source": [
+    "https://tobimaru.hateblo.jp/entry/2023/10/21/000000",
+    "https://www.youtube.com/watch?v=vvXavz88D0g"
+   ]
   },
   "progress the night -LIQUIDROOM-": {
    "date": "2024-02-18",
@@ -53,13 +55,13 @@
     "夜明けの唄",
     "四葉のクローバー",
     "ソラノナミダ",
-    "indigo",
+    "indigo"
+   ],
+   "encore": [
     "canvas",
     "Sparkle"
    ],
-   "encore": [],
-   "source": "https://www.youtube.com/watch?v=nd6EJzBDS60",
-   "note": "アンコールの区切りは記載がないため分けていません。"
+   "source": "https://lp.p.pia.jp/article/news/338555/index.html"
   },
   "tour2024 aki「春に廻れなかった場所編」Final": {
    "date": "2024-11-01",
@@ -117,7 +119,7 @@
     "オトギバナシ",
     "四葉のクローバー"
    ],
-   "source": "https://www.youtube.com/watch?v=9C9p08K1oAA"
+   "source": "https://natalie.mu/music/news/611846"
   },
   "tour2025 FINAL": {
    "date": "2025-07-25",
@@ -181,22 +183,27 @@
     "canvas",
     "indigo"
    ],
-   "source": "https://spice.eplus.jp/articles/319962",
-   "note": "indigo は本編とアンコールの2回披露されていて、映像がどちらかは分からないため、本編の位置に並べています。"
+   "source": [
+    "https://yosugala-unofficial.info/lives/1rz0BpOYLfLtX8HhXKFQSj/",
+    "https://spice.eplus.jp/articles/319962"
+   ],
+   "encore_video": [
+    "indigo"
+   ]
   },
   "tour2024 Final": {
    "date": "2024-06-22",
    "venue": "Spotify O-EAST",
    "main": [
-    "嘘とか愛とか",
-    "ろーるぷれいんぐ",
-    "sailing!!",
-    "会心の一撃",
-    "オヒメサマ？",
-    "エスカレート",
-    "マルバツゲーム",
-    "ムチャクチャ",
     "aspiration",
+    "ろーるぷれいんぐ",
+    "オヒメサマ？",
+    "会心の一撃",
+    "sailing!!",
+    "ムチャクチャ",
+    "マルバツゲーム",
+    "エスカレート",
+    "嘘とか愛とか",
     "裸足のまま",
     "僕に願いを",
     "オトギバナシ",
@@ -210,22 +217,22 @@
     "Sparkle",
     "prologue"
    ],
-   "source": "https://www.livefans.jp/events/1644430"
+   "source": "https://natalie.mu/music/news/579403"
   },
   "3rd anniversary live「progress the night -日比谷公園大音楽堂-」": {
    "date": "2025-06-22",
    "venue": "日比谷公園大音楽堂",
    "main": [
-    "大大大大大感謝",
-    "会心の一撃",
-    "僕のわがまま",
     "コノユビトマレ",
+    "sailing!!",
+    "夜明けの唄",
+    "大大大大大感謝",
     "アステリズム",
     "ろーるぷれいんぐ",
     "YOSUGAL伝説",
-    "sailing!!",
+    "会心の一撃",
     "オトギバナシ",
-    "夜明けの唄",
+    "僕のわがまま",
     "ひとりごと",
     "ソラノナミダ",
     "何億分の1を",
@@ -239,7 +246,7 @@
     "prologue",
     "My Dear"
    ],
-   "source": "https://www.livefans.jp/events/1767044"
+   "source": "https://natalie.mu/music/news/629990"
   }
  },
  "songs": [
@@ -399,7 +406,7 @@
    "kind": "single",
    "date": "2023-06-22",
    "venue": "Spotify O-WEST",
-   "no": 3
+   "no": 4
   },
   {
    "song": "indigo",
@@ -843,7 +850,7 @@
    "kind": "single",
    "date": "2023-06-22",
    "venue": "Spotify O-WEST",
-   "no": 4
+   "no": 3
   },
   {
    "song": "ひとりごと",

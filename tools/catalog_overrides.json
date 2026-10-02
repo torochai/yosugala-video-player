@@ -1,5 +1,5 @@
 {
-  "_説明": "update_catalog.py が catalog.json を作るときの手直し。prefer_single_over_full=true なら、単独映像と重なるフルライブのチャプターに hidden の印を付けてプレイヤーで非表示にする（データには残る）。aliases=曲名の統一、live_rules=動画タイトル(正規表現)→表示するライブ名、segments=「動画ID@開始秒」ごとの開始・終了の修正、exclude_videos/exclude_entries=除外 live_dates=ライブ名→公演日（タイトルに日付がない公演用。並び順と表示に使う）。 video_lives=動画ID→ライブ名（タイトルに公演名がない動画用） live_venues=ライブ名→会場名（「@ 会場名」で表示） setlists=ライブ名→セットリスト（main=本編, encore=アンコール, medley=メドレーの曲, source=出典, note=補足）。プレイリストの説明に表示し、フルライブ映像がない公演では曲順にも使う。",
+  "_説明": "update_catalog.py が catalog.json を作るときの手直し。prefer_single_over_full=true なら、単独映像と重なるフルライブのチャプターに hidden の印を付けてプレイヤーで非表示にする（データには残る）。aliases=曲名の統一、live_rules=動画タイトル(正規表現)→表示するライブ名、segments=「動画ID@開始秒」ごとの開始・終了の修正、exclude_videos/exclude_entries=除外 live_dates=ライブ名→公演日（タイトルに日付がない公演用。並び順と表示に使う）。 video_lives=動画ID→ライブ名（タイトルに公演名がない動画用） live_venues=ライブ名→会場名（「@ 会場名」で表示） setlists=ライブ名→セットリスト（main=本編, encore=アンコール, medley=メドレーの曲, source=出典（URL。複数なら配列）, note=補足, encore_video=本編とアンコールの両方で披露した曲のうち、映像がアンコールのほうの曲）。プレイリストの説明に表示し、フルライブ映像がない公演では曲順にも使う。",
   "prefer_single_over_full": true,
   "aliases": {
     "MyDear": "My Dear",
@@ -114,16 +114,16 @@
     },
     "3rd anniversary live「progress the night -日比谷公園大音楽堂-」": {
       "main": [
-        "大大大大大感謝",
-        "会心の一撃",
-        "僕のわがまま",
         "コノユビトマレ",
+        "sailing!!",
+        "夜明けの唄",
+        "大大大大大感謝",
         "アステリズム",
         "ろーるぷれいんぐ",
         "YOSUGAL伝説",
-        "sailing!!",
+        "会心の一撃",
         "オトギバナシ",
-        "夜明けの唄",
+        "僕のわがまま",
         "ひとりごと",
         "ソラノナミダ",
         "何億分の1を",
@@ -137,7 +137,7 @@
         "prologue",
         "My Dear"
       ],
-      "source": "https://www.livefans.jp/events/1767044"
+      "source": "https://natalie.mu/music/news/629990"
     },
     "progress the night -LINE CUBE SHIBUYA-": {
       "main": [
@@ -164,7 +164,7 @@
         "オトギバナシ",
         "四葉のクローバー"
       ],
-      "source": "https://www.youtube.com/watch?v=9C9p08K1oAA"
+      "source": "https://natalie.mu/music/news/611846"
     },
     "tour2024 aki「春に廻れなかった場所編」Final": {
       "main": [
@@ -195,15 +195,15 @@
     },
     "tour2024 Final": {
       "main": [
-        "嘘とか愛とか",
-        "ろーるぷれいんぐ",
-        "sailing!!",
-        "会心の一撃",
-        "オヒメサマ？",
-        "エスカレート",
-        "マルバツゲーム",
-        "ムチャクチャ",
         "aspiration",
+        "ろーるぷれいんぐ",
+        "オヒメサマ？",
+        "会心の一撃",
+        "sailing!!",
+        "ムチャクチャ",
+        "マルバツゲーム",
+        "エスカレート",
+        "嘘とか愛とか",
         "裸足のまま",
         "僕に願いを",
         "オトギバナシ",
@@ -217,7 +217,7 @@
         "Sparkle",
         "prologue"
       ],
-      "source": "https://www.livefans.jp/events/1644430"
+      "source": "https://natalie.mu/music/news/579403"
     },
     "progress the night -LIQUIDROOM-": {
       "main": [
@@ -238,13 +238,13 @@
         "夜明けの唄",
         "四葉のクローバー",
         "ソラノナミダ",
-        "indigo",
+        "indigo"
+      ],
+      "encore": [
         "canvas",
         "Sparkle"
       ],
-      "encore": [],
-      "source": "https://www.youtube.com/watch?v=nd6EJzBDS60",
-      "note": "アンコールの区切りは記載がないため分けていません。"
+      "source": "https://lp.p.pia.jp/article/news/338555/index.html"
     },
     "QUATTRO tour2023": {
       "main": [
@@ -269,8 +269,10 @@
         "canvas",
         "夜明けの唄"
       ],
-      "source": "https://tobimaru.hateblo.jp/entry/2023/10/21/000000",
-      "note": "aspiration はこの公演で初披露の新曲。"
+      "source": [
+        "https://tobimaru.hateblo.jp/entry/2023/10/21/000000",
+        "https://www.youtube.com/watch?v=vvXavz88D0g"
+      ]
     },
     "ヨモスエダカラ": {
       "main": [
@@ -292,8 +294,13 @@
         "canvas",
         "indigo"
       ],
-      "source": "https://spice.eplus.jp/articles/319962",
-      "note": "indigo は本編とアンコールの2回披露されていて、映像がどちらかは分からないため、本編の位置に並べています。"
+      "source": [
+        "https://yosugala-unofficial.info/lives/1rz0BpOYLfLtX8HhXKFQSj/",
+        "https://spice.eplus.jp/articles/319962"
+      ],
+      "encore_video": [
+        "indigo"
+      ]
     }
   }
 }

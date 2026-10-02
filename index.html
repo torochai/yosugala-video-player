@@ -745,20 +745,25 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
 // playable: フルライブ映像がない公演で、このプレイリストにある（映像で見られる）曲名。その曲に ▶ を付ける
 function setlistText(info, playable) {
   if (!info || !(info.main || []).length) return '';
-  const medley = new Set(info.medley || []);
+  const medley = new Set(info.medley || []), encoreVideo = new Set(info.encore_video || []);
+  // ▶ は映像のあるほうにだけ付ける（本編とアンコールの両方で披露した曲は、encore_video ならアンコール側、それ以外は本編側）
+  const hasVideo = (song, encore) => !!playable && playable.has(song)
+    && (encore ? encoreVideo.has(song) || !info.main.includes(song) : !encoreVideo.has(song));
   // 番号の桁がそろうように、足りない桁は数字と同じ幅の空白（U+2007）で埋める（曲名の位置がずれない）
   const width = String((info.main || []).length + (info.encore || []).length).length;
-  const line = (no, song) => `　${String(no).padStart(width, '\u2007')}. ${song}${medley.has(song) ? '（メドレー）' : ''}${playable && playable.has(song) ? '  ▶' : ''}`;
+  const line = (no, song, encore) => `　${String(no).padStart(width, '\u2007')}. ${song}${medley.has(song) ? '（メドレー）' : ''}${hasVideo(song, encore) ? '  ▶' : ''}`;
   // ⬜️本編 / ⬜️アンコール の見出しのあとに、字下げして通し番号で曲名（番号はアンコールにも続けて振る）
   const out = ['', '', '⬜️ 本編'];
   info.main.forEach((song, i) => out.push(line(i + 1, song)));
   if ((info.encore || []).length) {
     out.push('', '⬜️ アンコール');
-    info.encore.forEach((song, i) => out.push(line(info.main.length + i + 1, song)));
+    info.encore.forEach((song, i) => out.push(line(info.main.length + i + 1, song, true)));
   }
   if (playable) out.push('', '▶ = このプレイリストで見られる曲');
   if (info.note) out.push('', `※ ${info.note}`);
-  if (info.source) out.push('', `出典: ${info.source}`);
+  // 出典は1つでも複数（配列）でもよい
+  const sources = [].concat(info.source || []);
+  if (sources.length) out.push('', '出典:', ...sources);
   return out.join('\n');
 }
 

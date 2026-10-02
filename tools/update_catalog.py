@@ -190,6 +190,7 @@ def main():
         chapter_at = {(x['duplicate_of'], x['song']): x['start'] for x in group if x.get('duplicate_of')}
         sl = setlists.get(live, {})
         setlist = sl.get('main', []) + sl.get('encore', [])
+        encore_video = set(sl.get('encore_video', []))   # 本編とアンコールの両方で披露し、映像はアンコールのほうの曲
 
         def pos(x):
             if x['kind'] == 'full':
@@ -197,7 +198,8 @@ def main():
             if (x['vid'], x['song']) in chapter_at:
                 return (0, chapter_at[(x['vid'], x['song'])], '')
             if x['song'] in setlist:
-                return (1, setlist.index(x['song']), '')
+                i = len(setlist) - 1 - setlist[::-1].index(x['song']) if x['song'] in encore_video else setlist.index(x['song'])
+                return (1, i, '')
             return (2, 0, x['published'])
         for i, x in enumerate(sorted((x for x in group if not x.get('hidden')), key=pos)):
             x['no'] = i + 1
