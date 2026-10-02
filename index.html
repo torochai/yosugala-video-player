@@ -197,6 +197,8 @@
   /* ボタンが多くて並ばないときは、ボタンを次の行（右寄せ）に回す */
   .pinfo { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 10px; }
   .pinfo > div:first-child { min-width: 0; flex: 1 1 11em; }
+  /* 曲数と作成者は1行に並べる（入りきらないときだけ折り返す） */
+  .pinfo > div:first-child { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 14px; }
   /* 1行目: 曲数・作成者、2行目: ボタン列（右寄せ）。PC でもスマホでも同じ2行にする */
   .pactions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; width: 100%; }
   .pl-label { color: var(--muted); font-size: .72rem; letter-spacing: .08em; margin-bottom: -4px; }
