@@ -346,6 +346,10 @@
     /* スマホはシークバーを1段目に、ボタンを2段目に並べる */
     .bar { gap: 2px 4px; padding: 6px 8px 8px; flex-wrap: wrap; justify-content: space-between; }
     #seek { order: -1; flex-basis: 100%; margin: 4px 4px 2px; }
+    /* ボタンが多いので、狭い画面では1段に収まるようボタンの幅を少し縮める（高さはそのまま） */
+    .bar { column-gap: 2px; }
+    .bar > .bicon { flex: 1 1 26px; max-width: 40px; min-width: 0; padding: 0; }
+    .bar > .bicon.main { flex: none; }
   }
   @media (max-width: 600px) {
     /* 縦向きのスマホでは全画面時の曲名を出さない（横向きでは表示） */
@@ -391,6 +395,7 @@
           <button class="bicon" type="button" id="prev" aria-label="前の曲" title="前の曲"></button>
           <button class="bicon main" type="button" id="pp" aria-label="再生" title="再生 / 一時停止（スペース）・ ←→ で10秒移動 ・ 全画面では ↑↓ で前後の曲"></button>
           <button class="bicon" type="button" id="next" aria-label="次の曲" title="次の曲"></button>
+          <button class="bicon" type="button" id="last" aria-label="最後の曲から再生" title="最後の曲から再生"></button>
           <span class="bar-title" id="barTitle"></span>
           <input type="range" id="seek" min="0" max="1" step="0.1" value="0" aria-label="再生位置">
           <span class="time"><span id="tcur">0:00</span> / <span id="tdur">0:00</span></span>
@@ -650,6 +655,7 @@ const ICON = {
   pause: '<svg viewBox="0 0 24 24"><rect class="fill" x="6" y="4.5" width="4" height="15" rx="1"/><rect class="fill" x="14" y="4.5" width="4" height="15" rx="1"/></svg>',
   prev: '<svg viewBox="0 0 24 24"><path d="M6 5v14"/><path class="fill" d="M19 5.5v13L9 12z"/></svg>',
   first: '<svg viewBox="0 0 24 24"><path d="M4 5v14"/><path class="fill" d="M13.5 5.5v13L6 12z"/><path class="fill" d="M21 5.5v13L13.5 12z"/></svg>',
+  last: '<svg viewBox="0 0 24 24"><path d="M20 5v14"/><path class="fill" d="M10.5 5.5v13L18 12z"/><path class="fill" d="M3 5.5v13L10.5 12z"/></svg>',
   next: '<svg viewBox="0 0 24 24"><path d="M18 5v14"/><path class="fill" d="M5 5.5v13L15 12z"/></svg>',
   repeat: '<svg viewBox="0 0 24 24"><path d="M4 11V9a3 3 0 0 1 3-3h12"/><path d="M16 3l3 3-3 3"/><path d="M20 13v2a3 3 0 0 1-3 3H5"/><path d="M8 21l-3-3 3-3"/></svg>',
   repeatOne: '<svg viewBox="0 0 24 24"><path d="M4 11V9a3 3 0 0 1 3-3h12"/><path d="M16 3l3 3-3 3"/><path d="M20 13v2a3 3 0 0 1-3 3H5"/><path d="M8 21l-3-3 3-3"/><text x="12" y="14.6" text-anchor="middle">1</text></svg>',
@@ -975,7 +981,9 @@ function setRepeat(mode) {
 }
 // リピート「全曲」以外で最後の曲を選んでいるときは、「次の曲」は使えない（押しても何もしない）
 const atLastNoWrap = () => state.repeat !== 'all' && items().length > 0 && curIndex() === items().length - 1;
-function updateNextBtn() { $('next').disabled = atLastNoWrap(); }
+// 最後の曲を選んでいるときは、「最後の曲から再生」も使えない（リピートの設定によらない）
+const atLast = () => items().length > 0 && curIndex() === items().length - 1;
+function updateNextBtn() { $('next').disabled = atLastNoWrap(); $('last').disabled = atLast(); }
 function next(auto) {
   const i = curIndex(), n = items().length;
   if (!auto && atLastNoWrap()) return;
@@ -1621,6 +1629,8 @@ save = function () { if (shared) { const keep = state.playlists; state = { ...st
 $('prev').addEventListener('click', () => playIndex(Math.max(0, curIndex() - 1)));
 // 最初の曲から再生（前回の続きの位置が1曲目にあっても使わず、曲の頭から）
 $('first').addEventListener('click', () => { resumeAt = null; playIndex(0); });
+// 最後の曲から再生（曲の頭から）
+$('last').addEventListener('click', () => { if (atLast()) return; resumeAt = null; playIndex(items().length - 1); });
 $('next').addEventListener('click', () => next(false));
 $('repeat').addEventListener('click', () => setRepeat({ off: 'all', all: 'one', one: 'off' }[state.repeat || 'off']));
 setRepeat(state.repeat || 'off');
@@ -1669,7 +1679,7 @@ function togglePlay() {
 }
 $('pp').addEventListener('click', togglePlay);
 $('start').addEventListener('click', () => playIndex(Math.max(0, curIndex())));
-$('pp').innerHTML = ICON.play; $('prev').innerHTML = ICON.prev; $('first').innerHTML = ICON.first; $('next').innerHTML = ICON.next;
+$('pp').innerHTML = ICON.play; $('prev').innerHTML = ICON.prev; $('first').innerHTML = ICON.first; $('next').innerHTML = ICON.next; $('last').innerHTML = ICON.last;
 $('mute').innerHTML = ICON.vol; $('fs').innerHTML = ICON.fs;
 const isFs = () => !!fsEl() || $('stage').classList.contains('pseudo-fs');
 const syncFsIcon = () => {
