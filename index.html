@@ -46,6 +46,8 @@
   }
   * { box-sizing: border-box; }
   html { background: var(--night-0); }
+  /* 画面外へのはみ出しで横スクロールが出ないように（clip は上部固定の sticky を壊さない） */
+  html, body { overflow-x: clip; }
   body { margin: 0; min-height: 100vh; color: var(--text); font-family: var(--sans); line-height: 1.6; background: var(--night-0); }
   /* 星 */
   body::before, body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; }
@@ -243,6 +245,8 @@
   @media (max-width: 900px) {
     main { padding: calc(20px + env(safe-area-inset-top)) 0 40px; }
     .hero, .now, .msg, .banner, .pdesc, footer { margin-left: 16px; margin-right: 16px; }
+    /* タイトル背後のぼかしを画面内に収める */
+    .hero::before { inset: -20px -16px -20px -16px; }
     .layout { grid-template-columns: 1fr; gap: 16px; }
     /* section の枠を外して、動画をページ全体の範囲で上部固定できるようにする */
     .layout > section { display: contents; }
