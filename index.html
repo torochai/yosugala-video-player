@@ -661,7 +661,7 @@ function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catc
 //   / 公演ごと（YYYY.MM.DD「公演名」・セットリスト順）
 const CATALOG_ID = '__catalog__';             // すべてのライブ映像 - 曲順（以前からの ID のまま）
 const CATALOG_DATE_ID = '__catalog_date__';   // すべてのライブ映像 - 公演日順
-const SINGLES_ID = '__catalog_singles__';     // Official Live Video - 公開日順（単独で公開された映像だけ・新しい順）
+const SINGLES_ID = '__catalog_singles__';     // Official Live Video - 公開日順（単独で公開された映像だけ・古い順）
 const LIVE_ID = '__live__:';                  // 公演ごと: LIVE_ID + 公演日 + '|' + 公演名
 let catalog = null, catalogAll = [], catalogPls = [], catQuery = '', lastTarget = null;
 const liveInfo = {};   // 「動画ID@開始秒」→ { date: 公演日, live: 公演名, venue: 会場名 }
@@ -698,11 +698,11 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
     catalogPlaylist(CATALOG_ID, 'すべてのライブ映像 - 曲順', catalogAll, `${about}\n曲名の順に並べています。${CAT_HELP}`),
     catalogPlaylist(CATALOG_DATE_ID, 'すべてのライブ映像 - 公演日順', byDate, `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。${CAT_HELP}`),
   ];
-  // Official Live Video: 1曲ずつ公開された映像（フルライブ映像から切り出したものは入れない）を公開日の新しい順に
+  // Official Live Video: 1曲ずつ公開された映像（フルライブ映像から切り出したものは入れない）を公開日の古い順に
   const singles = c.songs.filter((x) => x.kind === 'single' && !x.hidden)
-    .sort((a, b) => b.published.localeCompare(a.published) || a.song.localeCompare(b.song)).map(toItem);
+    .sort((a, b) => a.published.localeCompare(b.published) || a.song.localeCompare(b.song)).map(toItem);
   catalogPls.push(catalogPlaylist(SINGLES_ID, 'Official Live Video - 公開日順', singles,
-    `yosugala official が1曲ずつ公開している公式ライブ映像（Official Live Video）を、公開日の新しい順に並べています（${singles.length} 本・${c.updated} 時点）。フルライブ映像から切り出した曲は入っていません。\n${CAT_HELP}`));
+    `yosugala official が1曲ずつ公開している公式ライブ映像（Official Live Video）を、公開日の古い順に並べています（${singles.length} 本・${c.updated} 時点）。フルライブ映像から切り出した曲は入っていません。\n${CAT_HELP}`));
   // 公演ごと（公演日が分かるものだけ）。新しい公演が上
   //   フルライブ映像がある公演は、フルライブ映像のチャプターだけをその順に（単独映像と重なるチャプターも使う）
   //   フルライブ映像がない公演は、単独映像をセットリスト順に
