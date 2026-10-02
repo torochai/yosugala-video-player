@@ -1784,6 +1784,16 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('stage
 window.addEventListener('popstate', () => { if ($('stage').classList.contains('pseudo-fs')) setPseudoFs(false, true); });
 if (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
   document.documentElement.classList.add('ios');
+// iPhone の横向きでは「画面の端まで使う」（viewport-fit=cover）を外す。付けたままだと切り欠きぶんの余白が
+// YouTube の埋め込みの中にも伝わり、映像だけが右へずれて左に黒帯が出るため。外すと iPhone が自分で左右を空ける。
+// 縦向きでは、ホーム画面から開いたときに上端まで使えるよう付けたままにする
+const viewportMeta = document.querySelector('meta[name="viewport"]');
+const landscapeMq = matchMedia('(orientation: landscape)');
+function syncViewportFit() {
+  viewportMeta.content = 'width=device-width, initial-scale=1' + (landscapeMq.matches ? '' : ', viewport-fit=cover');
+}
+syncViewportFit();
+landscapeMq.addEventListener('change', syncViewportFit);
 renderAll(); openSharedLib(); applyResume();
 const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
 </script>
