@@ -75,7 +75,7 @@
   h1 .sub { display: block; font-style: italic; font-size: .5em; letter-spacing: .12em;
     background: linear-gradient(90deg, var(--moon), var(--dawn) 60%, var(--dawn-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
   /* X で共有: ページ右上に大きめに置く */
-  .xshare { position: absolute; top: 0; right: 0; display: inline-flex; align-items: center; gap: 8px;
+  .xshare { position: absolute; top: -10px; right: 0;   /* 「UNOFFICIAL FAN-MADE PLAYER」の行に中心をそろえる */ display: inline-flex; align-items: center; gap: 8px;
     padding: 10px 18px; font-size: .95rem; font-weight: 700; z-index: 2;
   }
   .btn.xshare { background: #000; color: #fff; border: 1px solid rgba(255,255,255,.28); }   /* X らしい黒地に白（通常のボタンより優先） */
@@ -83,9 +83,10 @@
   .btn.xshare:hover { background: #16181c; border-color: rgba(255,255,255,.55); box-shadow: 0 0 14px rgba(255,255,255,.15); }
   .xshare svg { width: 18px; height: 18px; }
   @media (max-width: 900px) {
-    /* スマホでは「Live Video Player」の行の右端に並べる */
-    .xshare { top: 51px; padding: 8px 14px; font-size: .85rem; }
-    .xshare svg { width: 16px; height: 16px; }
+    /* スマホでは「UNOFFICIAL FAN-MADE PLAYER」の行の右端に並べる */
+    .xshare { top: -9px; padding: 6px 12px; font-size: .8rem; gap: 6px; }
+    .xshare svg { width: 14px; height: 14px; }
+    .eyebrow { letter-spacing: .2em; }   /* 右端のボタンと重ならないよう、少し詰める */
   }
   .lead { margin: 14px 0 0; color: var(--muted); font-size: .9rem; max-width: 40em; }
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 24px; align-items: start; }
@@ -299,9 +300,9 @@
     <p class="eyebrow">UNOFFICIAL FAN-MADE PLAYER</p>
     <h1>yosugala<span class="sub">Live Video Player</span></h1>
     <p class="lead" id="lead">好きなライブ映像を集めて、自分だけのセットリストで続けて再生。</p>
-    <a class="btn xshare" id="xShare" href="https://x.com/intent/tweet?text=yosugala%20Live%20Video%20Player%20-%20%E5%A5%BD%E3%81%8D%E3%81%AA%E3%83%A9%E3%82%A4%E3%83%96%E6%98%A0%E5%83%8F%E3%82%92%E9%9B%86%E3%82%81%E3%81%A6%E3%80%81%E8%87%AA%E5%88%86%E3%81%A0%E3%81%91%E3%81%AE%E3%82%BB%E3%83%83%E3%83%88%E3%83%AA%E3%82%B9%E3%83%88%E3%81%A7%E7%B6%9A%E3%81%91%E3%81%A6%E5%86%8D%E7%94%9F%E3%80%82%20%23yosugala&url=https%3A%2F%2Ftorochai.github.io%2Fyosugala-video-player%2F%3Fref%3Dx" target="_blank" rel="noopener" aria-label="このプレーヤーを X で共有">
+    <a class="btn xshare" id="xShare" href="https://x.com/intent/tweet?text=yosugala%20Live%20Video%20Player%20-%20%E5%A5%BD%E3%81%8D%E3%81%AA%E3%83%A9%E3%82%A4%E3%83%96%E6%98%A0%E5%83%8F%E3%82%92%E9%9B%86%E3%82%81%E3%81%A6%E3%80%81%E8%87%AA%E5%88%86%E3%81%A0%E3%81%91%E3%81%AE%E3%82%BB%E3%83%83%E3%83%88%E3%83%AA%E3%82%B9%E3%83%88%E3%81%A7%E7%B6%9A%E3%81%91%E3%81%A6%E5%86%8D%E7%94%9F%E3%80%82%20%23yosugala&url=https%3A%2F%2Ftorochai.github.io%2Fyosugala-video-player%2F%3Fref%3Dx" target="_blank" rel="noopener" aria-label="このプレーヤーを X でシェア">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>
-      共有
+      シェア
     </a>
   </header>
 
