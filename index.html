@@ -170,7 +170,8 @@
   .pdesc-body { margin-top: 8px; padding: 16px 18px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #cfd4ea; font-size: .84rem; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
   .pdesc-body a { color: var(--moon); }
-  ol { list-style: none; margin: 0; padding: 0; max-height: min(70vh, 760px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+  /* 曲リストは高さ制限なし（ページごとスクロールして全曲を見る） */
+  ol { list-style: none; margin: 0; padding: 0; }
   li { border-bottom: 1px solid var(--line); }
   li:last-child { border-bottom: 0; }
   li.dragging { opacity: .4; }
@@ -269,7 +270,6 @@
     /* 縦向きのスマホでは全画面時の曲名を出さない（横向きでは表示） */
     .stage.is-fs .bar-title { display: none; }
     .panel { margin: 0 12px; }
-    ol { max-height: none; }
     .row { padding: 12px 14px; }
     .icon { width: 40px; height: 40px; }
     .two { grid-template-columns: 1fr; }
