@@ -187,7 +187,7 @@
   .row .main { min-width: 0; text-align: left; background: none; border: 0; padding: 0; cursor: pointer; }
   .row .t { display: block; overflow-wrap: anywhere; letter-spacing: .02em; }
   .row .s { display: block; color: var(--muted); font-size: .74rem; overflow-wrap: anywhere; }
-  /* 「チャプター切り出し」バッジ */
+  /* 「フルライブ映像より」バッジ */
   .row .tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 4px;
     background: rgba(185,203,255,.16); border: 1px solid rgba(185,203,255,.35);
     font-size: .64rem; font-weight: 700; line-height: 1.4; letter-spacing: .04em; color: var(--moon); vertical-align: 1px; white-space: nowrap; }
@@ -894,12 +894,12 @@ function renderList() {
     const s = document.createElement('span'); s.className = 's';
     const ld = liveDates[`${it.vid}@${it.start}`];
     const liveText = (ld ? ld.replace(/-/g, '.') : '') + quoteLive(it.live);   // YYYY.MM.DD「ライブ名」
-    // フルライブ映像から切り出した曲（途中から始まる・途中で終わる）には「チャプター切り出し」バッジを付ける。
+    // フルライブ映像から切り出した曲（途中から始まる・途中で終わる）には「フルライブ映像より」バッジを付ける。
     // 元動画のどこからどこまでか（時間の範囲）は、編集モードのときだけ表示する
     const partial = !!(it.start || it.end != null);
     const range = editing && partial ? `${fmt(it.start)}〜${it.end != null ? fmt(it.end) : '最後'}` : '';
     s.textContent = [liveText, range].filter(Boolean).join(' ・ ');
-    if (partial) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'チャプター切り出し'; s.appendChild(tag); }
+    if (partial) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'フルライブ映像より'; s.appendChild(tag); }
     main.append(t, s);
     main.addEventListener('click', () => editing ? openSong(it.id) : playIndex(i));
     const d = document.createElement('span'); d.className = 'd'; d.textContent = fmt(itemLen(it));
