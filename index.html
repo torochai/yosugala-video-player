@@ -409,7 +409,7 @@ const DEFAULT_DESC = `yosugala official の公式ライブ映像から、人気�
 ■ 数字に表れないこと
 ・個別の公式動画がない曲（四葉のクローバーなど）は、再生数の点で不利になっています
 ・Spotify などの配信の再生数は含めていません
-・デビュー曲の prologue のような思い入れは反映されていません
+・デビュー曲の prologue のように、再生数や演奏回数では測れない曲の大切さは、順位に入れていません
 
 出典
 https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q
@@ -479,6 +479,7 @@ function load() {
       s.playlists.forEach((p) => {
         p.items = p.items.filter((it) => it && typeof it.vid === 'string');
         if (p.desc == null) p.desc = p.name === DEFAULT_NAME ? DEFAULT_DESC : '';
+        if (p.desc) p.desc = p.desc.replace('・デビュー曲の prologue のような思い入れは反映されていません', '・デビュー曲の prologue のように、再生数や演奏回数では測れない曲の大切さは、順位に入れていません');
       });
       if (s.playlists.length) return s;
     }
