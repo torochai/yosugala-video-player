@@ -154,13 +154,26 @@
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 20px 50px rgba(0,0,0,.4); }
   .phead { padding: 14px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .prow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .prow select { flex: 1 1 160px; min-width: 0; max-width: 100%; text-overflow: ellipsis; border: 1px solid var(--line-2); border-radius: 10px; padding: 9px 38px 9px 12px;
+  .prow select, .plpick { flex: 1 1 160px; min-width: 0; max-width: 100%; text-overflow: ellipsis; border: 1px solid var(--line-2); border-radius: 10px; padding: 9px 38px 9px 12px;
     -webkit-appearance: none; appearance: none; cursor: pointer; font-weight: 500;
     /* 右端の ▼（プルダウンだと分かるように） */
     background: rgba(5,6,15,.5) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b9cbff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 16px;
     transition: border-color .2s, box-shadow .2s; }
-  .prow select:hover { border-color: var(--moon); box-shadow: 0 0 12px rgba(185,203,255,.2); }
+  .plpick { text-align: left; display: flex; align-items: center; min-height: 40px; }
+  .plpick > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .plpick[aria-expanded="true"] { border-color: var(--moon); }
+  .prow select:hover, .plpick:hover { border-color: var(--moon); box-shadow: 0 0 12px rgba(185,203,255,.2); }
   .prow select option, .prow select optgroup { background: #0e1230; color: var(--text); }
+  /* プレイリストのメニュー（プルダウンの真下に、同じ幅で開く。長い名前は折り返す） */
+  .plmenu { position: fixed; z-index: 1000; overflow-y: auto; overscroll-behavior: contain; padding: 6px 0;
+    background: #0e1230; border: 1px solid var(--line-2); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,.6); }
+  .plmenu .g { padding: 8px 14px 4px; color: var(--muted); font-size: .72rem; letter-spacing: .08em; }
+  .plmenu button { display: flex; gap: 8px; width: 100%; text-align: left; padding: 9px 14px; border: 0; background: none;
+    line-height: 1.45; overflow-wrap: anywhere; cursor: pointer; }
+  .plmenu button .ck { flex: none; width: 1em; color: var(--moon); }
+  .plmenu button:hover, .plmenu button:focus-visible { background: rgba(185,203,255,.12); outline: none; }
+  .plmenu button[aria-selected="true"] { color: var(--moon); font-weight: 600; }
+  .plmenu button:disabled { color: var(--muted); cursor: default; background: none; }
   .tip { display: flex; gap: 8px; align-items: flex-start; padding: 10px 10px 10px 12px; border-radius: 10px;
     background: rgba(185,203,255,.08); border: 1px solid var(--line-2); font-size: .78rem; line-height: 1.7; color: #cfd4ea; }
   .tip p { margin: 0; flex: 1; }
@@ -366,7 +379,9 @@
       <div class="phead">
         <div class="pl-label">プレイリスト（タップで切り替え）</div>
         <div class="prow">
-          <select id="plSelect" aria-label="プレイリストを切り替え"></select>
+          <!-- プレイリストの切り替え。iPhone / iPad の標準のメニューは幅が狭いので、ページ側でメニューを開く（中身は隠した select から作る） -->
+          <button class="plpick" type="button" id="plPick" aria-haspopup="listbox" aria-expanded="false" aria-label="プレイリストを切り替え"><span id="plPickLabel"></span></button>
+          <select id="plSelect" hidden aria-hidden="true" tabindex="-1"></select>
         </div>
         <!-- プレイリストを自由に作れること・保存先の案内（× で閉じると次から出さない） -->
         <div class="tip" id="plTip" hidden>
@@ -949,7 +964,59 @@ function renderSelect() {
   catalogPls.forEach((p) => lib.push([p.id, `${p.name} (${p.all.length})`]));
   group('ライブラリ', lib);
   sel.value = pl().id;
+  $('plPickLabel').textContent = sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].textContent : '';
 }
+// プレイリストのメニュー: 隠した select の中身（見出し・項目）から作り、選んだら select の change を起こす
+let plMenu = null;
+function closePlMenu(focusBack) {
+  if (!plMenu) return;
+  plMenu.remove(); plMenu = null; $('plPick').setAttribute('aria-expanded', 'false');
+  if (focusBack) $('plPick').focus();
+}
+function openPlMenu() {
+  const sel = $('plSelect'), btn = $('plPick');
+  const menu = document.createElement('div'); menu.className = 'plmenu'; menu.setAttribute('role', 'listbox');
+  [...sel.children].forEach((g) => {
+    const h = document.createElement('div'); h.className = 'g'; h.textContent = g.label; menu.appendChild(h);
+    [...g.children].forEach((o) => {
+      const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.disabled = o.disabled;
+      b.setAttribute('aria-selected', String(o.value === sel.value && !o.disabled));
+      const ck = document.createElement('span'); ck.className = 'ck'; ck.textContent = o.value === sel.value && !o.disabled ? '✓' : '';
+      const t = document.createElement('span'); t.textContent = o.textContent; b.append(ck, t);
+      b.addEventListener('click', () => {
+        closePlMenu(true);
+        if (o.value === sel.value) return;
+        sel.value = o.value; sel.dispatchEvent(new Event('change'));
+      });
+      menu.appendChild(b);
+    });
+  });
+  // パネルには backdrop-filter があり fixed の基準になってしまうので、メニューは body に置く
+  document.body.appendChild(menu); plMenu = menu; btn.setAttribute('aria-expanded', 'true');
+  // プルダウンの真下に同じ幅で。下に入りきらなければ上に開く
+  const r = btn.getBoundingClientRect(), gap = 6, below = innerHeight - r.bottom - gap - 12, above = r.top - gap - 12;
+  menu.style.left = `${r.left}px`; menu.style.width = `${r.width}px`;
+  if (below >= Math.min(320, menu.scrollHeight) || below >= above) { menu.style.top = `${r.bottom + gap}px`; menu.style.maxHeight = `${below}px`; }
+  else { menu.style.bottom = `${innerHeight - r.top + gap}px`; menu.style.maxHeight = `${above}px`; }
+  (menu.querySelector('[aria-selected="true"]') || menu.querySelector('button:not(:disabled)')).focus({ preventScroll: true });
+  // 選択中の項目が見えるように、メニューの中だけをスクロールする（ページが動くとメニューが閉じるため scrollIntoView は使わない）
+  const cur = menu.querySelector('[aria-selected="true"]');
+  if (cur && cur.offsetTop + cur.offsetHeight > menu.clientHeight) menu.scrollTop = cur.offsetTop - menu.clientHeight / 2;
+}
+$('plPick').addEventListener('click', () => (plMenu ? closePlMenu(false) : openPlMenu()));
+// メニューの外を押す・Esc・ページのスクロールや大きさの変更で閉じる。↑↓で項目を移動
+document.addEventListener('pointerdown', (e) => { if (plMenu && !plMenu.contains(e.target) && !$('plPick').contains(e.target)) closePlMenu(false); });
+document.addEventListener('keydown', (e) => {
+  if (!plMenu) return;
+  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closePlMenu(true); return; }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    const items = [...plMenu.querySelectorAll('button:not(:disabled)')], i = items.indexOf(document.activeElement);
+    items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus();
+  }
+}, true);
+window.addEventListener('scroll', () => closePlMenu(false), { passive: true });
+window.addEventListener('resize', () => closePlMenu(false));
 // 説明文（URL だけリンクにして、それ以外はテキストのまま表示）
 // 作成者は名前だけ: URL・@ID・空になったカッコを取り除く
 function authorName(x) {
@@ -1443,7 +1510,7 @@ const SKIP_SEC = 10;
 document.addEventListener('keydown', (e) => {
   const tgt = e.target instanceof Element ? e.target : null;
   // 文字入力中やダイアログ内では何もしない（ボタンにフォーカスがあってもスペースは再生/停止に使う）
-  if ((tgt && tgt.closest('input:not([type=range]), textarea, select, dialog')) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if ((tgt && tgt.closest('input:not([type=range]), textarea, select, dialog, .plmenu')) || e.metaKey || e.ctrlKey || e.altKey) return;
   // 日本語入力中や大文字でも効くよう、文字ではなくキーの位置（e.code）で判定する
   const code = e.code;
   if (code === 'Space' || code === 'KeyK') { e.preventDefault(); if (tgt && tgt.blur) tgt.blur(); togglePlay(); }
