@@ -10,13 +10,14 @@
    "start": 3621,
    "end": 3863,
    "len": 242,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "CwXrM5fKfhk",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO"
   },
   {
    "song": "aspiration",
@@ -24,10 +25,12 @@
    "start": 0,
    "end": null,
    "len": 243,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-11-25",
    "kind": "single",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 14
   },
   {
    "song": "aspiration",
@@ -38,7 +41,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 14
   },
   {
    "song": "aspiration",
@@ -49,7 +54,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 17
   },
   {
    "song": "aspiration",
@@ -60,7 +67,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 5
   },
   {
    "song": "aspiration",
@@ -71,7 +80,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 4
   },
   {
    "song": "canvas",
@@ -79,10 +90,12 @@
    "start": 4373,
    "end": 4959,
    "len": 586,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 17
   },
   {
    "song": "canvas",
@@ -93,7 +106,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 19
   },
   {
    "song": "canvas",
@@ -104,7 +119,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 19
   },
   {
    "song": "canvas",
@@ -115,7 +132,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 18
   },
   {
    "song": "canvas",
@@ -126,7 +145,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 14
   },
   {
    "song": "indigo",
@@ -134,10 +155,12 @@
    "start": 0,
    "end": null,
    "len": 237,
-   "live": "",
+   "live": "ヨモスエダカラ",
    "published": "2023-08-10",
    "kind": "single",
-   "date": ""
+   "date": "2023-06-22",
+   "venue": "Spotify O-WEST",
+   "no": 4
   },
   {
    "song": "indigo",
@@ -145,10 +168,12 @@
    "start": 67,
    "end": 295,
    "len": 228,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 1
   },
   {
    "song": "indigo",
@@ -160,7 +185,9 @@
    "published": "2024-07-07",
    "kind": "full",
    "_memo": "4740 以降は MC とアンコールのコール",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 18
   },
   {
    "song": "indigo",
@@ -171,7 +198,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 13
   },
   {
    "song": "indigo",
@@ -185,7 +214,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "C1jaUFFHprk",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA"
   },
   {
    "song": "indigo",
@@ -196,7 +226,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-08-08",
    "kind": "single",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 2
   },
   {
    "song": "indigo",
@@ -210,7 +242,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "gY75OWSIkuE",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)"
   },
   {
    "song": "indigo",
@@ -221,7 +254,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-20",
    "kind": "single",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 5
   },
   {
    "song": "My Dear",
@@ -229,10 +264,12 @@
    "start": 0,
    "end": null,
    "len": 278,
-   "live": "tour2024 Final（Spotify O-EAST）",
+   "live": "tour2024 Final",
    "published": "2024-09-20",
    "kind": "single",
-   "date": "2024-06-22"
+   "date": "2024-06-22",
+   "venue": "Spotify O-EAST",
+   "no": 4
   },
   {
    "song": "My Dear",
@@ -243,7 +280,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 20
   },
   {
    "song": "My Dear",
@@ -254,7 +293,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 17
   },
   {
    "song": "My Dear",
@@ -265,7 +306,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 19
   },
   {
    "song": "prologue",
@@ -273,10 +316,12 @@
    "start": 0,
    "end": null,
    "len": 329,
-   "live": "",
+   "live": "ヨモスエダカラ",
    "published": "2023-07-09",
    "kind": "single",
-   "date": ""
+   "date": "2023-06-22",
+   "venue": "Spotify O-WEST",
+   "no": 2
   },
   {
    "song": "prologue",
@@ -284,10 +329,12 @@
    "start": 3863,
    "end": 4106,
    "len": 243,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 15
   },
   {
    "song": "prologue",
@@ -298,7 +345,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 10
   },
   {
    "song": "prologue",
@@ -312,7 +361,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "EU9yoFuV-2A",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA"
   },
   {
    "song": "prologue",
@@ -323,7 +373,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-06-08",
    "kind": "single",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 1
   },
   {
    "song": "prologue",
@@ -334,7 +386,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 21
   },
   {
    "song": "sailing!!",
@@ -342,10 +396,12 @@
    "start": 0,
    "end": null,
    "len": 215,
-   "live": "tour2024 Final（Spotify O-EAST）",
+   "live": "tour2024 Final",
    "published": "2024-07-20",
    "kind": "single",
-   "date": "2024-06-22"
+   "date": "2024-06-22",
+   "venue": "Spotify O-EAST",
+   "no": 1
   },
   {
    "song": "sailing!!",
@@ -356,7 +412,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 2
   },
   {
    "song": "Sparkle",
@@ -364,13 +422,14 @@
    "start": 4106,
    "end": 4373,
    "len": 267,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "lo2W_n4YV8Q",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO"
   },
   {
    "song": "Sparkle",
@@ -378,10 +437,12 @@
    "start": 0,
    "end": null,
    "len": 254,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-11-11",
    "kind": "single",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 16
   },
   {
    "song": "Sparkle",
@@ -392,7 +453,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 20
   },
   {
    "song": "Sparkle",
@@ -403,7 +466,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 15
   },
   {
    "song": "Sparkle",
@@ -414,7 +479,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 15
   },
   {
    "song": "Sparkle",
@@ -425,7 +492,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 24
   },
   {
    "song": "YOSUGAL伝説",
@@ -439,7 +508,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "p6yD4k9vtsA",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI"
   },
   {
    "song": "YOSUGAL伝説",
@@ -450,7 +520,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2024-12-08",
    "kind": "single",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 8
   },
   {
    "song": "YOSUGAL伝説",
@@ -464,7 +536,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "WGvs8GS_Who",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA"
   },
   {
    "song": "YOSUGAL伝説",
@@ -475,7 +548,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-05-09",
    "kind": "single",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 4
   },
   {
    "song": "かくれんぼ",
@@ -486,7 +561,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 16
   },
   {
    "song": "きっかけ",
@@ -500,7 +577,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "x4nkkUcnD_Q",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)"
   },
   {
    "song": "きっかけ",
@@ -511,7 +589,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-19",
    "kind": "single",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 10
   },
   {
    "song": "ひとりごと",
@@ -519,10 +599,12 @@
    "start": 0,
    "end": null,
    "len": 210,
-   "live": "",
+   "live": "ヨモスエダカラ",
    "published": "2023-07-04",
    "kind": "single",
-   "date": ""
+   "date": "2023-06-22",
+   "venue": "Spotify O-WEST",
+   "no": 1
   },
   {
    "song": "ひとりごと",
@@ -530,10 +612,12 @@
    "start": 2010,
    "end": 2222,
    "len": 212,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 10
   },
   {
    "song": "ひとりごと",
@@ -544,7 +628,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 13
   },
   {
    "song": "ひとりごと",
@@ -555,7 +641,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 11
   },
   {
    "song": "ろーるぷれいんぐ",
@@ -569,7 +657,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "cZm8gx38xNk",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM"
   },
   {
    "song": "ろーるぷれいんぐ",
@@ -580,7 +669,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-03-25",
    "kind": "single",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 3
   },
   {
    "song": "ろーるぷれいんぐ",
@@ -591,7 +682,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 3
   },
   {
    "song": "ろーるぷれいんぐ",
@@ -602,7 +695,9 @@
    "live": "3rd anniversary live「progress the night -日比谷公園大音楽堂-」",
    "published": "2026-09-04",
    "kind": "single",
-   "date": "2025-06-22"
+   "date": "2025-06-22",
+   "venue": "日比谷公園大音楽堂",
+   "no": 1
   },
   {
    "song": "ろーるぷれいんぐ",
@@ -613,7 +708,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 2
   },
   {
    "song": "アステリズム",
@@ -627,7 +724,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "zFgFUba5RKE",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI"
   },
   {
    "song": "アステリズム",
@@ -638,7 +736,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-01-02",
    "kind": "single",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 1
   },
   {
    "song": "アステリズム",
@@ -649,7 +749,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 13
   },
   {
    "song": "アステリズム",
@@ -663,7 +765,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "TLd87vVGwQI",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)"
   },
   {
    "song": "アステリズム",
@@ -674,7 +777,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-17",
    "kind": "single",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 17
   },
   {
    "song": "エスカレート",
@@ -682,10 +787,12 @@
    "start": 1201,
    "end": 1373,
    "len": 172,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 6
   },
   {
    "song": "エスカレート",
@@ -696,7 +803,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 7
   },
   {
    "song": "エスカレート",
@@ -707,7 +816,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 6
   },
   {
    "song": "エスカレート",
@@ -721,7 +832,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "ir9JQdYAY5w",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA"
   },
   {
    "song": "エスカレート",
@@ -732,7 +844,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-05-17",
    "kind": "single",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 6
   },
   {
    "song": "エスカレート",
@@ -743,7 +857,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 3
   },
   {
    "song": "オトギバナシ",
@@ -751,10 +867,12 @@
    "start": 2222,
    "end": 2477,
    "len": 255,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 11
   },
   {
    "song": "オトギバナシ",
@@ -765,7 +883,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 12
   },
   {
    "song": "オトギバナシ",
@@ -776,7 +896,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 12
   },
   {
    "song": "オトギバナシ",
@@ -787,7 +909,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 19
   },
   {
    "song": "オトギバナシ",
@@ -801,7 +925,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "qtnGksfbgIA",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)"
   },
   {
    "song": "オトギバナシ",
@@ -812,7 +937,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-18",
    "kind": "single",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 9
   },
   {
    "song": "オヒメサマ？",
@@ -820,10 +947,12 @@
    "start": 738,
    "end": 999,
    "len": 261,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 4
   },
   {
    "song": "オヒメサマ？",
@@ -834,7 +963,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 4
   },
   {
    "song": "オヒメサマ？",
@@ -845,7 +976,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 18
   },
   {
    "song": "オヒメサマ？",
@@ -859,7 +992,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "Edp42ExfCQw",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA"
   },
   {
    "song": "オヒメサマ？",
@@ -870,7 +1004,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-05-31",
    "kind": "single",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 3
   },
   {
    "song": "オヒメサマ？",
@@ -881,7 +1017,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 22
   },
   {
    "song": "コノユビトマレ",
@@ -895,7 +1033,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "K5DhUNxzjtI",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA"
   },
   {
    "song": "コノユビトマレ",
@@ -906,7 +1045,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-05-04",
    "kind": "single",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 9
   },
   {
    "song": "コノユビトマレ",
@@ -917,7 +1058,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 18
   },
   {
    "song": "スペードのエース",
@@ -925,10 +1068,12 @@
    "start": 295,
    "end": 527,
    "len": 232,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 2
   },
   {
    "song": "スペードのエース",
@@ -939,7 +1084,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 9
   },
   {
    "song": "スペードのエース",
@@ -950,7 +1097,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 5
   },
   {
    "song": "ソラノナミダ",
@@ -964,7 +1113,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "psMx676P7DQ",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM"
   },
   {
    "song": "ソラノナミダ",
@@ -975,7 +1125,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-03-18",
    "kind": "single",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 17
   },
   {
    "song": "ソラノナミダ",
@@ -986,7 +1138,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 16
   },
   {
    "song": "ソラノナミダ",
@@ -997,7 +1151,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 12
   },
   {
    "song": "バカばかC",
@@ -1005,10 +1161,12 @@
    "start": 0,
    "end": null,
    "len": 211,
-   "live": "",
+   "live": "ヨモスエダカラ",
    "published": "2023-07-24",
    "kind": "single",
-   "date": ""
+   "date": "2023-06-22",
+   "venue": "Spotify O-WEST",
+   "no": 3
   },
   {
    "song": "バカばかC",
@@ -1016,10 +1174,12 @@
    "start": 527,
    "end": 738,
    "len": 211,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 3
   },
   {
    "song": "バカばかC",
@@ -1030,7 +1190,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 5
   },
   {
    "song": "マルバツゲーム",
@@ -1038,13 +1200,14 @@
    "start": 1373,
    "end": 1553,
    "len": 180,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "MOY2kpSDzzs",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO"
   },
   {
    "song": "マルバツゲーム",
@@ -1052,10 +1215,12 @@
    "start": 0,
    "end": null,
    "len": 183,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-11-17",
    "kind": "single",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 7
   },
   {
    "song": "マルバツゲーム",
@@ -1066,7 +1231,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 6
   },
   {
    "song": "マルバツゲーム",
@@ -1077,7 +1244,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 7
   },
   {
    "song": "マルバツゲーム",
@@ -1088,7 +1257,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 8
   },
   {
    "song": "ムチャクチャ",
@@ -1096,10 +1267,12 @@
    "start": 0,
    "end": null,
    "len": 187,
-   "live": "tour2024 Final（Spotify O-EAST）",
+   "live": "tour2024 Final",
    "published": "2024-08-16",
    "kind": "single",
-   "date": "2024-06-22"
+   "date": "2024-06-22",
+   "venue": "Spotify O-EAST",
+   "no": 2
   },
   {
    "song": "会心の一撃",
@@ -1107,10 +1280,12 @@
    "start": 1553,
    "end": 1743,
    "len": 190,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 8
   },
   {
    "song": "会心の一撃",
@@ -1121,7 +1296,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 2
   },
   {
    "song": "会心の一撃",
@@ -1132,7 +1309,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 7
   },
   {
    "song": "会心の一撃",
@@ -1143,7 +1322,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 12
   },
   {
    "song": "何億分の1を",
@@ -1154,7 +1335,9 @@
    "live": "3rd anniversary live「progress the night -日比谷公園大音楽堂-」",
    "published": "2026-09-02",
    "kind": "single",
-   "date": "2025-06-22"
+   "date": "2025-06-22",
+   "venue": "日比谷公園大音楽堂",
+   "no": 2
   },
   {
    "song": "何億分の1を",
@@ -1165,7 +1348,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 1
   },
   {
    "song": "僕に願いを",
@@ -1173,10 +1358,12 @@
    "start": 1743,
    "end": 2010,
    "len": 267,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 9
   },
   {
    "song": "僕に願いを",
@@ -1187,7 +1374,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 1
   },
   {
    "song": "僕に願いを",
@@ -1198,7 +1387,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 8
   },
   {
    "song": "僕に願いを",
@@ -1209,7 +1400,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 23
   },
   {
    "song": "僕のわがまま",
@@ -1217,10 +1410,12 @@
    "start": 2477,
    "end": 2693,
    "len": 216,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 12
   },
   {
    "song": "僕のわがまま",
@@ -1231,7 +1426,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 11
   },
   {
    "song": "嘘とか愛とか",
@@ -1239,10 +1436,12 @@
    "start": 999,
    "end": 1201,
    "len": 202,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 5
   },
   {
    "song": "嘘とか愛とか",
@@ -1253,7 +1452,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 8
   },
   {
    "song": "四葉のクローバー",
@@ -1261,10 +1462,12 @@
    "start": 2693,
    "end": 3621,
    "len": 928,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 13
   },
   {
    "song": "四葉のクローバー",
@@ -1275,7 +1478,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 16
   },
   {
    "song": "四葉のクローバー",
@@ -1286,7 +1491,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 20
   },
   {
    "song": "四葉のクローバー",
@@ -1297,7 +1504,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 16
   },
   {
    "song": "夜明けの唄",
@@ -1305,10 +1514,12 @@
    "start": 4959,
    "end": 5207,
    "len": 248,
-   "live": "QUATTRO tour2023（SHIBUYA CLUB QUATTRO）",
+   "live": "QUATTRO tour2023",
    "published": "2023-12-31",
    "kind": "full",
-   "date": "2023-10-21"
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "no": 18
   },
   {
    "song": "夜明けの唄",
@@ -1319,7 +1530,9 @@
    "live": "progress the night -LIQUIDROOM-",
    "published": "2024-07-07",
    "kind": "full",
-   "date": "2024-02-18"
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "no": 15
   },
   {
    "song": "夜明けの唄",
@@ -1330,7 +1543,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 14
   },
   {
    "song": "夜明けの唄",
@@ -1341,7 +1556,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 14
   },
   {
    "song": "夜明けの唄",
@@ -1352,7 +1569,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 15
   },
   {
    "song": "夜更かしして寝坊するんだ",
@@ -1366,7 +1585,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "esuXMAe4_Y4",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI"
   },
   {
    "song": "夜更かしして寝坊するんだ",
@@ -1377,7 +1597,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-01-23",
    "kind": "single",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 9
   },
   {
    "song": "夜更かしして寝坊するんだ",
@@ -1388,7 +1610,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 11
   },
   {
    "song": "夜更かしして寝坊するんだ",
@@ -1399,7 +1623,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 11
   },
   {
    "song": "大大大大大感謝",
@@ -1410,7 +1636,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 7
   },
   {
    "song": "宇宙旅行",
@@ -1421,7 +1649,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 20
   },
   {
    "song": "裸足のまま",
@@ -1429,10 +1659,12 @@
    "start": 0,
    "end": null,
    "len": 294,
-   "live": "tour2024 Final（Spotify O-EAST）",
+   "live": "tour2024 Final",
    "published": "2024-09-27",
    "kind": "single",
-   "date": "2024-06-22"
+   "date": "2024-06-22",
+   "venue": "Spotify O-EAST",
+   "no": 3
   },
   {
    "song": "裸足のまま",
@@ -1443,7 +1675,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-03-25",
    "kind": "full",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 10
   },
   {
    "song": "裸足のまま",
@@ -1454,7 +1688,9 @@
    "live": "progress the night -LINE CUBE SHIBUYA-",
    "published": "2025-10-05",
    "kind": "full",
-   "date": "2025-02-08"
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "no": 10
   },
   {
    "song": "裸足のまま",
@@ -1465,7 +1701,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 13
   },
   {
    "song": "鬼さんこちらときめく方へ",
@@ -1479,7 +1717,8 @@
    "hidden": true,
    "hidden_reason": "単独映像あり",
    "duplicate_of": "sqEjT3sxtms",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI"
   },
   {
    "song": "鬼さんこちらときめく方へ",
@@ -1490,7 +1729,9 @@
    "live": "tour2024 aki「春に廻れなかった場所編」Final",
    "published": "2025-01-24",
    "kind": "single",
-   "date": "2024-11-01"
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "no": 4
   },
   {
    "song": "鬼さんこちらときめく方へ",
@@ -1501,7 +1742,9 @@
    "live": "tour2025 FINAL",
    "published": "2026-05-26",
    "kind": "full",
-   "date": "2025-07-25"
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "no": 6
   }
  ]
 }

@@ -152,9 +152,9 @@
   /* プレイリスト */
   .panel { background: var(--glass); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 20px 50px rgba(0,0,0,.4); }
-  .phead { padding: 14px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+  .phead { padding: 14px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .prow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .prow select { flex: 1 1 160px; min-width: 0; border: 1px solid var(--line-2); border-radius: 10px; padding: 9px 38px 9px 12px;
+  .prow select { flex: 1 1 160px; min-width: 0; max-width: 100%; text-overflow: ellipsis; border: 1px solid var(--line-2); border-radius: 10px; padding: 9px 38px 9px 12px;
     -webkit-appearance: none; appearance: none; cursor: pointer; font-weight: 500;
     /* 右端の ▼（プルダウンだと分かるように） */
     background: rgba(5,6,15,.5) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b9cbff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 16px;
@@ -369,7 +369,7 @@
           <p>好きな曲を集めて、自由にプレイリストを作れます（「＋ 新規作成」や「複製して編集」から）。作ったプレイリストはこのブラウザに保存されます。別の端末で使うときは「共有リンク」で移せます。</p>
           <button class="icon tip-close" type="button" id="plTipClose" aria-label="この案内を閉じる">✕</button>
         </div>
-        <!-- 「すべてのライブ映像」を開いているときの検索と追加 -->
+        <!-- ライブ映像の一覧（すべてのライブ映像・公演ごと）を開いているときの検索と追加 -->
         <div class="cattools" id="catTools" hidden>
           <input type="search" id="catSearch" placeholder="曲名・ライブ名で絞り込み" autocomplete="off" aria-label="曲名・ライブ名で絞り込み">
           <div class="prow">
@@ -655,33 +655,58 @@ function load() {
 }
 let state = load();
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
-// 「すべてのライブ映像」: catalog.json（tools/update_catalog.py で作る）から作る読み取り専用のプレイリスト
-const CATALOG_ID = '__catalog__';
-let catalog = null, catalogAll = [], catQuery = '', lastTarget = null;
-const liveDates = {};   // 「動画ID@開始秒」→ 公演日
+// catalog.json（tools/update_catalog.py で作る）から作る読み取り専用のプレイリスト
+//   すべてのライブ映像 - 曲順（曲名順）/ すべてのライブ映像 - 公演日順 / 公演ごと（YYYY.MM.DD「公演名」・セットリスト順）
+const CATALOG_ID = '__catalog__';             // すべてのライブ映像 - 曲順（以前からの ID のまま）
+const CATALOG_DATE_ID = '__catalog_date__';   // すべてのライブ映像 - 公演日順
+const LIVE_ID = '__live__:';                  // 公演ごと: LIVE_ID + 公演日 + '|' + 公演名
+let catalog = null, catalogAll = [], catalogPls = [], catQuery = '', lastTarget = null;
+const liveInfo = {};   // 「動画ID@開始秒」→ { date: 公演日, live: 公演名, venue: 会場名 }
+const infoOf = (it) => liveInfo[`${it.vid}@${it.start}`] || {};
 const catSelected = new Set();
 const normq = (x) => String(x || '').normalize('NFKC').toLowerCase();
-const catalogPl = {
-  id: CATALOG_ID, readonly: true, author: '',
-  name: 'すべてのライブ映像',
-  get desc() {
-    return catalog ? `yosugala official の公式ライブ映像を、曲ごとに分けた一覧です（${catalogAll.length} 件・${catalog.updated} 時点）。新しい公式ライブ映像が出たら追加していきます。
-曲の右の「＋」、またはチェックを入れて「選択した曲をプレイリストに追加」で、好きなプレイリストに入れられます。上の欄で曲名やライブ名を絞り込めます。` : '';
-  },
-  get items() {
-    const q = normq(catQuery).trim();
-    return q ? catalogAll.filter((it) => normq(`${it.title} ${it.live} ${liveDates[`${it.vid}@${it.start}`] || ''}`).includes(q)) : catalogAll;
-  },
-};
-const pl = () => (state.current === CATALOG_ID && catalog ? catalogPl : null)
+const dotDate = (d) => d.replace(/-/g, '.');
+const CAT_HELP = '曲の右の「＋」、またはチェックを入れて「選択した曲をプレイリストに追加」で、好きなプレイリストに入れられます。上の欄で曲名やライブ名を絞り込めます。';
+function catalogPlaylist(id, name, all, desc) {
+  return {
+    id, name, all, desc, readonly: true, catalog: true, author: '',
+    get items() {
+      const q = normq(catQuery).trim();
+      if (!q) return all;
+      return all.filter((it) => { const x = infoOf(it); return normq(`${it.title} ${x.live || it.live} ${x.date || ''} ${x.venue || ''}`).includes(q); });
+    },
+  };
+}
+const pl = () => catalogPls.find((p) => p.id === state.current)
   || state.playlists.find((p) => p.id === state.current) || state.playlists[0];
 fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   catalog = c;
+  // 公演日・公演名・会場名（分かるものだけ）。どのプレイリストの曲でも、同じ動画・同じ開始位置なら表示する
+  c.songs.forEach((x) => { liveInfo[`${x.vid}@${x.start}`] = { date: x.date || '', live: x.live || '', venue: x.venue || '' }; });
   // hidden の付いたもの（単独映像と重なるフルライブのチャプターなど）は一覧に出さない
-  catalogAll = c.songs.filter((x) => !x.hidden).map((x) => ({ id: `c:${x.vid}@${x.start}`, vid: x.vid, start: x.start, end: x.end, title: x.song,
-    live: x.live || '', len: x.len ?? null }));
-  // 公演日（分かるものだけ）。どのプレイリストの曲でも、同じ動画・同じ開始位置なら表示する
-  c.songs.forEach((x) => { if (x.date) liveDates[`${x.vid}@${x.start}`] = x.date; });
+  const visible = c.songs.filter((x) => !x.hidden);
+  const toItem = (x) => ({ id: `c:${x.vid}@${x.start}`, vid: x.vid, start: x.start, end: x.end, title: x.song, live: x.live || '', len: x.len ?? null });
+  catalogAll = visible.map(toItem);   // catalog.json の並び = 曲名順（同じ曲の中は公演日の古い順）
+  // 公演日順: 公演日の古い順、同じ公演の中はセットリスト順（公演日が分からないものは最後に公開日順）
+  const byLive = (a, b) => (a.date || '9999').localeCompare(b.date || '9999') || (a.no ?? 999) - (b.no ?? 999) || a.published.localeCompare(b.published);
+  const byDate = [...visible].sort(byLive).map(toItem);
+  const about = `yosugala official の公式ライブ映像を、曲ごとに分けた一覧です（${catalogAll.length} 件・${c.updated} 時点）。新しい公式ライブ映像が出たら追加していきます。`;
+  catalogPls = [
+    catalogPlaylist(CATALOG_ID, 'すべてのライブ映像 - 曲順', catalogAll, `${about}\n曲名の順に並べています。${CAT_HELP}`),
+    catalogPlaylist(CATALOG_DATE_ID, 'すべてのライブ映像 - 公演日順', byDate, `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。${CAT_HELP}`),
+  ];
+  // 公演ごと（公演日が分かるものだけ）。新しい公演が上
+  const lives = new Map();
+  visible.filter((x) => x.date && x.live).forEach((x) => {
+    const k = `${x.date}|${x.live}`;
+    if (!lives.has(k)) lives.set(k, []);
+    lives.get(k).push(x);
+  });
+  [...lives.entries()].sort((a, b) => b[0].localeCompare(a[0])).forEach(([k, list]) => {
+    const { date, live, venue } = list[0];
+    catalogPls.push(catalogPlaylist(LIVE_ID + k, `${dotDate(date)}${quoteLive(live)}`, [...list].sort(byLive).map(toItem),
+      `${dotDate(date)}${quoteLive(live)}${venue ? ` @ ${venue}` : ''} の公式ライブ映像を、セットリストの順に並べています（公開されている映像の曲だけです）。\n${CAT_HELP}`));
+  });
   renderAll();
 }).catch(() => {});
 
@@ -707,12 +732,12 @@ function showNow() {
   const list = items(), i = curIndex(), it = list[i];
   $('nowNum').textContent = it ? `${pad(i + 1)} / ${list.length}` : `${list.length} 曲`;
   $('nowTitle').textContent = it ? it.title : pl().name;
-  // ライブ名と公演日（分かるものだけ）
-  const nd = it ? liveDates[`${it.vid}@${it.start}`] : null;
-  // 「公演日: YYYY.MM.DD 「ライブ名」」（間は半角スペース。公演日が分からなければライブ名だけ）
+  // ライブ名と公演日・会場名（分かるものだけ）
+  // 「公演日: YYYY.MM.DD 「ライブ名」 @ 会場名」（間は半角スペース。分からないものは省く）
   // ライブ名は「」で囲む（中にある「」は『』にする）
-  const liveQ = it ? quoteLive(it.live) : '';
-  $('nowLive').textContent = it ? [nd ? `公演日: ${nd.replace(/-/g, '.')}` : '', liveQ].filter(Boolean).join(' ') : '';
+  const x = it ? infoOf(it) : {};
+  $('nowLive').textContent = it ? [x.date ? `公演日: ${dotDate(x.date)}` : '', quoteLive(x.live || it.live), x.venue ? `@ ${x.venue}` : '']
+    .filter(Boolean).join(' ') : '';
   if (it && (it.start || it.end != null)) {   // フルライブ映像から切り出した曲にはバッジ
     const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'フルライブ映像より';
     $('nowLive').appendChild(tag);
@@ -857,10 +882,10 @@ function renderSelect() {
     g.appendChild(opt(NEW_ID, '＋ 新規作成'));   // いちばん下に「新規作成」
     sel.appendChild(g);
   }
-  // ライブラリ: 組み込みのプレイリスト（トロのセレクションなど）。編集はできないが複製できる
-  // ライブラリ: 組み込みのプレイリスト（トロ's セレクションなど）と、いちばん下に「すべてのライブ映像」
+  // ライブラリ: 組み込みのプレイリスト（トロ's セレクションなど）。編集はできないが複製できる
   const lib = state.playlists.filter((p) => p.readonly).map((p) => [p.id, withCount(p)]);
-  if (catalog) lib.push([CATALOG_ID, `${catalogPl.name} (${catalogAll.length})`]);
+  // その下に「すべてのライブ映像」の2つと、公演ごとのプレイリスト（新しい公演が上）
+  catalogPls.forEach((p) => lib.push([p.id, `${p.name} (${p.all.length})`]));
   group('ライブラリ', lib);
   sel.value = pl().id;
 }
@@ -889,6 +914,11 @@ function renderDesc() {
 }
 // ライブ名を「」で囲む（中にある「」は『』にする）
 const quoteLive = (live) => live ? `「${live.replace(/「/g, '『').replace(/」/g, '』')}」` : '';
+// 曲の行のライブ表示「YYYY.MM.DD「ライブ名」 @ 会場名」（カタログにある曲は、カタログの公演日・ライブ名・会場名を使う）
+function liveLine(it) {
+  const x = infoOf(it);
+  return [(x.date ? dotDate(x.date) : '') + quoteLive(x.live || it.live), x.venue ? `@ ${x.venue}` : ''].filter(Boolean).join(' ');
+}
 // PC では曲リストを20曲分の高さまでにして、それ以上は枠の中でスクロールする
 const LIST_MAX_ROWS = 20;
 function fitListHeight() {
@@ -906,7 +936,7 @@ function renderList() {
   const list = items();
   const total = list.reduce((a, it) => a + (itemLen(it) || 0), 0);
   const unknown = list.some((it) => itemLen(it) == null);
-  const cat = pl().id === CATALOG_ID;
+  const cat = !!pl().catalog;
   $('plMeta').textContent = `${list.length} ${cat ? '件' : '曲'}` + (list.length ? ` ・ 約 ${fmt(total)}${unknown ? ' 以上' : ''}` : '');
   if (!list.length) {
     const li = document.createElement('li'); li.className = 'empty';
@@ -926,8 +956,7 @@ function renderList() {
     const main = document.createElement('button'); main.type = 'button'; main.className = 'main';
     const t = document.createElement('span'); t.className = 't'; t.textContent = it.title;
     const s = document.createElement('span'); s.className = 's';
-    const ld = liveDates[`${it.vid}@${it.start}`];
-    const liveText = (ld ? ld.replace(/-/g, '.') : '') + quoteLive(it.live);   // YYYY.MM.DD「ライブ名」
+    const liveText = liveLine(it);   // YYYY.MM.DD「ライブ名」 @ 会場名
     // フルライブ映像から切り出した曲（途中から始まる・途中で終わる）には「フルライブ映像より」バッジを付ける。
     // 元動画のどこからどこまでか（時間の範囲）は、編集モードのときだけ表示する
     const partial = !!(it.start || it.end != null);
@@ -969,7 +998,7 @@ function renderAll() {
   $('editToggle').textContent = editing ? '完了' : '編集'; $('editToggle').hidden = ro;
   $('dupEdit').hidden = !ro;
   $('dupMine').hidden = ro;
-  $('catTools').hidden = pl().id !== CATALOG_ID; renderCatBar(); renderTip();
+  $('catTools').hidden = !pl().catalog; renderCatBar(); renderTip();
 }
 // 案内は「×」で閉じるまで表示（閉じた状態は保存して、次から出さない）
 function renderTip() { $('plTip').hidden = !!state.hideTip; $('plTipOpen').hidden = !state.hideTip; }
@@ -1013,11 +1042,11 @@ $('addNewBtn').addEventListener('click', () => {
 $('catSearch').addEventListener('input', () => { catQuery = $('catSearch').value; renderList(); });
 $('catAll').addEventListener('click', () => { items().forEach((it) => catSelected.add(it.id)); renderList(); renderCatBar(); });
 $('catNone').addEventListener('click', () => { catSelected.clear(); renderList(); renderCatBar(); });
-$('catAdd').addEventListener('click', () => openAdd(catalogAll.filter((it) => catSelected.has(it.id))));
+$('catAdd').addEventListener('click', () => openAdd(pl().all.filter((it) => catSelected.has(it.id))));
 $('dupMine').addEventListener('click', () => { $('plDup').click(); });
 $('dupEdit').addEventListener('click', () => {
   const p = unpack(pack(pl()));   // すべてのライブ映像では、検索で絞り込んだ表示中の曲だけがコピーされる
-  p.name = pl().name + (pl().id === CATALOG_ID && catQuery.trim() ? `「${catQuery.trim()}」` : '') + ' (コピー)';
+  p.name = pl().name + (pl().catalog && catQuery.trim() ? `「${catQuery.trim()}」` : '') + ' (コピー)';
   p.author = ''; p.desc = '';
   state.playlists.push(p); editing = true; switchTo(p.id);
   $('msg').textContent = 'コピーを作りました。このブラウザに保存されます。';
@@ -1151,6 +1180,8 @@ async function createPlaylist() {
 
 // ---------- プレイリスト操作 ----------
 function switchTo(id) {
+  // ライブ映像の一覧を切り替えたら、絞り込みと選択は解除する
+  if (id !== state.current) { catQuery = ''; $('catSearch').value = ''; catSelected.clear(); }
   state.current = id; save(); curId = null;
   started = false; previewing = false; cueIndex(0);
   $('msg').textContent = ''; renderAll();
