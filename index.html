@@ -69,22 +69,25 @@
     border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.55), 0 0 80px rgba(110,130,255,.12); }
   .screen { position: relative; width: 100%; aspect-ratio: 16 / 9; }
   .screen > #player, .screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .bar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: linear-gradient(180deg, #0b1030, #070a1c);
+  .bar { display: flex; align-items: center; gap: 4px; padding: 8px 10px; background: linear-gradient(180deg, #0b1030, #070a1c);
     border-top: 1px solid var(--line); }
   .bicon { background: none; border: 0; color: var(--text); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1rem;
     display: grid; place-items: center; flex: none; }
   .bicon:hover { background: var(--glass-2); color: #fff; box-shadow: 0 0 12px rgba(185,203,255,.25); }
-  .time { font-variant-numeric: tabular-nums; font-size: .78rem; color: var(--muted); min-width: 3.2em; text-align: center; flex: none; }
+  .bicon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .bicon svg .fill { fill: currentColor; stroke: none; }
+  .bicon svg text { fill: currentColor; stroke: none; font: 700 7.5px var(--sans); }
+  .bicon.main { width: 40px; height: 40px; border: 1px solid var(--line-2); }
+  .bicon.main svg { width: 18px; height: 18px; }
+  .bicon.toggle { color: var(--muted); opacity: .7; }
+  .bicon.toggle[aria-pressed="true"] { color: var(--moon); opacity: 1; text-shadow: 0 0 10px var(--moon); filter: drop-shadow(0 0 6px rgba(185,203,255,.55)); }
+  .time { font-variant-numeric: tabular-nums; font-size: .74rem; color: var(--muted); white-space: nowrap; flex: none; padding: 0 2px; }
   .bar input[type=range] { accent-color: var(--moon); cursor: pointer; height: 4px; }
-  #seek { flex: 1; min-width: 60px; }
-  #vol { width: 90px; flex: none; }
-  .start { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
-    color: #fff; border: 0; cursor: pointer; z-index: 2; font-family: var(--serif); font-size: 1.15rem; letter-spacing: .25em;
-    background: radial-gradient(60% 80% at 50% 120%, rgba(243,183,195,.25), transparent 70%), radial-gradient(80% 90% at 50% 0%, #1b2560, #05060f 75%); }
-  .start .play { width: 78px; height: 78px; border-radius: 50%; border: 1px solid rgba(255,255,255,.45); display: grid; place-items: center;
-    box-shadow: 0 0 30px rgba(185,203,255,.35), inset 0 0 20px rgba(185,203,255,.15); transition: transform .2s; }
-  .start:hover .play { transform: scale(1.06); }
-  .start .play::before { content: ""; border-left: 20px solid #fff; border-top: 12px solid transparent; border-bottom: 12px solid transparent; margin-left: 6px; }
+  #seek { flex: 1; min-width: 60px; margin: 0 6px; }
+  /* 音量バーはスピーカーにマウスを乗せたときだけ広がる */
+  .volwrap { display: flex; align-items: center; flex: none; }
+  #vol { width: 0; opacity: 0; margin: 0; transition: width .25s, opacity .25s, margin .25s; }
+  .volwrap:hover #vol, .volwrap:focus-within #vol { width: 72px; opacity: 1; margin: 0 6px 0 2px; }
   .now { display: flex; align-items: flex-end; gap: 14px; margin-top: 18px; flex-wrap: wrap; }
   .now .label { flex: 1 1 240px; min-width: 0; }
   .now .num { font-family: var(--serif); font-style: italic; color: var(--moon); font-size: 1rem; letter-spacing: .1em; }
@@ -152,12 +155,16 @@
   /* フルスクリーン */
   .stage:fullscreen, .stage:-webkit-full-screen { border-radius: 0; border: 0; width: 100vw; height: 100vh; background: #000; }
   .stage:fullscreen .screen, .stage:-webkit-full-screen .screen { flex: 1; aspect-ratio: auto; }
-  .fs-title { display: none; position: absolute; left: 0; right: 0; top: 0; z-index: 3; padding: 22px 28px 40px; pointer-events: none;
-    background: linear-gradient(rgba(0,0,0,.6), transparent); opacity: 0; transition: opacity .8s; }
-  .stage:fullscreen .fs-title, .stage:-webkit-full-screen .fs-title { display: block; }
-  .fs-title.show { opacity: 1; }
-  .fs-num { display: block; font-family: var(--serif); font-style: italic; color: var(--moon); letter-spacing: .1em; }
-  .fs-t { font-size: 1.6rem; font-weight: 700; letter-spacing: .04em; }
+  /* 全画面では曲名をバーに出す（動画の上には何も重ねない） */
+  .bar-title { display: none; min-width: 0; max-width: 32%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: .9rem; font-weight: 700; letter-spacing: .04em; margin: 0 8px; }
+  .bar-title .bn { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--moon); margin-right: 8px; }
+  .stage:fullscreen .bar-title, .stage:-webkit-full-screen .bar-title { display: block; }
+  /* 全画面で3秒操作がないとバーを畳む。下端に細い帯を残し、そこにマウスを持っていくと再表示 */
+  .stage:fullscreen .bar, .stage:-webkit-full-screen .bar { max-height: 80px; overflow: hidden;
+    transition: max-height .35s, padding .35s, opacity .35s; }
+  .stage.idle:fullscreen .bar, .stage.idle:-webkit-full-screen .bar { max-height: 10px; padding-top: 0; padding-bottom: 0; opacity: .35; }
+  .stage.idle:fullscreen, .stage.idle:-webkit-full-screen { cursor: none; }
 
   /* スマホ・タブレット */
   @media (max-width: 900px) {
@@ -173,7 +180,9 @@
     .stage { border-radius: 0; border-left: 0; border-right: 0; }
     /* スマホは本体の音量ボタンで調整するので音量バーは出さない */
     #vol { display: none; }
-    .bar { gap: 6px; padding: 6px 8px; }
+    /* スマホはシークバーを1段目に、ボタンを2段目に並べる */
+    .bar { gap: 2px 4px; padding: 6px 8px 8px; flex-wrap: wrap; justify-content: space-between; }
+    #seek { order: -1; flex-basis: 100%; margin: 4px 4px 2px; }
     .panel { margin: 0 12px; }
     ol { max-height: none; }
     .row { padding: 12px 14px; }
@@ -202,20 +211,22 @@
       <div class="stage-wrap"><div class="stage" id="stage">
         <div class="screen">
           <div id="player"></div>
-          <div class="fs-title" id="fsTitle" aria-hidden="true"><span class="fs-num"></span><span class="fs-t"></span></div>
-          <button class="start" id="start" type="button" aria-label="再生">
-            <span class="play" aria-hidden="true"></span><span>PLAY</span>
-          </button>
         </div>
         <!-- 操作バー（YouTube の操作バーは非表示にして、こちらで操作する） -->
         <div class="bar">
-          <button class="bicon" type="button" id="pp" aria-label="再生">▶</button>
-          <span class="time" id="tcur">0:00</span>
+          <button class="bicon" type="button" id="prev" aria-label="前の曲" title="前の曲"></button>
+          <button class="bicon main" type="button" id="pp" aria-label="再生" title="再生 / 一時停止（スペース）"></button>
+          <button class="bicon" type="button" id="next" aria-label="次の曲" title="次の曲"></button>
+          <span class="bar-title" id="barTitle"></span>
           <input type="range" id="seek" min="0" max="1" step="0.1" value="0" aria-label="再生位置">
-          <span class="time" id="tdur">0:00</span>
-          <button class="bicon" type="button" id="mute" aria-label="ミュート">🔊</button>
-          <input type="range" id="vol" min="0" max="100" step="1" value="100" aria-label="音量">
-          <button class="bicon" type="button" id="fs" aria-label="全画面">⛶</button>
+          <span class="time"><span id="tcur">0:00</span> / <span id="tdur">0:00</span></span>
+          <button class="bicon toggle" type="button" id="repeat" aria-label="リピート"></button>
+          <button class="bicon toggle" type="button" id="cc" aria-label="字幕"></button>
+          <span class="volwrap">
+            <button class="bicon" type="button" id="mute" aria-label="ミュート" title="ミュート（M）"></button>
+            <input type="range" id="vol" min="0" max="100" step="1" value="100" aria-label="音量">
+          </span>
+          <button class="bicon" type="button" id="fs" aria-label="全画面" title="全画面（F）"></button>
         </div>
       </div></div>
       <div class="now">
@@ -223,12 +234,6 @@
           <div class="num" id="nowNum"></div>
           <div class="title" id="nowTitle"></div>
           <div class="live" id="nowLive"></div>
-        </div>
-        <div class="controls">
-          <button class="btn" type="button" id="prev">◀︎ 前へ</button>
-          <button class="btn" type="button" id="next">次へ ▶︎</button>
-          <button class="btn" type="button" id="repeat" aria-label="リピート">リピート：オフ</button>
-          <button class="btn" type="button" id="cc" aria-label="字幕">字幕：オフ</button>
         </div>
       </div>
       <div class="msg" id="msg" role="status"></div>
@@ -329,6 +334,21 @@ const DEFAULT_ITEMS = [
 ];
 const DEFAULT_NAME = '人気曲セレクション 16曲';
 
+// ---------- アイコン（SVG） ----------
+const ICON = {
+  play: '<svg viewBox="0 0 24 24"><path class="fill" d="M7 4.5v15l12.5-7.5z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24"><rect class="fill" x="6" y="4.5" width="4" height="15" rx="1"/><rect class="fill" x="14" y="4.5" width="4" height="15" rx="1"/></svg>',
+  prev: '<svg viewBox="0 0 24 24"><path d="M6 5v14"/><path class="fill" d="M19 5.5v13L9 12z"/></svg>',
+  next: '<svg viewBox="0 0 24 24"><path d="M18 5v14"/><path class="fill" d="M5 5.5v13L15 12z"/></svg>',
+  repeat: '<svg viewBox="0 0 24 24"><path d="M4 11V9a3 3 0 0 1 3-3h12"/><path d="M16 3l3 3-3 3"/><path d="M20 13v2a3 3 0 0 1-3 3H5"/><path d="M8 21l-3-3 3-3"/></svg>',
+  repeatOne: '<svg viewBox="0 0 24 24"><path d="M4 11V9a3 3 0 0 1 3-3h12"/><path d="M16 3l3 3-3 3"/><path d="M20 13v2a3 3 0 0 1-3 3H5"/><path d="M8 21l-3-3 3-3"/><text x="12" y="14.6" text-anchor="middle">1</text></svg>',
+  cc: '<svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><text x="12" y="14.6" text-anchor="middle">CC</text></svg>',
+  vol: '<svg viewBox="0 0 24 24"><path class="fill" d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>',
+  mute: '<svg viewBox="0 0 24 24"><path class="fill" d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>',
+  fs: '<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  fsExit: '<svg viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>',
+};
+
 // ---------- ユーティリティ ----------
 const $ = (id) => document.getElementById(id);
 const pad = (n) => String(n).padStart(2, '0');
@@ -400,7 +420,7 @@ const b64enc = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s))).
 const b64dec = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)));
 
 // ---------- 再生 ----------
-let player = null, ready = false, started = false, curId = null, watchTimer = null;
+let player = null, ready = false, started = false, previewing = false, curId = null, watchTimer = null;
 const items = () => pl().items;
 const curIndex = () => items().findIndex((it) => it.id === curId);
 
@@ -409,8 +429,19 @@ function showNow() {
   $('nowNum').textContent = it ? `${pad(i + 1)} / ${list.length}` : `${list.length} 曲`;
   $('nowTitle').textContent = it ? it.title : pl().name;
   $('nowLive').textContent = it ? it.live : '';
+  $('barTitle').innerHTML = '';
+  if (it) { const n = document.createElement('span'); n.className = 'bn'; n.textContent = pad(i + 1);
+    $('barTitle').append(n, document.createTextNode(it.title)); }
   document.title = it && started ? `${it.title} - yosugala Live Selection` : 'yosugala Live Selection';
   document.querySelectorAll('#list .row').forEach((r) => r.classList.toggle('cur', r.dataset.id === curId));
+}
+function cueIndex(i) {
+  const list = items(), it = list[i];
+  curId = it ? it.id : null; showNow();
+  if (!ready || !it) return;
+  const opts = { videoId: it.vid, startSeconds: it.start };
+  if (it.end != null) opts.endSeconds = it.end;
+  player.cueVideoById(opts);
 }
 function playIndex(i) {
   const list = items();
@@ -418,8 +449,7 @@ function playIndex(i) {
   curId = list[i].id; $('msg').textContent = '';
   showNow();
   if (!ready) return;
-  started = true; $('start').hidden = true;
-  if (fsEl()) flashTitle();
+  started = true; previewing = false;
   const it = list[i], opts = { videoId: it.vid, startSeconds: it.start };
   if (it.end != null) opts.endSeconds = it.end;
   player.loadVideoById(opts);
@@ -434,7 +464,9 @@ function autoNext() {
 const REPEAT_LABEL = { off: 'リピート：オフ', all: 'リピート：全曲', one: 'リピート：1曲' };
 function setRepeat(mode) {
   state.repeat = mode; save();
-  $('repeat').textContent = REPEAT_LABEL[mode];
+  $('repeat').innerHTML = mode === 'one' ? ICON.repeatOne : ICON.repeat;
+  $('repeat').title = REPEAT_LABEL[mode];
+  $('repeat').setAttribute('aria-label', REPEAT_LABEL[mode]);
   $('repeat').setAttribute('aria-pressed', mode !== 'off');
 }
 function next(auto) {
@@ -442,7 +474,7 @@ function next(auto) {
   if (auto && state.repeat === 'one' && i >= 0) return playIndex(i);
   if (i >= 0 && i < n - 1) return playIndex(i + 1);
   if (state.repeat === 'all' && n) return playIndex(0);
-  started = false; player && player.stopVideo(); $('start').hidden = false; showNow();
+  started = false; cueIndex(0);
 }
 function watch() {
   clearInterval(watchTimer);
@@ -459,13 +491,15 @@ window.onYouTubeIframeAPIReady = function () {
     videoId: first ? first.vid : undefined,
     playerVars: { rel: 0, playsinline: 1, controls: 0, cc_load_policy: 0, iv_load_policy: 3, start: first ? Math.floor(first.start) : 0 },
     events: {
-      onReady: () => { ready = true; watch(); applyCaptions(); applyVolume(); },
+      onReady: () => { ready = true; watch(); applyCaptions(); applyVolume(); cueIndex(Math.max(0, curIndex())); },
       // 字幕モジュールが読み込まれたタイミングで、設定に合わせてオン/オフし直す
       onApiChange: () => applyCaptions(),
       onStateChange: (e) => {
         if (e.data === YT.PlayerState.ENDED && started) autoNext();
         // 最後まで再生する曲は長さを覚えておく（リストの表示用）
         if (e.data === YT.PlayerState.PLAYING) { applyCaptions(); setTimeout(applyCaptions, 1500); setTimeout(applyCaptions, 4000); }
+        // 動画を直接クリックして再生が始まったときも、プレイリスト再生として扱う
+        if (e.data === YT.PlayerState.PLAYING && !started && !previewing && curIndex() >= 0) { started = true; showNow(); }
         if (e.data === YT.PlayerState.PLAYING && started) {
           const it = items()[curIndex()];
           if (it && it.end == null && it.len == null && player.getVideoData().video_id === it.vid) {
@@ -597,7 +631,7 @@ $('fPreview').addEventListener('click', () => {
   try {
     const f = readSongForm(); $('fErr').textContent = '';
     if (!ready) return;
-    started = false; $('start').hidden = true;
+    started = false; previewing = true;
     const opts = { videoId: f.vid, startSeconds: f.start }; if (f.end != null) opts.endSeconds = f.end;
     player.loadVideoById(opts);
     $('songDlg').close();
@@ -627,7 +661,7 @@ $('addSong').addEventListener('click', () => openSong(null));
 // ---------- プレイリスト操作 ----------
 function switchTo(id) {
   state.current = id; save(); curId = null;
-  if (started) { started = false; player && player.stopVideo(); $('start').hidden = false; }
+  started = false; previewing = false; cueIndex(0);
   $('msg').textContent = ''; renderAll();
 }
 $('plSelect').addEventListener('change', (e) => switchTo(e.target.value));
@@ -689,7 +723,6 @@ save = function () { if (shared) { const keep = state.playlists; state = { ...st
   _save(); state = { ...state, playlists: keep }; } else _save(); };
 
 // ---------- 起動 ----------
-$('start').addEventListener('click', () => playIndex(Math.max(0, curIndex())));
 $('prev').addEventListener('click', () => playIndex(Math.max(0, curIndex() - 1)));
 $('next').addEventListener('click', () => next(false));
 $('repeat').addEventListener('click', () => setRepeat({ off: 'all', all: 'one', one: 'off' }[state.repeat || 'off']));
@@ -705,7 +738,9 @@ function applyCaptions() {
 }
 function setCaptions(on) {
   state.captions = on; save();
-  $('cc').textContent = on ? '字幕：オン' : '字幕：オフ';
+  $('cc').innerHTML = ICON.cc;
+  $('cc').title = on ? '字幕：オン' : '字幕：オフ';
+  $('cc').setAttribute('aria-label', $('cc').title);
   $('cc').setAttribute('aria-pressed', on);
   applyCaptions();
 }
@@ -716,7 +751,8 @@ $('cc').addEventListener('click', () => setCaptions(!state.captions));
 function segment() {
   const it = items()[curIndex()], dur = player && player.getDuration ? player.getDuration() : 0;
   const vid = player && player.getVideoData ? player.getVideoData().video_id : null;
-  if (started && it && it.vid === vid) return { s: it.start, e: it.end != null ? it.end : dur };
+  const cur = it || items()[0];
+  if (cur && cur.vid === vid && !previewing) return { s: cur.start, e: cur.end != null ? cur.end : dur };
   return { s: 0, e: dur };
 }
 let seeking = false;
@@ -726,15 +762,31 @@ setInterval(() => {
   if (!seeking) { $('seek').max = len || 1; $('seek').value = t; $('tcur').textContent = fmt(t); }
   $('tdur').textContent = fmt(len);
   const playing = player.getPlayerState() === YT.PlayerState.PLAYING;
-  $('pp').textContent = playing ? '❚❚' : '▶';
+  if ($('pp').dataset.s !== String(playing)) { $('pp').dataset.s = playing; $('pp').innerHTML = playing ? ICON.pause : ICON.play; }
   $('pp').setAttribute('aria-label', playing ? '一時停止' : '再生');
 }, 250);
 function togglePlay() {
   if (!ready) return;
-  if (!$('start').hidden) return playIndex(Math.max(0, curIndex()));
+  if (!started && !previewing) return playIndex(Math.max(0, curIndex()));
   player.getPlayerState() === YT.PlayerState.PLAYING ? player.pauseVideo() : player.playVideo();
 }
 $('pp').addEventListener('click', togglePlay);
+$('pp').innerHTML = ICON.play; $('prev').innerHTML = ICON.prev; $('next').innerHTML = ICON.next;
+$('mute').innerHTML = ICON.vol; $('fs').innerHTML = ICON.fs;
+const syncFsIcon = () => { $('fs').innerHTML = fsEl() ? ICON.fsExit : ICON.fs; };
+document.addEventListener('fullscreenchange', syncFsIcon);
+document.addEventListener('webkitfullscreenchange', syncFsIcon);
+let idleTimer = null;
+function wake() {
+  $('stage').classList.remove('idle'); clearTimeout(idleTimer);
+  if (fsEl()) idleTimer = setTimeout(() => {
+    if (fsEl() && player.getPlayerState() === YT.PlayerState.PLAYING && !seeking)
+      $('stage').classList.add('idle');
+  }, 3000);
+}
+['mousemove', 'mousedown', 'touchstart', 'keydown'].forEach((ev) => document.addEventListener(ev, wake, { passive: true }));
+document.addEventListener('fullscreenchange', wake);
+document.addEventListener('webkitfullscreenchange', wake);
 $('seek').addEventListener('input', () => { seeking = true; $('tcur').textContent = fmt(+$('seek').value); });
 $('seek').addEventListener('change', () => { player.seekTo(segment().s + +$('seek').value, true); seeking = false; });
 function applyVolume() {
@@ -742,7 +794,7 @@ function applyVolume() {
   player.setVolume(state.volume ?? 100);
   state.muted ? player.mute() : player.unMute();
   $('vol').value = state.volume ?? 100;
-  $('mute').textContent = state.muted || state.volume === 0 ? '🔇' : '🔊';
+  $('mute').innerHTML = state.muted || state.volume === 0 ? ICON.mute : ICON.vol;
 }
 $('vol').addEventListener('input', () => { state.volume = +$('vol').value; state.muted = false; save(); applyVolume(); });
 $('mute').addEventListener('click', () => { state.muted = !state.muted; save(); applyVolume(); });
@@ -766,17 +818,9 @@ $('fs').addEventListener('click', () => {
   const st = $('stage');
   if (fsEl()) return (document.exitFullscreen || document.webkitExitFullscreen).call(document);
   const req = st.requestFullscreen || st.webkitRequestFullscreen;
-  if (req) { req.call(st); flashTitle(); }
+  if (req) req.call(st);
   else $('msg').textContent = 'この端末ではページからの全画面に対応していません。動画右下の全画面ボタンを使ってください（iPhone は曲が変わると全画面が解除されることがあります）。';
 });
-let fsTimer = null;
-function flashTitle() {
-  const it = items()[curIndex()]; if (!it) return;
-  $('fsTitle').querySelector('.fs-num').textContent = `${pad(curIndex() + 1)} / ${items().length}`;
-  $('fsTitle').querySelector('.fs-t').textContent = it.title;
-  $('fsTitle').classList.add('show'); clearTimeout(fsTimer);
-  fsTimer = setTimeout(() => $('fsTitle').classList.remove('show'), 4000);
-}
 renderAll();
 const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
 </script>
