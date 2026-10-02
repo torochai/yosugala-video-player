@@ -187,6 +187,8 @@
   .targets .btn.last { border-color: var(--moon); }
   .author a { color: var(--moon); }
   .pdesc { margin-top: 14px; }
+  /* 「情報」ボタン（説明までスクロール）はスマホだけ。PC では説明が動画の下に見えているので出さない */
+  @media (min-width: 901px) { #infoJump { display: none; } }
   .pdesc-head { color: var(--moon); font-family: var(--serif); font-style: italic; font-size: .95rem; letter-spacing: .08em; }
   .pdesc-body { margin-top: 8px; padding: 16px 18px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #cfd4ea; font-size: .84rem; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -397,6 +399,7 @@
             <div class="author" id="plAuthor" hidden></div>
           </div>
           <div class="pactions">
+            <button class="btn small" type="button" id="infoJump" hidden title="このプレイリストについての説明を表示">情報</button>
             <button class="btn small tip-open" type="button" id="plTipOpen" hidden title="使い方のヒントを表示" aria-label="使い方のヒントを表示">💡</button>
             <button class="btn small" type="button" id="dupMine" hidden>複製</button>
             <button class="btn small" type="button" id="selectToggle" title="曲を選んで、まとめてプレイリストに追加します">選択</button>
@@ -682,9 +685,9 @@ const CAT_HELP = '曲の右の「＋」、または「選択」でチェック�
 // tools = true のもの（すべてのライブ映像の2つ）だけ、曲名・ライブ名で絞り込める。
 // それ以外（Official Live Video・公演ごと）はトロ's セレクションと同じ、ふつうの読み取り専用プレイリスト
 // （「＋」と「選択」はどのプレイリストでも使える）
-function catalogPlaylist(id, name, all, desc, tools = false) {
+function catalogPlaylist(id, name, all, desc, tools = false, live = false) {
   return {
-    id, name, all, desc, readonly: true, catalog: tools, author: '',
+    id, name, all, desc, readonly: true, catalog: tools, live, author: '',
     get items() {
       const q = normq(catQuery).trim();
       if (!tools || !q) return all;
@@ -730,10 +733,30 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
     if (!list.length) return;
     const { date, live, venue } = list[0];
     catalogPls.push(catalogPlaylist(LIVE_ID + k, `${dotDate(date)}${quoteLive(live)}`, list.map(toItem),
-      `${dotDate(date)}${quoteLive(live)}${venue ? ` @ ${venue}` : ''} の公式ライブ映像を、セットリストの順に並べています（${full.length ? 'フルライブ映像から曲ごとに分けています' : '公開されている映像の曲だけです'}）。`));
+      `${dotDate(date)}${quoteLive(live)}${venue ? ` @ ${venue}` : ''} の公式ライブ映像を、セットリストの順に並べています（${full.length ? 'フルライブ映像から曲ごとに分けています' : '公開されている映像の曲だけです'}）。`
+      + setlistText((c.lives || {})[live], full.length ? null : new Set(list.map((x) => x.song))), false, true));
   });
   renderAll(); openSharedLib();
 }).catch(() => { if (sharedLib) { sharedLib = null; $('msg').textContent = 'ライブ映像の一覧を読み込めませんでした。'; } });
+
+// 公演の説明に付けるセットリスト（catalog.json の lives。tools/catalog_overrides.json の setlists から作る）
+// playable: フルライブ映像がない公演で、このプレイリストにある（映像で見られる）曲名。その曲に ▶ を付ける
+function setlistText(info, playable) {
+  if (!info || !(info.main || []).length) return '';
+  const medley = new Set(info.medley || []);
+  const line = (no, song) => `${no}. ${song}${medley.has(song) ? '（メドレー）' : ''}${playable && playable.has(song) ? '  ▶' : ''}`;
+  // ◾️本編 / ◾️アンコール の見出しのあとに、通し番号で曲名（番号はアンコールにも続けて振る）
+  const out = ['', '', '◾️本編'];
+  info.main.forEach((song, i) => out.push(line(i + 1, song)));
+  if ((info.encore || []).length) {
+    out.push('', '◾️アンコール');
+    info.encore.forEach((song, i) => out.push(line(info.main.length + i + 1, song)));
+  }
+  if (playable) out.push('', '▶ = このプレイリストで見られる曲');
+  if (info.note) out.push('', `※ ${info.note}`);
+  if (info.source) out.push('', `出典: ${info.source}`);
+  return out.join('\n');
+}
 
 // 共有・書き出し用のコンパクトな形式
 function pack(p) { return { name: p.name, author: p.author || '', desc: p.desc || '', items: p.items.map((it) => [it.vid, it.start, it.end, it.title, it.live || '', it.len ?? null]) }; }
@@ -1026,6 +1049,9 @@ function renderAll() {
   $('panel').classList.toggle('editing', editing); $('panel').classList.toggle('catalog', ro);
   $('editToggle').textContent = editing ? '完了' : '編集'; $('editToggle').hidden = ro;
   $('dupEdit').hidden = !ro; $('libShare').hidden = !ro;
+  // スマホ: 説明があるときだけ「情報」（公演ごとのプレイリストは「公演情報」）で説明までスクロールできる
+  $('infoJump').hidden = !(pl().desc || '').trim();
+  $('infoJump').textContent = pl().live ? '公演情報' : '情報';
   $('dupMine').hidden = ro;
   $('selectToggle').hidden = editing; $('selectToggle').textContent = selecting ? '選択をやめる' : '選択';
   $('selectToggle').classList.toggle('primary', selecting);
@@ -1074,6 +1100,12 @@ $('catSearch').addEventListener('input', () => { catQuery = $('catSearch').value
 $('catAll').addEventListener('click', () => { items().forEach((it) => catSelected.add(it.id)); renderList(); renderCatBar(); });
 $('catNone').addEventListener('click', () => { catSelected.clear(); renderList(); renderCatBar(); });
 $('catAdd').addEventListener('click', () => openAdd((pl().all || pl().items).filter((it) => catSelected.has(it.id))));
+// 上に固定している動画の高さの分だけずらして、説明の見出しが動画に隠れないようにする
+$('infoJump').addEventListener('click', () => {
+  const stage = document.querySelector('.stage-wrap'), sticky = stage && getComputedStyle(stage).position === 'sticky';
+  const top = $('pdesc').getBoundingClientRect().top + scrollY - (sticky ? stage.offsetHeight : 0) - 8;
+  window.scrollTo({ top, behavior: 'smooth' });
+});
 $('selectToggle').addEventListener('click', () => { selecting = !selecting; if (!selecting) catSelected.clear(); renderAll(); });
 $('dupMine').addEventListener('click', () => { $('plDup').click(); });
 $('dupEdit').addEventListener('click', () => {

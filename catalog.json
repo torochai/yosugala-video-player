@@ -3,6 +3,245 @@
  "count": 112,
  "total": 131,
  "hidden": 19,
+ "lives": {
+  "QUATTRO tour2023": {
+   "date": "2023-10-21",
+   "venue": "SHIBUYA CLUB QUATTRO",
+   "main": [
+    "indigo",
+    "スペードのエース",
+    "バカばかC",
+    "オヒメサマ？",
+    "嘘とか愛とか",
+    "エスカレート",
+    "マルバツゲーム",
+    "会心の一撃",
+    "僕に願いを",
+    "ひとりごと",
+    "オトギバナシ",
+    "僕のわがまま",
+    "四葉のクローバー",
+    "aspiration",
+    "prologue"
+   ],
+   "encore": [
+    "Sparkle",
+    "canvas",
+    "夜明けの唄"
+   ],
+   "source": "https://tobimaru.hateblo.jp/entry/2023/10/21/000000",
+   "note": "aspiration はこの公演で初披露の新曲。"
+  },
+  "progress the night -LIQUIDROOM-": {
+   "date": "2024-02-18",
+   "venue": "EBISU LIQUIDROOM",
+   "main": [
+    "僕に願いを",
+    "会心の一撃",
+    "ろーるぷれいんぐ",
+    "オヒメサマ？",
+    "バカばかC",
+    "マルバツゲーム",
+    "エスカレート",
+    "嘘とか愛とか",
+    "スペードのエース",
+    "prologue",
+    "僕のわがまま",
+    "オトギバナシ",
+    "ひとりごと",
+    "aspiration",
+    "夜明けの唄",
+    "四葉のクローバー",
+    "ソラノナミダ",
+    "indigo",
+    "canvas",
+    "Sparkle"
+   ],
+   "encore": [],
+   "source": "https://www.youtube.com/watch?v=nd6EJzBDS60",
+   "note": "アンコールの区切りは記載がないため分けていません。"
+  },
+  "tour2024 aki「春に廻れなかった場所編」Final": {
+   "date": "2024-11-01",
+   "venue": "EX THEATER ROPPONGI",
+   "main": [
+    "アステリズム",
+    "sailing!!",
+    "ろーるぷれいんぐ",
+    "鬼さんこちらときめく方へ",
+    "スペードのエース",
+    "エスカレート",
+    "マルバツゲーム",
+    "YOSUGAL伝説",
+    "夜更かしして寝坊するんだ",
+    "裸足のまま",
+    "ひとりごと",
+    "オトギバナシ",
+    "indigo",
+    "夜明けの唄",
+    "Sparkle",
+    "ソラノナミダ",
+    "aspiration"
+   ],
+   "encore": [
+    "オヒメサマ？",
+    "canvas",
+    "My Dear"
+   ],
+   "source": "https://www.youtube.com/watch?v=EiobVwTprto"
+  },
+  "progress the night -LINE CUBE SHIBUYA-": {
+   "date": "2025-02-08",
+   "venue": "LINE CUBE SHIBUYA",
+   "main": [
+    "prologue",
+    "indigo",
+    "オヒメサマ？",
+    "YOSUGAL伝説",
+    "aspiration",
+    "エスカレート",
+    "会心の一撃",
+    "僕に願いを",
+    "コノユビトマレ",
+    "裸足のまま",
+    "夜更かしして寝坊するんだ",
+    "ソラノナミダ",
+    "アステリズム",
+    "夜明けの唄",
+    "Sparkle",
+    "かくれんぼ",
+    "My Dear"
+   ],
+   "encore": [
+    "canvas",
+    "オトギバナシ",
+    "四葉のクローバー"
+   ],
+   "source": "https://www.youtube.com/watch?v=9C9p08K1oAA"
+  },
+  "tour2025 FINAL": {
+   "date": "2025-07-25",
+   "venue": "Zepp DiverCity (TOKYO)",
+   "main": [
+    "何億分の1を",
+    "ろーるぷれいんぐ",
+    "エスカレート",
+    "aspiration",
+    "indigo",
+    "鬼さんこちらときめく方へ",
+    "大大大大大感謝",
+    "マルバツゲーム",
+    "オトギバナシ",
+    "きっかけ",
+    "夜更かしして寝坊するんだ",
+    "会心の一撃",
+    "裸足のまま",
+    "canvas",
+    "夜明けの唄",
+    "四葉のクローバー",
+    "アステリズム",
+    "コノユビトマレ",
+    "My Dear",
+    "宇宙旅行",
+    "prologue"
+   ],
+   "encore": [
+    "オヒメサマ？",
+    "僕に願いを",
+    "Sparkle"
+   ],
+   "medley": [
+    "夜更かしして寝坊するんだ",
+    "会心の一撃",
+    "裸足のまま",
+    "canvas",
+    "夜明けの唄"
+   ],
+   "source": "https://www.youtube.com/watch?v=Tv7KrUG9C0Q"
+  },
+  "ヨモスエダカラ": {
+   "date": "2023-06-22",
+   "venue": "Spotify O-WEST",
+   "main": [
+    "prologue",
+    "会心の一撃",
+    "バカばかC",
+    "僕のわがまま",
+    "indigo",
+    "オヒメサマ？",
+    "スペードのエース",
+    "エスカレート",
+    "嘘とか愛とか",
+    "ひとりごと",
+    "オトギバナシ",
+    "四葉のクローバー",
+    "夜明けの唄"
+   ],
+   "encore": [
+    "canvas",
+    "indigo"
+   ],
+   "source": "https://spice.eplus.jp/articles/319962",
+   "note": "indigo は本編とアンコールの2回披露されていて、映像がどちらかは分からないため、本編の位置に並べています。"
+  },
+  "tour2024 Final": {
+   "date": "2024-06-22",
+   "venue": "Spotify O-EAST",
+   "main": [
+    "嘘とか愛とか",
+    "ろーるぷれいんぐ",
+    "sailing!!",
+    "会心の一撃",
+    "オヒメサマ？",
+    "エスカレート",
+    "マルバツゲーム",
+    "ムチャクチャ",
+    "aspiration",
+    "裸足のまま",
+    "僕に願いを",
+    "オトギバナシ",
+    "ソラノナミダ",
+    "indigo",
+    "夜明けの唄",
+    "canvas",
+    "My Dear"
+   ],
+   "encore": [
+    "Sparkle",
+    "prologue"
+   ],
+   "source": "https://www.livefans.jp/events/1644430"
+  },
+  "3rd anniversary live「progress the night -日比谷公園大音楽堂-」": {
+   "date": "2025-06-22",
+   "venue": "日比谷公園大音楽堂",
+   "main": [
+    "大大大大大感謝",
+    "会心の一撃",
+    "僕のわがまま",
+    "コノユビトマレ",
+    "アステリズム",
+    "ろーるぷれいんぐ",
+    "YOSUGAL伝説",
+    "sailing!!",
+    "オトギバナシ",
+    "夜明けの唄",
+    "ひとりごと",
+    "ソラノナミダ",
+    "何億分の1を",
+    "僕に願いを",
+    "オヒメサマ？",
+    "canvas",
+    "Sparkle",
+    "indigo"
+   ],
+   "encore": [
+    "prologue",
+    "My Dear"
+   ],
+   "source": "https://www.livefans.jp/events/1767044"
+  }
+ },
  "songs": [
   {
    "song": "aspiration",
