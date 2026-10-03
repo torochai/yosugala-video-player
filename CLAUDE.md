@@ -31,5 +31,6 @@
 ## カタログ（catalog.json）
 
 - `catalog.json` は直接書き換えず、`tools/catalog_overrides.json` を直して `python3 tools/update_catalog.py --offline` で作り直す。
+- `s/` の曲ごとの案内ページ（X で曲を共有したときのリンク先）も `update_catalog.py` が一緒に作り直す。直接書き換えない。
 - セットリストの出典は、曲順が一覧で分かるものを優先して1〜2個。ライブレポートがあればライブレポート、なければ公式 YouTube の概要欄。LiveFans などのユーザー投稿だけを根拠にしない。
 - 裏付けのない補足（「初披露」など推測を含むもの）は書かない。

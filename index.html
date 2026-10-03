@@ -162,6 +162,12 @@
   .now { display: flex; align-items: flex-end; gap: 14px; margin-top: 18px; flex-wrap: wrap; }
   .now .label { flex: 1 1 240px; min-width: 0; }
   .now .num { font-family: var(--serif); font-style: italic; color: var(--moon); font-size: 1rem; letter-spacing: .1em; }
+  /* 「02 / 16」の行の右端に「この曲を共有」（X らしい黒地に白） */
+  .now .numrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .btn.songshare { display: inline-flex; align-items: center; gap: 6px; background: #000; color: #fff; border-color: rgba(255,255,255,.28); }
+  .btn.songshare:hover { background: #16181c; border-color: rgba(255,255,255,.55); box-shadow: 0 0 14px rgba(255,255,255,.15); }
+  .btn.songshare[hidden] { display: none; }
+  .songshare svg { width: 13px; height: 13px; }
   .now .title { font-size: 1.45rem; font-weight: 700; letter-spacing: .04em; overflow-wrap: anywhere; line-height: 1.3; }
   .now .live { color: var(--muted); font-size: .82rem; }
   .controls { display: flex; gap: 8px; }
@@ -412,7 +418,14 @@
       </div></div>
       <div class="now">
         <div class="label">
-          <div class="num" id="nowNum"></div>
+          <div class="numrow">
+            <div class="num" id="nowNum"></div>
+            <!-- 再生中の曲を X で共有（曲名・公演・この曲を開くリンク） -->
+            <button class="btn small songshare" type="button" id="songShare" hidden aria-label="この曲を X で共有する" title="この曲を X で共有する">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>
+              この曲を共有
+            </button>
+          </div>
           <div class="title" id="nowTitle"></div>
           <div class="live" id="nowLive"></div>
         </div>
@@ -827,7 +840,7 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
       + setlistText((c.lives || {})[live], full.length ? null : new Set(list.map((x) => x.song))), false, true));
   });
   renderAll(); openSharedLib(); applyResume();
-}).catch(() => { if (sharedLib) { sharedLib = null; $('msg').textContent = 'ライブ映像の一覧を読み込めませんでした。'; } });
+}).catch(() => { if (sharedLib || sharedSong) { sharedLib = sharedSong = null; $('msg').textContent = 'ライブ映像の一覧を読み込めませんでした。'; } });
 
 // 公演の説明に付けるセットリスト（catalog.json の lives。tools/catalog_overrides.json の setlists から作る）
 // playable: フルライブ映像がない公演で、このプレイリストにある（映像で見られる）曲名。その曲に ▶ を付ける
@@ -885,6 +898,7 @@ function showNow() {
   const list = items(), i = curIndex(), it = list[i];
   $('nowNum').textContent = it ? `${pad(i + 1)} / ${list.length}` : `${list.length} 曲`;
   $('nowTitle').textContent = it ? it.title : pl().name;
+  $('songShare').hidden = !it;
   // ライブ名と公演日・会場名（分かるものだけ）
   // 「公演日: YYYY.MM.DD 「ライブ名」 @ 会場名」（間は半角スペース。分からないものは省く）
   // ライブ名は「」で囲む（中にある「」は『』にする）
@@ -1589,6 +1603,31 @@ function libId(key) {
   const p = catalogPls.find((x) => x.id === LIVE_ID + key) || catalogPls.find((x) => x.id.startsWith(LIVE_ID + key + '|'));
   return p ? p.id : null;
 }
+// ---------- 再生中の曲を X で共有 ----------
+// 曲は「動画ID@開始秒」で表す（プレーヤーの曲リンクは #lib=プレイリスト&song=… または #song=…）
+const songKey = (it) => `${it.vid}@${it.start}`;
+// カタログにある曲は、曲ごとの案内ページ（s/動画ID-開始秒.html）のリンクにする。X のカードにその曲のサムネと
+// 曲名・公演が出て、開くとすぐプレーヤーのその曲に移る（tools/update_catalog.py がカタログと一緒に作る）。
+// いまライブラリのプレイリストを開いていれば ?lib= でそのプレイリストを伝える（なければ公演のプレイリスト）。
+// カタログにない曲（自分で追加した動画）は、その1曲だけのプレイリストの #pl= リンクにする
+function songLink(it) {
+  const base = location.origin + location.pathname.replace(/[^/]*$/, ''), key = songKey(it);
+  const inLib = pl().id === BUILTIN_ID || catalogPls.includes(pl());
+  if (catalogPls.some((p) => p.all.some((x) => songKey(x) === key)))
+    return `${base}s/${it.vid}-${it.start}.html${inLib ? '?lib=' + libKey(pl()) : ''}`;
+  return `${base}#pl=${b64enc(JSON.stringify(pack({ name: it.title, items: [it] })))}`;
+}
+// 「♫ 曲名 ／ yosugala | 公演日「公演名」@ 会場名 #yosugala リンク」（分からないものは省く）
+function songShareText(it) {
+  const x = infoOf(it), live = quoteLive(x.live || it.live);
+  const where = [(x.date ? dotDate(x.date) : '') + live, x.venue ? `@ ${x.venue}` : ''].filter(Boolean).join('');
+  return `♫ ${it.title} ／ yosugala${where ? ' | ' + where : ''} #yosugala ${songLink(it)}`;
+}
+$('songShare').addEventListener('click', () => {
+  const it = items()[curIndex()];
+  if (!it) return;
+  window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(songShareText(it))}`, '_blank', 'noopener');
+});
 $('libShare').addEventListener('click', () => copyLink(`${location.origin}${location.pathname}#lib=${libKey(pl())}`,
   `「${pl().name}」の共有リンクをコピーしました。開いた人は、このプレイリストをそのまま再生できます。`));
 $('plIO').addEventListener('click', () => {
@@ -1614,16 +1653,28 @@ let shared = null;
   state.playlists.push(shared); state.current = shared.id;   // 保存はボタンを押したときだけ
 })();
 // ライブラリの共有リンク（#lib=）: カタログを読み込んでから、そのプレイリストを開く
+// 曲の共有リンク（#lib=…&song=動画ID@開始秒、または #song=… だけ）: その曲を選んだ状態で開く。
+// プレイリストの指定がなければ、その曲が入っている公演のプレイリスト（なければ他のライブラリ）を開く
 let sharedLib = (location.hash.match(/#lib=([^&]+)/) || [])[1] || null;
+let sharedSong = (() => { try { return decodeURIComponent((location.hash.match(/[#&]song=([^&]+)/) || [])[1] || '') || null; } catch { return null; } })();
 function openSharedLib() {
-  if (!sharedLib) return;
-  const key = sharedLib, id = libId(key);
+  if (!sharedLib && !sharedSong) return;
+  if (!sharedLib && !catalog) return;   // 曲だけのリンクはカタログを読み込んでから、入っているプレイリストを探す
+  const has = (p) => p.all.some((x) => songKey(x) === sharedSong);
+  const id = sharedLib ? libId(sharedLib) : (catalogPls.find((p) => p.live && has(p)) || catalogPls.find(has) || {}).id;
   if (!catalog && id !== BUILTIN_ID) return;   // トロ's セレクション以外はカタログの読み込みを待つ
   sharedLib = null; clearHash();
-  if (id) switchTo(id); else $('msg').textContent = '共有リンクのプレイリストが見つかりませんでした。';
+  if (!id) { $('msg').textContent = '共有リンクのプレイリストが見つかりませんでした。'; return; }
+  switchTo(id);
+  // 曲の共有リンク（&song=動画ID@開始秒）: その曲を選んでおく（再生は PLAY を押したとき）
+  if (sharedSong) {
+    const i = items().findIndex((it) => songKey(it) === sharedSong);
+    sharedSong = null;
+    if (i >= 0) { cueIndex(i); scrollCurToTop(); }
+  }
 }
 // 開いているページで共有リンクを開いた（# 以降だけが変わった）ときも読み込み直す
-window.addEventListener('hashchange', () => { if (/#(pl|lib)=/.test(location.hash)) location.reload(); });
+window.addEventListener('hashchange', () => { if (/#(pl|lib|song)=/.test(location.hash)) location.reload(); });
 function clearHash() { history.replaceState(null, '', location.pathname + location.search); }
 $('shareSave').addEventListener('click', () => { shared = null; save(); $('shareBanner').hidden = true; clearHash(); renderAll(); });
 $('shareDismiss').addEventListener('click', () => {

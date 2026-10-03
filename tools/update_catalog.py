@@ -10,6 +10,7 @@
 - フルライブはチャプターで曲ごとに分ける（MC・SE などは除く）
 - 動画ごとの情報は tools/video_cache.json に保存し、次回からは新しい動画だけを取得する
 - 曲名の表記ゆれ・除外・終了時刻の調整などは tools/catalog_overrides.json で直す
+- 最後に tools/make_song_pages.py で曲ごとの案内ページ（s/）も作り直す
 必要なもの: yt-dlp
 """
 import json, os, re, subprocess, sys, time, datetime
@@ -231,6 +232,10 @@ def main():
     vis = sum(1 for x in out if not x.get('hidden'))
     print(f'catalog.json を更新しました: 全 {len(out)} 件（表示 {vis} 件・非表示 {len(out) - vis} 件／{len(names)} 曲）')
     print('曲名一覧: ' + ' / '.join(names))
+    # 曲ごとの案内ページ（X で曲を共有したときのリンク先）もカタログに合わせて作り直す
+    sys.path.insert(0, HERE); sys.dont_write_bytecode = True
+    import make_song_pages
+    make_song_pages.main(OFFLINE)
 
 
 if __name__ == '__main__':
