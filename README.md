@@ -4,8 +4,8 @@ yosugala official の公式ライブ映像（YouTube）から好きな曲だけ�
 
 https://torochai.github.io/yosugala-video-player/
 
-- 曲ごとに開始・終了時刻を指定して、フルライブ映像から1曲だけ再生できます
-- プレイリストの作成・編集（追加・並べ替え・削除）、複数プレイリスト
+- フルライブ映像の中の曲は、その曲の部分だけを再生します
+- プレイリストの作成・編集（ライブ映像の一覧から追加・並べ替え・削除）、複数プレイリスト
 - 共有リンク、書き出し / 読み込み
 - リピート（全曲 / 1曲）、全画面再生
 
@@ -28,8 +28,10 @@ https://torochai.github.io/yosugala-video-player/
 
 ```bash
 python3 tools/update_catalog.py
-git add catalog.json tools/video_cache.json && git commit -m "Update catalog" && git push
+git add catalog.json tools/video_cache.json tools/song_ids.json tools/thumb_cache.json s/ && git commit -m "Update catalog" && git push
 ```
+
+- 曲には曲 ID（1 からの連番）を付けます。プレイリスト・共有リンク・書き出しの JSON・曲の案内ページ（`s/曲ID.html`）は、この ID で曲を指します。ID は `tools/song_ids.json` に保存し、一度付けたら変えません（新しい曲には古い動画順に続きの番号を付けます。開始秒や曲名を直しても ID はそのままです）
 
 - 単独の「Official Live Video」は1曲として、フルライブ映像はチャプターで曲ごとに分けて登録します（MC・SE などは除外）
 - 一度取得した動画の情報は `tools/video_cache.json` に保存され、次回からは新しい動画だけを取得します

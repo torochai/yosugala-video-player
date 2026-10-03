@@ -21,6 +21,7 @@ CHANNEL = 'https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q'
 CACHE = os.path.join(HERE, 'video_cache.json')
 OVERRIDES = os.path.join(HERE, 'catalog_overrides.json')
 OUT = os.path.join(ROOT, 'catalog.json')
+SONG_IDS = os.path.join(HERE, 'song_ids.json')
 OFFLINE = '--offline' in sys.argv[1:]
 EXTRA = [a for a in sys.argv[1:] if a != '--offline']   # yt-dlp にそのまま渡す追加オプション（--cookies-from-browser など）
 
@@ -80,6 +81,42 @@ def title_date(title):
 
 def iso(upload_date):
     return f'{upload_date[:4]}-{upload_date[4:6]}-{upload_date[6:]}' if upload_date else ''
+
+
+def assign_ids(out):
+    """曲ごとの ID（1 からの連番）を付ける。プレイリスト・共有リンク・曲の案内ページは、この ID で曲を指す。
+    一度付けた ID は変えない・使い回さない（tools/song_ids.json に保存）。新しい曲には、古い動画（公開日）順・
+    動画の中では開始の早い順に、続きの番号を付ける。前の曲との対応は「同じ動画の同じ曲名の何番目か」、
+    なければ「同じ動画の同じ開始秒」で取るので、開始秒や曲名を直しても ID は変わらない（両方同時に変えると別の曲になる）。
+    カタログからなくなった曲の ID は欠番として残す。"""
+    recs = load(SONG_IDS, [])
+    def occ_key(items):
+        # 同じ動画・同じ曲名の何番目か（開始の早い順）
+        seen, keys = {}, {}
+        for x in sorted(items, key=lambda x: (x['vid'], x['start'])):
+            k = (x['vid'], x['song']); seen[k] = seen.get(k, -1) + 1; keys[id(x)] = (x['vid'], x['song'], seen[k])
+        return keys
+    rk, ok = occ_key(recs), occ_key(out)
+    by_occ = {rk[id(r)]: r for r in recs}
+    by_start = {(r['vid'], r['start']): r for r in recs}
+    used, new = set(), []
+    for x in out:
+        r = by_occ.get(ok[id(x)])
+        if not r or r['id'] in used:
+            r = by_start.get((x['vid'], x['start']))
+        if r and r['id'] not in used:
+            used.add(r['id']); x['id'] = r['id']; r.update(start=x['start'], song=x['song'])   # 今の開始秒・曲名を覚えておく
+        else:
+            new.append(x)
+    nxt = max((r['id'] for r in recs), default=0) + 1
+    for x in sorted(new, key=lambda x: (x['published'], x['vid'], x['start'])):
+        x['id'] = nxt; recs.append({'id': nxt, 'vid': x['vid'], 'start': x['start'], 'song': x['song']}); nxt += 1
+    recs.sort(key=lambda r: r['id'])
+    with open(SONG_IDS, 'w', encoding='utf-8') as f:
+        f.write('[\n' + ',\n'.join(json.dumps(r, ensure_ascii=False) for r in recs) + '\n]\n')
+    if new:
+        lo, hi = min(x['id'] for x in new), max(x['id'] for x in new)
+        print(f'新しい曲に ID を付けました: {len(new)} 曲（{lo}' + (f'〜{hi}' if hi != lo else '') + '）')
 
 
 def main():
@@ -222,6 +259,8 @@ def main():
     for x in out:
         if x['live'] and x['live'] not in lives:
             lives[x['live']] = {'date': x['date'], 'venue': x['venue'], **setlists.get(x['live'], {})}
+
+    assign_ids(out)
 
     with open(OUT, 'w', encoding='utf-8') as f:
         visible = sum(1 for x in out if not x.get('hidden'))

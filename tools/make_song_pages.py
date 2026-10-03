@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""曲ごとの案内ページ（s/動画ID-開始秒.html）を catalog.json から作る。
+"""曲ごとの案内ページ（s/曲ID.html）を catalog.json から作る。曲 ID は tools/song_ids.json の連番。
 
 プレーヤーの「この曲を共有」で X に貼るリンク用。X のカードにその曲の YouTube のサムネ・曲名・公演が出て、
-開くとすぐプレーヤーのその曲（../?song=動画ID@開始秒）に移る。?lib=… が付いていれば、そのプレイリストで開く。
+開くとすぐプレーヤーのその曲（../?song=曲ID）に移る。?lib=… が付いていれば、そのプレイリストで開く。
 
 使い方（player フォルダで）:
     python3 tools/make_song_pages.py             # サムネの大きい画像があるかを YouTube に確かめる（結果は tools/thumb_cache.json に保存）
@@ -46,15 +46,15 @@ def quote_live(live):
 
 
 def page(s, thumb):
-    vid, start, song = s['vid'], s['start'], s['song']
+    vid, sid, song = s['vid'], s['id'], s['song']
     where = dot(s.get('date')) + quote_live(s.get('live'))
     if s.get('venue'):
         where += f'@ {s["venue"]}'
     title = f'♫ {song} ／ yosugala'
     desc = f'{where} ｜ yosugala Live Video Player' if where else 'yosugala Live Video Player'
-    url = f'{SITE}s/{vid}-{start}.html'
+    url = f'{SITE}s/{sid}.html'
     img = f'https://i.ytimg.com/vi/{vid}/{thumb}.jpg'
-    song_key = f'{vid}%40{start}'
+    song_key = str(sid)
     e = lambda x: html.escape(x, quote=True)
     return f'''<!doctype html>
 <html lang="ja">
@@ -102,7 +102,7 @@ def main(offline=False):
     os.makedirs(OUT_DIR, exist_ok=True)
     want = set()
     for s in songs:
-        name = f'{s["vid"]}-{s["start"]}.html'
+        name = f'{s["id"]}.html'
         want.add(name)
         with open(os.path.join(OUT_DIR, name), 'w', encoding='utf-8') as f:
             f.write(page(s, thumb_name(s['vid'], cache, offline)))

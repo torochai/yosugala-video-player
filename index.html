@@ -310,7 +310,6 @@
   input[type=text], textarea { width: 100%; background: rgba(5,6,15,.6); border: 1px solid var(--line-2); border-radius: 10px; padding: 9px 11px; color: var(--text); }
   input[type=text]:focus, textarea:focus, select:focus { outline: none; border-color: var(--moon); box-shadow: 0 0 0 3px rgba(185,203,255,.15); }
   textarea { min-height: 150px; font-family: ui-monospace, Menlo, monospace; font-size: .78rem; }
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .timefield { display: flex; gap: 6px; }
   .timefield input { flex: 1; min-width: 0; }
   .hint { font-size: .76rem; color: var(--muted); margin: 0; }
@@ -378,7 +377,6 @@
     .panel { margin: 0 12px; }
     .row { padding: 12px 14px; }
     .icon { width: 40px; height: 40px; }
-    .two { grid-template-columns: 1fr; }
     dialog { width: 100vw; max-width: 100vw; margin: auto 0 0; border-radius: 18px 18px 0 0; max-height: 92vh; }
   }
 </style>
@@ -502,7 +500,6 @@
       <ol id="list" aria-label="曲リスト"></ol>
       <div class="pfoot"><div class="prow">
         <button class="btn" type="button" id="addFromCatalog">＋ ライブ映像から選ぶ</button>
-        <button class="btn" type="button" id="addSong">＋ URL で追加</button>
       </div></div>
     </aside>
   </div>
@@ -516,35 +513,6 @@
     </ul>
   </footer>
 </main>
-
-<!-- 曲の追加・編集 -->
-<dialog id="songDlg">
-  <form method="dialog" id="songForm">
-    <h2 id="songDlgTitle">曲を追加</h2>
-    <label>YouTube の URL（時刻付きリンクなら開始時刻も読み取ります）
-      <input type="text" id="fUrl" placeholder="https://youtu.be/... または https://www.youtube.com/watch?v=..." autocomplete="off">
-    </label>
-    <label>曲名<input type="text" id="fTitle" autocomplete="off"></label>
-    <label>ライブ名など（任意）<input type="text" id="fLive" autocomplete="off"></label>
-    <div class="two">
-      <label>開始（例 1:15:08）
-        <span class="timefield"><input type="text" id="fStart" placeholder="0:00" autocomplete="off">
-        <button class="btn small" type="button" id="fStartNow" title="プレイヤーの今の再生位置を入れる">今</button></span>
-      </label>
-      <label>終了（空欄＝動画の最後まで）
-        <span class="timefield"><input type="text" id="fEnd" placeholder="" autocomplete="off">
-        <button class="btn small" type="button" id="fEndNow" title="プレイヤーの今の再生位置を入れる">今</button></span>
-      </label>
-    </div>
-    <p class="hint">「今」はプレイヤーで同じ動画を再生中のときに、その再生位置を入れます。フルライブから1曲だけ切り出すときに便利です。</p>
-    <p class="err" id="fErr"></p>
-    <div class="actions">
-      <button class="btn" type="button" id="fPreview">この範囲を試聴</button>
-      <button class="btn" value="cancel" formnovalidate>キャンセル</button>
-      <button class="btn primary" type="button" id="fSave">保存</button>
-    </div>
-  </form>
-</dialog>
 
 <!-- プレイリストの説明 -->
 <!-- このプレイリストについて（「情報」「公演情報」ボタンで開く） -->
@@ -564,7 +532,7 @@
       <input type="text" id="authorText" maxlength="40" autocomplete="off" placeholder="例：トロ">
     </label>
     <label>説明（選曲の意図や並べ方など、自由に）</label>
-    <p class="hint">説明では、URL と X のアカウント名（@名前）がリンクになります。作成者と説明は共有リンクにも含まれます。</p>
+    <p class="hint">説明では、URL と X のアカウント名（@名前）がリンクになります。名前と作成者は共有リンクにも含まれます（説明は含まれません）。</p>
     <textarea id="descText" maxlength="5000" style="min-height: 240px; font-family: var(--sans); font-size: .85rem;"></textarea>
     <div class="actions">
       <button class="btn" value="cancel">キャンセル</button>
@@ -618,28 +586,27 @@
 
 <script>
 // ---------- 初期プレイリスト ----------
-const DEFAULT_ITEMS = [
-  ['nd6EJzBDS60', 4508, 4739, 'indigo', 'progress the night -LIQUIDROOM-'],   // 4740 以降はMCとアンコールのコール
-  ['zFgFUba5RKE', 0, null, 'アステリズム', 'tour2024 aki「春に廻れなかった場所編」Final', 273],
-  ['K5DhUNxzjtI', 0, null, 'コノユビトマレ', 'progress the night -LINE CUBE SHIBUYA-', 196],
-  ['nd6EJzBDS60', 3490, 3709, '夜明けの唄', 'progress the night -LIQUIDROOM-'],
-  ['Tv7KrUG9C0Q', 105, 352, '何億分の1を', 'tour2025 FINAL'],
-  ['Pz0yIRvzOXM', 0, null, 'My Dear', 'tour2024 Final at Spotify O-EAST', 278],
-  ['CwXrM5fKfhk', 0, null, 'aspiration', 'QUATTRO tour2023 at SHIBUYA CLUB QUATTRO', 243],
-  ['cZm8gx38xNk', 0, null, 'ろーるぷれいんぐ', 'progress the night -LIQUIDROOM-', 216],
-  ['lo2W_n4YV8Q', 0, null, 'Sparkle', 'QUATTRO tour2023 at SHIBUYA CLUB QUATTRO', 254],
-  ['psMx676P7DQ', 0, null, 'ソラノナミダ', 'progress the night -LIQUIDROOM-', 323],
-  ['nd6EJzBDS60', 107, 336, '僕に願いを', 'progress the night -LIQUIDROOM-'],
-  ['Tv7KrUG9C0Q', 4630, 4927, 'prologue', 'tour2025 FINAL'],
-  ['qtnGksfbgIA', 0, null, 'オトギバナシ', 'tour2025 FINAL', 240],
-  ['HD8zoRz9Ufw', 0, null, 'sailing!!', 'tour2024 Final at Spotify O-EAST', 215],
-  ['Tv7KrUG9C0Q', 3096, 3348, '四葉のクローバー', 'tour2025 FINAL'],
-  ['x4nkkUcnD_Q', 0, null, 'きっかけ', 'tour2025 FINAL', 249],
+// トロ's セレクションの曲（catalog.json の曲 ID。上から順に）
+const DEFAULT_SONGS = [
+  45,    // indigo（progress the night -LIQUIDROOM-）
+  53,    // アステリズム
+  76,    // コノユビトマレ
+  42,    // 夜明けの唄
+  106,   // 何億分の1を
+  50,    // My Dear
+  7,     // aspiration
+  27,    // ろーるぷれいんぐ
+  5,     // Sparkle
+  26,    // ソラノナミダ
+  28,    // 僕に願いを
+  126,   // prologue
+  103,   // オトギバナシ
+  48,    // sailing!!
+  121,   // 四葉のクローバー
+  104,   // きっかけ
 ];
 const DEFAULT_NAME = "トロ's セレクション";
 const DEFAULT_AUTHOR = 'トロ';
-// 以前の曲名（保存済みのプレイリストや共有リンクの曲名を、いまの正式な表記に直す）
-const OLD_SONG_TITLES = { 'マルバツゲーム': '◯×ゲーム' };
 const OLD_DEFAULT_NAMES = ['人気曲セレクション 16曲', 'ライブ映像セレクション 16曲', "トロ's ライブ映像セレクション (16)", "トロ's ライブ映像セレクション"];   // 以前の名前（保存済みのものを新しい名前に変える）
 const DEFAULT_DESC = `トロが個人的に選んだ、yosugala の公式ライブ映像16曲のセレクションです。yosugala 公式のものではありません。
 
@@ -704,40 +671,17 @@ function fmt(sec) {
   const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
   return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
-// "1:15:08" "75:08" "4508" "4508s" "1h15m8s" → 秒
-function parseTime(str) {
-  str = String(str ?? '').trim();
-  if (!str) return null;
-  let m = str.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+(?:\.\d+)?)s?)?$/i);
-  if (m && (m[1] || m[2] || m[3])) return (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0);
-  if (/^\d+(:\d{1,2}){1,2}(\.\d+)?$/.test(str)) return str.split(':').reduce((a, v) => a * 60 + parseFloat(v), 0);
-  return NaN;
-}
-function parseYouTube(url) {
-  url = String(url ?? '').trim();
-  if (/^[\w-]{11}$/.test(url)) return { id: url, t: null };
-  let u;
-  try { u = new URL(url.startsWith('http') ? url : 'https://' + url); } catch { return null; }
-  let id = null;
-  if (/youtu\.be$/.test(u.hostname)) id = u.pathname.slice(1, 12);
-  else if (/youtube\.com$|youtube-nocookie\.com$/.test(u.hostname)) {
-    id = u.searchParams.get('v') || (u.pathname.match(/\/(?:embed|shorts|live|v)\/([\w-]{11})/) || [])[1];
-  }
-  if (!id || !/^[\w-]{11}$/.test(id)) return null;
-  const t = u.searchParams.get('t') || u.searchParams.get('start');
-  return { id, t: t ? parseTime(t) : null };
-}
 const itemLen = (it) => it.end != null ? it.end - it.start : (it.len ?? null);
 
 // ---------- 保存 ----------
 const KEY = 'yosugala-live-selection-v1';
 // トロのプレイリストは組み込み（読み取り専用）。毎回ここに書いた内容で作り直す
 const BUILTIN_ID = 'builtin-toro';
+// プレイリストの曲は { id: 行の ID, sid: 曲 ID } で持ち、カタログを読み込んだら動画・開始・終了・曲名などを付ける（songRow）。
+// 組み込みの行の ID は「toro:曲 ID」で固定する（開くたびに変わると、続きから再生する曲を覚えられない）
 function defaultPlaylist() {
-  return { id: BUILTIN_ID, builtin: true, readonly: true, name: DEFAULT_NAME, author: DEFAULT_AUTHOR, desc: DEFAULT_DESC, items: DEFAULT_ITEMS.map(([vid, start, end, title, live, len]) =>
-    // 曲の ID は「動画 ID＋開始秒」で固定する（開くたびに変わると、続きから再生する曲を覚えられない。
-    // 何曲目かは入れないので、曲を追加・並べ替えしても ID は変わらない）
-    ({ id: `toro:${vid}@${start}`, vid, start, end, title, live, len: len ?? null })) };
+  return { id: BUILTIN_ID, builtin: true, readonly: true, name: DEFAULT_NAME, author: DEFAULT_AUTHOR, desc: DEFAULT_DESC,
+           items: DEFAULT_SONGS.map((sid) => ({ id: `toro:${sid}`, sid })) };
 }
 function load() {
   try {
@@ -745,16 +689,14 @@ function load() {
     if (s && Array.isArray(s.playlists) && s.playlists.length) {
       s.playlists = s.playlists.filter((p) => p && Array.isArray(p.items));
       s.playlists.forEach((p) => {
-        p.items = p.items.filter((it) => it && typeof it.vid === 'string');
+        p.items = p.items.filter((it) => it && (Number.isInteger(it.sid) || typeof it.vid === 'string'));   // 以前の形式（動画 ID）はカタログを読んでから置き換える
         if (OLD_DEFAULT_NAMES.includes(p.name)) p.name = DEFAULT_NAME;
         if (p.desc == null) p.desc = p.name === DEFAULT_NAME ? DEFAULT_DESC : '';
         if (OLD_DEFAULT_DESCS.includes(p.desc)) p.desc = DEFAULT_DESC;
         if (p.author == null) p.author = p.name === DEFAULT_NAME ? DEFAULT_AUTHOR : '';
-        p.items.forEach((it) => { if (it.vid === 'nd6EJzBDS60' && it.start === 4508 && it.end === 4771) { it.end = 4739; it.len = null; } });
-        p.items.forEach((it) => { if (OLD_SONG_TITLES[it.title]) it.title = OLD_SONG_TITLES[it.title]; });
       });
       // 組み込みプレイリストを正しい内容に置き換える（以前に編集していた場合は、その内容をコピーとして残す）
-      const sig = (p) => p.items.map((it) => `${it.vid}@${it.start}@${it.end}`).join(',');
+      const sig = (p) => p.items.map((it) => it.sid ?? `${it.vid}@${it.start}`).join(',');
       const fresh = defaultPlaylist();
       const out = [];
       s.playlists.forEach((p) => {
@@ -777,7 +719,11 @@ let state = load();
 // （共有リンク #pl= / #lib= から開いたときは、このあとでリンク先のプレイリストに切り替える）
 const startPlaylist = (s) => { s.current = s.lastPlayed || BUILTIN_ID; return s; };
 startPlaylist(state);
-function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+// 保存するのは曲 ID だけ（動画・開始秒・曲名などはカタログから付け直す）
+function save() {
+  const slim = { ...state, playlists: state.playlists.map((p) => ({ ...p, items: p.items.map(({ id, sid }) => ({ id, sid })) })) };
+  try { localStorage.setItem(KEY, JSON.stringify(slim)); } catch {}
+}
 // catalog.json（tools/update_catalog.py で作る）から作る読み取り専用のプレイリスト
 //   すべてのライブ映像 - 曲名順 / すべてのライブ映像 - 公演日順 / Official Live Video - 公開日順
 //   / 公演ごと（YYYY.MM.DD「公演名」・セットリスト順）
@@ -786,8 +732,22 @@ const CATALOG_DATE_ID = '__catalog_date__';   // すべてのライブ映像 - �
 const SINGLES_ID = '__catalog_singles__';     // Official Live Video - 公開日順（単独で公開された映像だけ・古い順）
 const LIVE_ID = '__live__:';                  // 公演ごと: LIVE_ID + 公演日 + '|' + 公演名
 let catalog = null, catalogAll = [], catalogPls = [], catQuery = '', lastTarget = null;
-const liveInfo = {};   // 「動画ID@開始秒」→ { date: 公演日, live: 公演名, venue: 会場名 }
-const infoOf = (it) => liveInfo[`${it.vid}@${it.start}`] || {};
+const songById = new Map();   // 曲 ID → catalog.json の曲（vid・start・end・song・live・date・venue など）
+const infoOf = (it) => songById.get(it.sid) || {};   // 公演日・公演名・会場名
+// プレイリストの1行（曲 ID から、再生と表示に使う内容を付ける）。カタログにない曲 ID は null
+function songRow(sid, id = uid()) {
+  const x = songById.get(sid);
+  return x ? { id, sid, vid: x.vid, start: x.start, end: x.end, title: x.song, live: x.live || '', len: x.len ?? null } : null;
+}
+// プレイリストの曲にカタログの内容を付ける。以前の形式（動画 ID＋開始秒）で保存された曲は曲 ID に置き換え、
+// カタログにない曲は外す
+function hydrate(p) {
+  p.items = p.items.map((it) => {
+    let sid = it.sid;
+    if (!Number.isInteger(sid) && it.vid) sid = (catalog.songs.find((x) => x.vid === it.vid && x.start === it.start) || {}).id;
+    return songRow(sid, it.id);
+  }).filter(Boolean);
+}
 const catSelected = new Set();
 const normq = (x) => String(x || '').normalize('NFKC').toLowerCase();
 // 記号の入った曲名を、読みや似た記号でも絞り込めるようにする（曲名 → 検索に足す言葉）
@@ -811,11 +771,13 @@ const pl = () => catalogPls.find((p) => p.id === state.current)
   || state.playlists.find((p) => p.id === state.current) || state.playlists[0];
 fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   catalog = c;
-  // 公演日・公演名・会場名（分かるものだけ）。どのプレイリストの曲でも、同じ動画・同じ開始位置なら表示する
-  c.songs.forEach((x) => { liveInfo[`${x.vid}@${x.start}`] = { date: x.date || '', live: x.live || '', venue: x.venue || '' }; });
+  c.songs.forEach((x) => songById.set(x.id, x));
+  // 保存してあるプレイリスト・共有リンクのプレイリストに、カタログの内容を付ける（以前の形式の保存データもここで置き換える）
+  state.playlists.forEach(hydrate);
+  migrateResume(); save(); showSharedBanner();
   // hidden の付いたもの（単独映像と重なるフルライブのチャプターなど）は一覧に出さない
   const visible = c.songs.filter((x) => !x.hidden);
-  const toItem = (x) => ({ id: `c:${x.vid}@${x.start}`, vid: x.vid, start: x.start, end: x.end, title: x.song, live: x.live || '', len: x.len ?? null });
+  const toItem = (x) => songRow(x.id, `c:${x.id}`);
   catalogAll = visible.map(toItem);   // catalog.json の並び = 曲名順（同じ曲の中は公演日の古い順）
   // 公演日順: 公演日の古い順、同じ公演の中はセットリスト順（公演日が分からないものは最後に公開日順）
   const byLive = (a, b) => (a.date || '9999').localeCompare(b.date || '9999') || (a.no ?? 999) - (b.no ?? 999) || a.published.localeCompare(b.published);
@@ -851,7 +813,7 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
       + setlistText((c.lives || {})[live], full.length ? null : new Set(list.map((x) => x.song))), false, true));
   });
   renderAll(); openSharedLib(); applyResume();
-}).catch(() => { if (sharedLib || sharedSong) { sharedLib = sharedSong = null; $('msg').textContent = 'ライブ映像の一覧を読み込めませんでした。'; } });
+}).catch(() => { $('msg').textContent = 'ライブ映像の一覧を読み込めませんでした。ページを再読み込みしてください。'; });
 
 // 公演の説明に付けるセットリスト（catalog.json の lives。tools/catalog_overrides.json の setlists から作る）
 // playable: フルライブ映像がない公演で、このプレイリストにある（映像で見られる）曲名。その曲に ▶ を付ける
@@ -879,26 +841,17 @@ function setlistText(info, playable) {
   return out.join('\n');
 }
 
-// 共有・書き出し用のコンパクトな形式
-function pack(p) { return { name: p.name, author: p.author || '', desc: p.desc || '', items: p.items.map((it) => [it.vid, it.start, it.end, it.title, it.live || '', it.len ?? null]) }; }
+// 書き出し（JSON）の形式: { name, author, desc, songs: [曲 ID, …] }
+function pack(p) { return { name: p.name, author: p.author || '', desc: p.desc || '', songs: p.items.map((it) => it.sid) }; }
+// カタログを読み込んだあとなら、カタログにない曲 ID はエラーにする（共有リンクはカタログを読む前に開くので、あとで外す）
 function unpack(o) {
-  if (!o || !Array.isArray(o.items)) throw new Error('形式が正しくありません');
-  return { id: uid(), name: String(o.name || '読み込んだプレイリスト').slice(0, 80), author: authorName(o.author), desc: String(o.desc || '').slice(0, 5000), items: o.items.map((a) => {
-    if (!Array.isArray(a) || !/^[\w-]{11}$/.test(a[0])) throw new Error('動画IDが正しくありません');
-    // 秒数は数字だけ受け付ける（開始は0以上、終了は開始より後、長さは0より大きいときだけ）
-    const num = (v) => (v != null && v !== '' && Number.isFinite(+v) ? +v : null);
-    const start = Math.max(0, num(a[1]) ?? 0), end = num(a[2]), len = num(a[5]);
-    return { id: uid(), vid: a[0], start, end: end != null && end > start ? end : null, title: OLD_SONG_TITLES[a[3]] || String(a[3] || '(無題)'),
-             live: String(a[4] || ''), len: len != null && len > 0 ? len : null };
-  }) };
+  if (!o || !Array.isArray(o.songs)) throw new Error('形式が正しくありません（"songs" に曲 ID を並べてください）');
+  const items = o.songs.map((sid) => {
+    if (!Number.isInteger(sid) || (catalog && !songById.has(sid))) throw new Error(`曲 ID ${JSON.stringify(sid)} はカタログにありません`);
+    return catalog ? songRow(sid) : { id: uid(), sid };
+  });
+  return { id: uid(), name: String(o.name || '読み込んだプレイリスト').slice(0, 80), author: authorName(o.author), desc: String(o.desc || '').slice(0, 5000), items };
 }
-// 長いプレイリストでも止まらないように、少しずつ文字にする（一度に ... で渡すと引数が多すぎてエラーになる）
-function b64enc(s) {
-  const bytes = new TextEncoder().encode(s); let bin = '';
-  for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-const b64dec = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)));
 
 // ---------- 再生 ----------
 let player = null, ready = false, started = false, previewing = false, curId = null, watchTimer = null;
@@ -957,7 +910,14 @@ function resumeTime(it, t, dur) {
   return t > it.start && (!end || t < end - 5) ? t : it.start;
 }
 let resumeAt = null;   // { id, t }: 次にこの曲を再生するときの開始秒
-// 編集で曲の範囲が変わっていても、使うときにもう一度範囲を確かめる
+// 以前の形式の行 ID（「toro:動画ID@開始秒」「c:動画ID@開始秒」）で覚えていた続きの位置を、曲 ID の行 ID に直す
+function migrateResume() {
+  const m = resume && String(resume.id).match(/^(toro|c):([\w-]{11})@(\d+)$/);
+  if (!m) return;
+  const x = catalog.songs.find((x) => x.vid === m[2] && x.start === +m[3]);
+  storeResume(x ? { ...resume, id: `${m[1]}:${x.id}` } : null);
+}
+// カタログで曲の範囲が変わっていても、使うときにもう一度範囲を確かめる
 const startOf = (it) => (resumeAt && resumeAt.id === it.id ? resumeTime(it, resumeAt.t) : it.start);
 let lastResumeSave = 0;
 function saveResume(force) {
@@ -1268,7 +1228,7 @@ function renderList() {
   $('plMeta').textContent = `${list.length} ${cat ? '件' : '曲'}` + (list.length ? ` ・ 約 ${fmt(total)}${unknown ? ' 以上' : ''}` : '');
   if (!list.length) {
     const li = document.createElement('li'); li.className = 'empty';
-    li.textContent = cat ? '見つかりませんでした。' : editing ? '「＋ ライブ映像から選ぶ」か「＋ URL で追加」から曲を追加してください。' : '曲がありません。「編集」から曲を追加できます。';
+    li.textContent = cat ? '見つかりませんでした。' : editing ? '「＋ ライブ映像から選ぶ」から曲を追加してください。' : '曲がありません。「編集」から曲を追加できます。';
     ol.appendChild(li);
   }
   list.forEach((it, i) => {
@@ -1286,13 +1246,11 @@ function renderList() {
     const s = document.createElement('span'); s.className = 's';
     const liveText = liveLine(it);   // YYYY.MM.DD「ライブ名」 @ 会場名
     // フルライブ映像から切り出した曲（途中から始まる・途中で終わる）には「フルライブ映像より」バッジを付ける。
-    // 元動画のどこからどこまでか（時間の範囲）は、編集モードのときだけ表示する
     const partial = !!(it.start || it.end != null);
-    const range = editing && partial ? `${fmt(it.start)}〜${it.end != null ? fmt(it.end) : '最後'}` : '';
-    s.textContent = [liveText, range].filter(Boolean).join(' ・ ');
+    s.textContent = liveText;
     if (partial) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'フルライブ映像より'; s.appendChild(tag); }
     main.append(t, s);
-    main.addEventListener('click', () => editing ? openSong(it.id) : playIndex(i));
+    main.addEventListener('click', () => playIndex(i));
     const d = document.createElement('span'); d.className = 'd'; d.textContent = fmt(itemLen(it));
     const tools = document.createElement('span'); tools.className = 'tools';
     const mk = (label, title, fn, disabled) => {
@@ -1302,7 +1260,6 @@ function renderList() {
     tools.append(
       mk('↑', '上へ', () => move(i, i - 1), i === 0),
       mk('↓', '下へ', () => move(i, i + 1), i === list.length - 1),
-      mk('✎', '編集', () => openSong(it.id)),
       mk('✕', '削除', () => removeSong(it.id)),
     );
     const right = document.createElement('span'); right.append(d, tools);
@@ -1370,7 +1327,7 @@ function openAdd(list) {
   $('addDlg').showModal();
 }
 function addTo(p) {
-  p.items.push(...pendingAdd.map((it) => ({ id: uid(), vid: it.vid, start: it.start, end: it.end, title: it.title, live: it.live, len: it.len ?? null })));
+  p.items.push(...pendingAdd.map((it) => songRow(it.sid)));
   lastTarget = p.id; save();
   $('msg').textContent = `「${p.name}」に ${pendingAdd.length} 曲追加しました。`;
   pendingAdd = []; catSelected.clear(); selecting = false; $('addDlg').close(); renderAll();
@@ -1441,75 +1398,13 @@ function addDrag(li) {
   });
 }
 
-// ---------- 曲の追加・編集 ----------
-let editingSongId = null;
-function openSong(id) {
-  editingSongId = id;
-  const it = id ? items().find((x) => x.id === id) : null;
-  $('songDlgTitle').textContent = it ? '曲を編集' : '曲を追加';
-  $('fUrl').value = it ? `https://www.youtube.com/watch?v=${it.vid}` : '';
-  $('fTitle').value = it ? it.title : '';
-  $('fLive').value = it ? it.live : '';
-  $('fStart').value = it ? fmt(it.start) : '';
-  $('fEnd').value = it && it.end != null ? fmt(it.end) : '';
-  $('fErr').textContent = '';
-  $('songDlg').showModal();
-}
-function readSongForm() {
-  const y = parseYouTube($('fUrl').value);
-  if (!y) throw new Error('YouTube の URL を正しく入力してください。');
-  const start = $('fStart').value.trim() ? parseTime($('fStart').value) : (y.t ?? 0);
-  const end = parseTime($('fEnd').value);
-  if (start == null || isNaN(start)) throw new Error('開始時刻の形式が正しくありません（例 1:15:08）。');
-  if (end != null && (isNaN(end) || end <= start)) throw new Error('終了時刻は開始時刻より後にしてください。');
-  const title = $('fTitle').value.trim();
-  if (!title) throw new Error('曲名を入力してください。');
-  return { vid: y.id, start, end, title, live: $('fLive').value.trim() };
-}
-$('fUrl').addEventListener('change', () => {
-  const y = parseYouTube($('fUrl').value);
-  if (y && y.t != null && !$('fStart').value.trim()) $('fStart').value = fmt(y.t);
-});
-function nowFor(field) {
-  const y = parseYouTube($('fUrl').value);
-  if (!player || !ready || !player.getVideoData) return;
-  const vd = player.getVideoData();
-  if (!y || vd.video_id !== y.id) { $('fErr').textContent = 'プレイヤーで同じ動画を再生しているときに使えます（「この範囲を試聴」で再生できます）。'; return; }
-  $(field).value = fmt(player.getCurrentTime()); $('fErr').textContent = '';
-}
-$('fStartNow').addEventListener('click', () => nowFor('fStart'));
-$('fEndNow').addEventListener('click', () => nowFor('fEnd'));
-$('fPreview').addEventListener('click', () => {
-  try {
-    const f = readSongForm(); $('fErr').textContent = '';
-    $('songDlg').close();
-    whenReady(() => {
-      started = false; previewing = true;
-      const opts = { videoId: f.vid, startSeconds: f.start }; if (f.end != null) opts.endSeconds = f.end;
-      player.loadVideoById(opts);
-    });
-    $('msg').textContent = '試聴中です。位置を決めたら、曲の「✎」から開き直して「今」で時刻を入れられます。';
-  } catch (e) { $('fErr').textContent = e.message; }
-});
-$('fSave').addEventListener('click', () => {
-  try {
-    const f = readSongForm();
-    const list = items();
-    if (editingSongId) {
-      const it = list.find((x) => x.id === editingSongId);
-      if (it.vid !== f.vid || it.start !== f.start || it.end !== f.end) it.len = null;
-      Object.assign(it, f);
-    } else list.push({ id: uid(), len: null, ...f });
-    save(); renderList(); $('songDlg').close();
-  } catch (e) { $('fErr').textContent = e.message; }
-});
+// ---------- 曲の削除 ----------
 async function removeSong(id) {
   const it = items().find((x) => x.id === id);
   if (!await ask({ title: '曲を削除', message: `「${it.title}」（${it.live || ''}）をこのプレイリストから削除しますか？`, ok: '削除', danger: true })) return;
   pl().items = items().filter((x) => x.id !== id);
   save(); renderList();
 }
-$('addSong').addEventListener('click', () => openSong(null));
 
 // ---------- 入力・確認ダイアログ ----------
 // input: true なら名前を入力させて文字列を返す。false なら確認だけで true を返す。キャンセルは null
@@ -1593,7 +1488,9 @@ async function copyLink(url, done) {
   try { await navigator.clipboard.writeText(url); $('msg').textContent = done; }
   catch { ask({ title: '共有リンク', message: '自動でコピーできなかったので、下のリンクを選択してコピーしてください。', input: true, value: url, ok: '閉じる' }); }
 }
-$('plShare').addEventListener('click', () => copyLink(`${location.origin}${location.pathname}#pl=${b64enc(JSON.stringify(pack(pl())))}`,
+// プレイリストの共有リンク: 「#pl=曲 ID.曲 ID.…&t=名前&a=作成者」（説明は入れない）
+$('plShare').addEventListener('click', () => copyLink(`${location.origin}${location.pathname}#pl=${pl().items.map((it) => it.sid).join('.')}`
+  + `&t=${encodeURIComponent(pl().name)}${pl().author ? '&a=' + encodeURIComponent(pl().author) : ''}`,
   '共有リンクをコピーしました。開いた人は、このプレイリストを保存して再生できます。'));
 // ライブラリのプレイリストは曲を埋め込まず「#lib=名前」の短いリンクにする（開くといつも最新の内容）
 //   toro = トロ's セレクション / songs = すべてのライブ映像 - 曲名順 / dates = すべてのライブ映像 - 公演日順
@@ -1615,18 +1512,13 @@ function libId(key) {
   return p ? p.id : null;
 }
 // ---------- 再生中の曲を X で共有 ----------
-// 曲は「動画ID@開始秒」で表す（プレーヤーの曲リンクは #lib=プレイリスト&song=… または #song=…）
-const songKey = (it) => `${it.vid}@${it.start}`;
-// カタログにある曲は、曲ごとの案内ページ（s/動画ID-開始秒.html）のリンクにする。X のカードにその曲のサムネと
-// 曲名・公演が出て、開くとすぐプレーヤーのその曲に移る（tools/update_catalog.py がカタログと一緒に作る）。
-// いまライブラリのプレイリストを開いていれば ?lib= でそのプレイリストを伝える（なければ公演のプレイリスト）。
-// カタログにない曲（自分で追加した動画）は、その1曲だけのプレイリストの #pl= リンクにする
+// 曲のリンクは、曲ごとの案内ページ（s/曲ID.html）。X のカードにその曲のサムネと曲名・公演が出て、
+// 開くとすぐプレーヤーのその曲（?song=曲ID）に移る（tools/update_catalog.py がカタログと一緒に作る）。
+// いまライブラリのプレイリストを開いていれば ?lib= でそのプレイリストを伝える（なければ公演のプレイリスト）
 function songLink(it) {
-  const base = location.origin + location.pathname.replace(/[^/]*$/, ''), key = songKey(it);
+  const base = location.origin + location.pathname.replace(/[^/]*$/, '');
   const inLib = pl().id === BUILTIN_ID || catalogPls.includes(pl());
-  if (catalogPls.some((p) => p.all.some((x) => songKey(x) === key)))
-    return `${base}s/${it.vid}-${it.start}.html${inLib ? '?lib=' + libKey(pl()) : ''}`;
-  return `${base}#pl=${b64enc(JSON.stringify(pack({ name: it.title, items: [it] })))}`;
+  return `${base}s/${it.sid}.html${inLib ? '?lib=' + libKey(pl()) : ''}`;
 }
 // 「♫ 曲名 ／ yosugala | 公演日「公演名」@ 会場名 #yosugala リンク」（分からないものは省く）
 function songShareText(it) {
@@ -1664,40 +1556,43 @@ $('ioImport').addEventListener('click', async () => {
 
 // ---------- 共有リンクから開いたとき ----------
 let shared = null;
+// 「#pl=曲 ID.曲 ID.…&t=名前&a=作成者」。カタログを読み込んだら曲を付け、バナーを出す（showSharedBanner）
 (function readHash() {
-  const m = location.hash.match(/#pl=([\w-]+)/);
-  if (!m) return;
-  try { shared = unpack(JSON.parse(b64dec(m[1]))); } catch { $('msg').textContent = '共有リンクを読み込めませんでした。'; return; }
-  $('shareText').textContent = `共有されたプレイリスト「${shared.name}」（${shared.items.length} 曲${shared.author ? '・作成：' + authorName(shared.author) : ''}）を開いています。`;
-  $('shareBanner').hidden = false;
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (!h.has('pl')) return;
+  const songs = h.get('pl').split('.').filter(Boolean).map(Number);
+  try { shared = unpack({ name: h.get('t') || '共有されたプレイリスト', author: h.get('a') || '', songs }); }
+  catch { $('msg').textContent = '共有リンクを読み込めませんでした。'; return; }
   state.playlists.push(shared); state.current = shared.id;   // 保存はボタンを押したときだけ
 })();
+function showSharedBanner() {
+  if (!shared) return;
+  $('shareText').textContent = `共有されたプレイリスト「${shared.name}」（${shared.items.length} 曲${shared.author ? '・作成：' + authorName(shared.author) : ''}）を開いています。`;
+  $('shareBanner').hidden = false;
+}
 // ライブラリの共有リンク（#lib=）: カタログを読み込んでから、そのプレイリストを開く
-// 曲の共有リンク（#lib=…&song=動画ID@開始秒、または #song=… だけ）: その曲を選んだ状態で開く。
-// プレイリストの指定がなければ、その曲が入っている公演のプレイリスト（なければ他のライブラリ）を開く
-// 曲ごとの案内ページ（s/…html）からは「?song=…&lib=…」で来る（X アプリの中のブラウザは移るときに # 以降を落とすことがあるため）
+// 曲の案内ページ（s/曲ID.html）からは「?song=曲ID&lib=…」で来る（X アプリの中のブラウザは移るときに # 以降を落とすことがあるため）。
+// その曲を選んだ状態で開く。プレイリストの指定がなければ、その曲が入っている公演のプレイリスト（なければ他のライブラリ）
 const query = new URLSearchParams(location.search);
 let sharedLib = (location.hash.match(/#lib=([^&]+)/) || [])[1] || (query.get('lib') ? encodeURIComponent(query.get('lib')) : null);
-let sharedSong = (() => { try { return decodeURIComponent((location.hash.match(/[#&]song=([^&]+)/) || [])[1] || '') || null; } catch { return null; } })()
-  || query.get('song');
+let sharedSong = /^\d+$/.test(query.get('song') || '') ? +query.get('song') : null;
 function openSharedLib() {
   if (!sharedLib && !sharedSong) return;
-  if (!sharedLib && !catalog) return;   // 曲だけのリンクはカタログを読み込んでから、入っているプレイリストを探す
-  const has = (p) => p.all.some((x) => songKey(x) === sharedSong);
+  if (!catalog) return;   // カタログを読み込んでから開く
+  const has = (p) => p.all.some((x) => x.sid === sharedSong);
   const id = sharedLib ? libId(sharedLib) : (catalogPls.find((p) => p.live && has(p)) || catalogPls.find(has) || {}).id;
-  if (!catalog && id !== BUILTIN_ID) return;   // トロ's セレクション以外はカタログの読み込みを待つ
   sharedLib = null; clearHash();
   if (!id) { $('msg').textContent = '共有リンクのプレイリストが見つかりませんでした。'; return; }
   switchTo(id);
-  // 曲の共有リンク（&song=動画ID@開始秒）: その曲を選んでおく（再生は PLAY を押したとき）
-  if (sharedSong) {
-    const i = items().findIndex((it) => songKey(it) === sharedSong);
+  // 曲のリンク（?song=曲ID）: その曲を選んでおく（再生は PLAY を押したとき）
+  if (sharedSong != null) {
+    const i = items().findIndex((it) => it.sid === sharedSong);
     sharedSong = null;
     if (i >= 0) { cueIndex(i); scrollCurToTop(); }
   }
 }
 // 開いているページで共有リンクを開いた（# 以降だけが変わった）ときも読み込み直す
-window.addEventListener('hashchange', () => { if (/#(pl|lib|song)=/.test(location.hash)) location.reload(); });
+window.addEventListener('hashchange', () => { if (/#(pl|lib)=/.test(location.hash)) location.reload(); });
 // 共有リンクの # 以降と、案内ページから来たときの ?song= / ?lib= をアドレス欄から消す（ほかの ? はそのまま）
 function clearHash() {
   const q = new URLSearchParams(location.search); q.delete('song'); q.delete('lib');
@@ -1706,7 +1601,7 @@ function clearHash() {
 $('shareSave').addEventListener('click', () => { shared = null; save(); $('shareBanner').hidden = true; clearHash(); renderAll(); });
 $('shareDismiss').addEventListener('click', () => {
   state.playlists = state.playlists.filter((p) => p.id !== shared.id); shared = null;
-  state = startPlaylist(load()); $('shareBanner').hidden = true; clearHash(); switchTo(state.current);
+  state = startPlaylist(load()); state.playlists.forEach(hydrate); $('shareBanner').hidden = true; clearHash(); switchTo(state.current);
 });
 const _save = save;
 save = function () { if (shared) { const keep = state.playlists; state = { ...state, playlists: keep.filter((p) => p !== shared) };
@@ -1895,7 +1790,7 @@ function syncViewportFit() {
 }
 syncViewportFit();
 landscapeMq.addEventListener('change', syncViewportFit);
-renderAll(); openSharedLib(); applyResume();
+// 曲の内容はカタログから付けるので、描画はカタログを読み込んでから（fetch('catalog.json') の中で）
 const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
 </script>
 </body>
