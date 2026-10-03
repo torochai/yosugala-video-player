@@ -854,7 +854,7 @@ function unpack(o) {
 }
 
 // ---------- 再生 ----------
-let player = null, ready = false, started = false, previewing = false, curId = null, watchTimer = null;
+let player = null, ready = false, started = false, curId = null, watchTimer = null;
 const items = () => pl().items;
 const curIndex = () => items().findIndex((it) => it.id === curId);
 
@@ -892,7 +892,7 @@ function cueIndex(i) {
   if (it.end != null) opts.endSeconds = it.end;
   player.cueVideoById(opts);
 }
-// 曲を再生したプレイリストを覚えておき、次にページを開いたときはそこから始める（試聴は除く）
+// 曲を再生したプレイリストを覚えておき、次にページを開いたときはそこから始める
 function rememberPlayed() { if (state.lastPlayed !== pl().id) { state.lastPlayed = pl().id; save(); } }
 // 続きから再生: 再生中の位置（プレイリスト・曲・秒）を 別のキー（RESUME_KEY）に覚えておき、次に開いたときはその曲を選んでおく。
 // 自動再生はブラウザに止められるので、PLAY（その曲の再生）を押したときに、覚えておいた秒から始める
@@ -921,7 +921,7 @@ function migrateResume() {
 const startOf = (it) => (resumeAt && resumeAt.id === it.id ? resumeTime(it, resumeAt.t) : it.start);
 let lastResumeSave = 0;
 function saveResume(force) {
-  if (!player || !ready || !started || previewing || !player.getCurrentTime) return;
+  if (!player || !ready || !started || !player.getCurrentTime) return;
   // 共有リンクで開いた保存前のプレイリストは、開くたびに ID が変わるので覚えない
   if (shared && pl() === shared) return;
   if (!force && Date.now() - lastResumeSave < 5000) return;
@@ -931,10 +931,10 @@ function saveResume(force) {
   storeResume({ pl: pl().id, id: it.id, t: resumeTime(it, Math.floor(player.getCurrentTime()), player.getDuration()) });
 }
 // 起動時（とカタログを読み込んだあと）: 前回のプレイリストを開いていれば、続きの曲を選んでおく。
-// まだ何も選んでいない・再生していない・試聴していないときだけ（ほかの操作やメッセージを上書きしない）
+// まだ何も選んでいない・再生していないときだけ（ほかの操作やメッセージを上書きしない）
 function applyResume() {
   const r = resume;
-  if (!r || started || previewing || curId != null || r.pl !== state.current || pl().id !== state.current) return;
+  if (!r || started || curId != null || r.pl !== state.current || pl().id !== state.current) return;
   const i = items().findIndex((it) => it.id === r.id);
   if (i < 0) return;
   const it = items()[i], t = resumeTime(it, r.t);
@@ -949,7 +949,7 @@ function playIndex(i) {
   curId = list[i].id; $('msg').textContent = ''; rememberPlayed();
   showNow(); scrollCurToTop();
   if (!ready) { if (!player) pendingPlay = i; return whenReady(() => playIndex(i)); }
-  started = true; previewing = false;
+  started = true;
   const it = list[i], opts = { videoId: it.vid, startSeconds: startOf(it) };
   resumeAt = null;
   if (it.end != null) opts.endSeconds = it.end;
@@ -1023,7 +1023,7 @@ function createPlayer() {
           // 準備中に曲数の少ないプレイリストへ切り替えていたら、その1曲目にする
           const it = items()[i] || items()[0];
           if (!it) return;
-          curId = it.id; started = true; previewing = false; resumeAt = null; showNow();
+          curId = it.id; started = true; resumeAt = null; showNow();
           player.playVideo();
           // それでも始まらないとき（主に iPhone）は、動画のボタンを押してもらう
           setTimeout(() => {
@@ -1042,8 +1042,8 @@ function createPlayer() {
         if (e.data === YT.PlayerState.PLAYING) { applyCaptions(); setTimeout(applyCaptions, 1500); setTimeout(applyCaptions, 4000); }
         // 動画を直接クリックして再生が始まったときも、プレイリスト再生として扱う
         if (e.data === YT.PlayerState.PLAYING && /自動再生/.test($('msg').textContent)) $('msg').textContent = '';
-        if (e.data === YT.PlayerState.PLAYING && !started && !previewing && curIndex() >= 0) { started = true; showNow(); }
-        if (e.data === YT.PlayerState.PLAYING && started && !previewing) rememberPlayed();
+        if (e.data === YT.PlayerState.PLAYING && !started && curIndex() >= 0) { started = true; showNow(); }
+        if (e.data === YT.PlayerState.PLAYING && started) rememberPlayed();
         if (e.data === YT.PlayerState.PLAYING && started) {
           const it = items()[curIndex()];
           if (it && it.end == null && it.len == null && player.getVideoData().video_id === it.vid) {
@@ -1448,7 +1448,7 @@ function switchTo(id) {
   if (id !== state.current) { catQuery = ''; $('catSearch').value = ''; catSelected.clear(); selecting = false; }
   if (dupFrom && id !== dupFrom.copyId) dupFrom = null;   // 別のプレイリストに切り替えたらコピーは確定
   state.current = id; save(); curId = null; resumeAt = null;
-  started = false; previewing = false; cueIndex(0);
+  started = false; cueIndex(0);
   $('msg').textContent = ''; renderAll();
 }
 const NEW_ID = '__new__';
@@ -1634,7 +1634,7 @@ function segment() {
   const it = items()[curIndex()], dur = player && player.getDuration ? player.getDuration() : 0;
   const vd = player && player.getVideoData ? player.getVideoData() : null, vid = vd ? vd.video_id : null;
   const cur = it || items()[0];
-  if (cur && cur.vid === vid && !previewing) return { s: cur.start, e: cur.end != null ? cur.end : dur };
+  if (cur && cur.vid === vid) return { s: cur.start, e: cur.end != null ? cur.end : dur };
   return { s: 0, e: dur };
 }
 let seeking = false;
@@ -1672,7 +1672,7 @@ setInterval(() => {
 }, 250);
 function togglePlay() {
   if (!ready) return playIndex(Math.max(0, curIndex()));
-  if (!started && !previewing) return playIndex(Math.max(0, curIndex()));
+  if (!started) return playIndex(Math.max(0, curIndex()));
   player.getPlayerState() === YT.PlayerState.PLAYING ? player.pauseVideo() : player.playVideo();
 }
 $('pp').addEventListener('click', togglePlay);
@@ -1722,7 +1722,7 @@ document.addEventListener('keydown', (e) => {
   const code = e.code;
   if (code === 'Space' || code === 'KeyK') { e.preventDefault(); if (tgt && tgt.blur) tgt.blur(); togglePlay(); }
   else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-    if (!player || !ready || !started && !previewing) return;
+    if (!player || !ready || !started) return;
     e.preventDefault(); const { s, e: end } = segment();
     player.seekTo(Math.min(end, Math.max(s, player.getCurrentTime() + (e.key === 'ArrowRight' ? SKIP_SEC : -SKIP_SEC))), true);
   }
