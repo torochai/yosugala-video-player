@@ -395,7 +395,7 @@
   <div class="banner" id="shareBanner" hidden>
     <span id="shareText"></span>
     <button class="btn primary" type="button" id="shareSave">マイライブラリに保存</button>
-    <button class="btn" type="button" id="shareDismiss">保存しない</button>
+    <button class="btn" type="button" id="shareDismiss" title="この案内を閉じます（保存はしません。このリンクを開いている間はプレイリストに残ります）">保存しない</button>
   </div>
 
   <div class="layout">
@@ -1567,7 +1567,7 @@ let shared = null;
 })();
 function showSharedBanner() {
   if (!shared) return;
-  $('shareText').textContent = `共有されたプレイリスト「${shared.name}」（${shared.items.length} 曲${shared.author ? '・作成：' + authorName(shared.author) : ''}）を開いています。`;
+  $('shareText').textContent = `共有されたプレイリスト「${shared.name}」（${shared.items.length} 曲${shared.author ? '・作成：' + authorName(shared.author) : ''}）です。このまま再生できます。`;
   $('shareBanner').hidden = false;
 }
 // ライブラリの共有リンク（#lib=）: カタログを読み込んでから、そのプレイリストを開く
@@ -1599,10 +1599,8 @@ function clearHash() {
   history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
 }
 $('shareSave').addEventListener('click', () => { shared = null; save(); $('shareBanner').hidden = true; clearHash(); renderAll(); });
-$('shareDismiss').addEventListener('click', () => {
-  state.playlists = state.playlists.filter((p) => p.id !== shared.id); shared = null;
-  state = startPlaylist(load()); state.playlists.forEach(hydrate); $('shareBanner').hidden = true; clearHash(); switchTo(state.current);
-});
+// 「保存しない」: 案内を閉じるだけ（共有されたプレイリストはメニューに残り、そのまま再生できる。保存はしない。URL もそのまま）
+$('shareDismiss').addEventListener('click', () => { $('shareBanner').hidden = true; });
 const _save = save;
 save = function () { if (shared) { const keep = state.playlists; state = { ...state, playlists: keep.filter((p) => p !== shared) };
   _save(); state = { ...state, playlists: keep }; } else _save(); };
