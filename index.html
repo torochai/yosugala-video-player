@@ -178,6 +178,7 @@
   .btn.songshare { display: inline-flex; align-items: center; gap: 6px; background: #000; color: #fff; border-color: rgba(255,255,255,.28); }
   .btn.songshare:hover { background: #16181c; border-color: rgba(255,255,255,.55); box-shadow: 0 0 14px rgba(255,255,255,.15); }
   .btn.songshare[hidden] { display: none; }
+  .now .xbtns { display: inline-flex; gap: 6px; flex: none; }
   .songshare svg { width: 13px; height: 13px; }
   .now .title { font-size: 1.45rem; font-weight: 700; letter-spacing: .04em; overflow-wrap: anywhere; line-height: 1.3; }
   .now .live { color: var(--muted); font-size: .82rem; }
@@ -429,11 +430,17 @@
         <div class="label">
           <div class="numrow">
             <div class="num" id="nowNum"></div>
-            <!-- 再生中の曲を X で共有（曲名・公演・この曲を開くリンク） -->
-            <button class="btn small songshare" type="button" id="songShare" hidden aria-label="この曲を X で共有する" title="この曲を X で共有する">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>
-              この曲を共有
-            </button>
+            <!-- X で共有: 「曲を共有」は再生中の曲（曲名・公演・この曲を開くリンク）、「PLを共有」は開いているプレイリスト -->
+            <span class="xbtns">
+              <button class="btn small songshare" type="button" id="songShare" hidden aria-label="この曲を X で共有する" title="この曲を X で共有する">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>
+                曲を共有
+              </button>
+              <button class="btn small songshare" type="button" id="plXShare" hidden aria-label="このプレイリストを X で共有する" title="このプレイリストを X で共有する">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>
+                PLを共有
+              </button>
+            </span>
           </div>
           <div class="title" id="nowTitle"></div>
           <div class="live" id="nowLive"></div>
@@ -475,7 +482,6 @@
         <div class="prow" id="plTools" hidden>
           <button class="btn small" type="button" id="plRename">名前変更</button>
           <button class="btn small" type="button" id="plDup">複製</button>
-          <button class="btn small" type="button" id="plShare" title="このプレイリストを開くリンクをコピーします">共有</button>
           <button class="btn small" type="button" id="plIO">書き出し / 読み込み</button>
           <button class="btn small" type="button" id="plDesc">説明・作成者を編集</button>
           <button class="btn small danger" type="button" id="plDelete">削除</button>
@@ -487,13 +493,14 @@
             <div class="author" id="plAuthor" hidden></div>
           </div>
           <div class="pactions">
+            <!-- 並びは 情報・選択・編集・複製・共有（ライブラリは編集の代わりに、コピーを作って編集する「複製」） -->
             <button class="btn small" type="button" id="infoJump" hidden data-tip="このプレイリストについて">情報</button>
-            <button class="btn small" type="button" id="dupMine" hidden>複製</button>
-            <button class="btn small" type="button" id="dupCancel" hidden title="いま作ったコピーを削除して、元のプレイリストに戻ります">キャンセル</button>
             <button class="btn small" type="button" id="selectToggle" title="曲を選んで、まとめてプレイリストに追加します">選択</button>
             <button class="btn small" type="button" id="editToggle">編集</button>
-            <button class="btn small" type="button" id="libShare" hidden title="このプレイリストを開くリンクをコピーします">共有</button>
+            <button class="btn small" type="button" id="dupMine" hidden>複製</button>
             <button class="btn small" type="button" id="dupEdit" hidden title="このプレイリストは編集できません。コピーを作って編集します">複製</button>
+            <button class="btn small" type="button" id="dupCancel" hidden title="いま作ったコピーを削除して、元のプレイリストに戻ります">キャンセル</button>
+            <button class="btn small" type="button" id="plShare" title="このプレイリストを開くリンクをコピーします">共有</button>
           </div>
         </div>
       </div>
@@ -862,7 +869,7 @@ function showNow() {
   const list = items(), i = curIndex(), it = list[i];
   $('nowNum').textContent = it ? `${pad(i + 1)} / ${list.length}` : `${list.length} 曲`;
   $('nowTitle').textContent = it ? it.title : pl().name;
-  $('songShare').hidden = !it;
+  $('songShare').hidden = !it; $('plXShare').hidden = !list.length;
   // ライブ名と公演日・会場名（分かるものだけ）
   // 「公演日: YYYY.MM.DD 「ライブ名」 @ 会場名」（間は半角スペース。分からないものは省く）
   // ライブ名は「」で囲む（中にある「」は『』にする）
@@ -1282,7 +1289,8 @@ function renderAll() {
   renderList(); $('plTools').hidden = !editing;   // renderList の中でプルダウンの中身も作る
   $('panel').classList.toggle('editing', editing); $('panel').classList.toggle('catalog', ro);
   $('editToggle').textContent = editing ? '完了' : '編集'; $('editToggle').hidden = ro;
-  $('dupEdit').hidden = !ro; $('libShare').hidden = !ro;
+  $('dupEdit').hidden = !ro;
+  $('plShare').hidden = editing;   // 編集中は「完了」（と複製直後の「キャンセル」）だけにする
   // スマホ: 説明があるときだけ「情報」（公演ごとのプレイリストは「公演情報」）で説明までスクロールできる
   $('infoJump').hidden = !(pl().desc || '').trim();
   $('infoJump').textContent = pl().live ? '公演情報' : '情報';
@@ -1488,10 +1496,17 @@ async function copyLink(url, done) {
   try { await navigator.clipboard.writeText(url); $('msg').textContent = done; }
   catch { ask({ title: '共有リンク', message: '自動でコピーできなかったので、下のリンクを選択してコピーしてください。', input: true, value: url, ok: '閉じる' }); }
 }
-// プレイリストの共有リンク: 「#pl=曲 ID.曲 ID.…&t=名前&a=作成者」（説明は入れない）
-$('plShare').addEventListener('click', () => copyLink(`${location.origin}${location.pathname}#pl=${pl().items.map((it) => it.sid).join('.')}`
-  + `&t=${encodeURIComponent(pl().name)}${pl().author ? '&a=' + encodeURIComponent(pl().author) : ''}`,
-  '共有リンクをコピーしました。開いた人は、このプレイリストを保存して再生できます。'));
+// プレイリストの共有リンク。ライブラリのプレイリストは「#lib=名前」（開くといつも最新の内容）、
+// 自分のプレイリストは「#pl=曲 ID.曲 ID.…&t=名前&a=作成者」（説明は入れない）
+const isLib = (p) => p.id === BUILTIN_ID || catalogPls.includes(p);
+function plLink(p) {
+  const base = location.origin + location.pathname;
+  if (isLib(p)) return `${base}#lib=${libKey(p)}`;
+  return `${base}#pl=${p.items.map((it) => it.sid).join('.')}&t=${encodeURIComponent(p.name)}${p.author ? '&a=' + encodeURIComponent(p.author) : ''}`;
+}
+$('plShare').addEventListener('click', () => copyLink(plLink(pl()), isLib(pl())
+  ? `「${pl().name}」の共有リンクをコピーしました。開いた人は、このプレイリストをそのまま再生できます。`
+  : '共有リンクをコピーしました。開いた人は、このプレイリストを再生したり、保存したりできます。'));
 // ライブラリのプレイリストは曲を埋め込まず「#lib=名前」の短いリンクにする（開くといつも最新の内容）
 //   toro = トロ's セレクション / songs = すべてのライブ映像 - 曲名順 / dates = すべてのライブ映像 - 公演日順
 //   singles = Official Live Video - 公開日順 / YYYY-MM-DD = その日の公演
@@ -1517,8 +1532,7 @@ function libId(key) {
 // いまライブラリのプレイリストを開いていれば ?lib= でそのプレイリストを伝える（なければ公演のプレイリスト）
 function songLink(it) {
   const base = location.origin + location.pathname.replace(/[^/]*$/, '');
-  const inLib = pl().id === BUILTIN_ID || catalogPls.includes(pl());
-  return `${base}s/${it.sid}.html${inLib ? '?lib=' + libKey(pl()) : ''}`;
+  return `${base}s/${it.sid}.html${isLib(pl()) ? '?lib=' + libKey(pl()) : ''}`;
 }
 // 「♫ 曲名 ／ yosugala | 公演日「公演名」@ 会場名 #yosugala リンク」（分からないものは省く）
 function songShareText(it) {
@@ -1526,13 +1540,20 @@ function songShareText(it) {
   const where = [(x.date ? dotDate(x.date) : '') + live, x.venue ? `@ ${x.venue}` : ''].filter(Boolean).join('');
   return `♫ ${it.title} ／ yosugala${where ? ' | ' + where : ''} #yosugala ${songLink(it)}`;
 }
+// 「♫ プレイリスト名（N 曲・作成：名前）／ yosugala #yosugala リンク」
+function plShareText(p) {
+  const n = (p.all || p.items).length, by = p.author ? `・作成：${authorName(p.author)}` : '';
+  return `♫ ${p.name}（${n} 曲${by}）／ yosugala #yosugala ${plLink(p)}`;
+}
+$('plXShare').addEventListener('click', () => {
+  if (!pl().items.length) return;
+  window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(plShareText(pl()))}`, '_blank', 'noopener');
+});
 $('songShare').addEventListener('click', () => {
   const it = items()[curIndex()];
   if (!it) return;
   window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(songShareText(it))}`, '_blank', 'noopener');
 });
-$('libShare').addEventListener('click', () => copyLink(`${location.origin}${location.pathname}#lib=${libKey(pl())}`,
-  `「${pl().name}」の共有リンクをコピーしました。開いた人は、このプレイリストをそのまま再生できます。`));
 $('plIO').addEventListener('click', () => {
   $('ioText').value = JSON.stringify(pack(pl()), null, 1); $('ioErr').textContent = ''; $('ioDlg').showModal();
 });
