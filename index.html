@@ -75,19 +75,27 @@
   h1 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(2.2rem, 6vw, 3.6rem); line-height: 1.05; letter-spacing: .02em; }
   h1 .sub { display: block; font-style: italic; font-size: .5em; letter-spacing: .12em;
     background: linear-gradient(90deg, var(--moon), var(--dawn) 60%, var(--dawn-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  /* X で共有: ページ右上に大きめに置く */
-  .xshare { position: absolute; top: -10px; right: 0;   /* 「UNOFFICIAL FAN-MADE PLAYER」の行に中心をそろえる */ display: inline-flex; align-items: center; gap: 8px;
-    padding: 10px 18px; font-size: .95rem; font-weight: 700; z-index: 2;
+  /* X で共有: ページ右上に置く。PC では「この曲を共有」ボタン（.btn.small）と同じ大きさ（スマホは下で小さくする） */
+  .xshare { position: absolute; top: -7px; right: 0;   /* 「UNOFFICIAL FAN-MADE PLAYER」の行に中心をそろえる */ display: inline-flex; align-items: center; gap: 6px;
+    z-index: 2;
   }
-  .btn.xshare { background: #000; color: #fff; border: 1px solid rgba(255,255,255,.28); }   /* X らしい黒地に白（通常のボタンより優先） */
+  .btn.xshare { background: #000; color: #fff; border: 1px solid rgba(255,255,255,.28);   /* X らしい黒地に白（通常のボタンより優先） */
+    padding: 5px 11px; font-size: .78rem; }   /* 大きさは .btn.small と同じ */
   a.xshare { text-decoration: none; }
   .btn.xshare:hover { background: #16181c; border-color: rgba(255,255,255,.55); box-shadow: 0 0 14px rgba(255,255,255,.15); }
-  .xshare svg { width: 18px; height: 18px; }
+  .xshare svg { width: 13px; height: 13px; }
   @media (max-width: 900px) {
-    /* スマホでは「UNOFFICIAL FAN-MADE PLAYER」の行の右端に並べる */
-    .xshare { top: -9px; padding: 6px 12px; font-size: .8rem; gap: 6px; }
-    .xshare svg { width: 14px; height: 14px; }
+    /* スマホでは「UNOFFICIAL FAN-MADE PLAYER」の行の右端に、文字と重ならないよう小さめに並べる */
+    .btn.xshare { padding: 3px 9px; font-size: .68rem; gap: 5px; }
+    .xshare { top: -4px; }
+    .xshare svg { width: 11px; height: 11px; }
     .eyebrow { letter-spacing: .2em; }   /* 右端のボタンと重ならないよう、少し詰める */
+  }
+  @media (max-width: 480px) {
+    .eyebrow { letter-spacing: .08em; }   /* スマホの縦向きは幅が狭いので、さらに詰める */
+  }
+  @media (max-width: 340px) {
+    .xs-long { display: none; }   /* それでも入らない小さな画面では「共有」だけにする */
   }
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 24px; align-items: start; }
   /* PC・iPad 横向き: プレイリスト欄をページの一番上（タイトルの右）から始める。タイトル・共有の案内・動画は左の列。
@@ -382,7 +390,7 @@
     <h1>yosugala<span class="sub">Live Video Player</span></h1>
     <a class="btn xshare" id="xShare" href="https://x.com/intent/tweet?text=yosugala%20Live%20Video%20Player%20-%20%E5%A5%BD%E3%81%8D%E3%81%AA%E3%83%A9%E3%82%A4%E3%83%96%E6%98%A0%E5%83%8F%E3%82%92%E9%9B%86%E3%82%81%E3%81%A6%E3%80%81%E8%87%AA%E5%88%86%E3%81%A0%E3%81%91%E3%81%AE%E3%82%BB%E3%83%83%E3%83%88%E3%83%AA%E3%82%B9%E3%83%88%E3%82%92%E5%86%8D%E7%94%9F%20%23yosugala&url=https%3A%2F%2Ftorochai.github.io%2Fyosugala-video-player%2F%3Fref%3Dx" target="_blank" rel="noopener" aria-label="このプレーヤーを X で共有する">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>
-      共有する
+      <span><span class="xs-long">プレーヤーを</span>共有</span>
     </a>
   </header>
 
