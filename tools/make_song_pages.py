@@ -2,7 +2,7 @@
 """曲ごとの案内ページ（s/動画ID-開始秒.html）を catalog.json から作る。
 
 プレーヤーの「この曲を共有」で X に貼るリンク用。X のカードにその曲の YouTube のサムネ・曲名・公演が出て、
-開くとすぐプレーヤーのその曲（../#song=動画ID@開始秒）に移る。?lib=… が付いていれば、そのプレイリストで開く。
+開くとすぐプレーヤーのその曲（../?song=動画ID@開始秒）に移る。?lib=… が付いていれば、そのプレイリストで開く。
 
 使い方（player フォルダで）:
     python3 tools/make_song_pages.py             # サムネの大きい画像があるかを YouTube に確かめる（結果は tools/thumb_cache.json に保存）
@@ -75,16 +75,17 @@ def page(s, thumb):
 <meta name="twitter:description" content="{e(desc)}">
 <meta name="twitter:image" content="{e(img)}">
 <meta name="robots" content="noindex">
-<noscript><meta http-equiv="refresh" content="0; url=../#song={song_key}"></noscript>
+<noscript><meta http-equiv="refresh" content="0; url=../?song={song_key}"></noscript>
 <script>
-  // ?lib=… が付いていればそのプレイリストで、なければ公演のプレイリストでこの曲を開く
+  // ?lib=… が付いていればそのプレイリストで、なければ公演のプレイリストでこの曲を開く。
+  // # ではなく ? で渡す（X アプリの中のブラウザは、移るときに # 以降を落とすことがあるため）
   var lib = new URLSearchParams(location.search).get('lib');
-  location.replace('../#' + (lib ? 'lib=' + encodeURIComponent(lib) + '&' : '') + 'song={song_key}');
+  location.replace('../?' + (lib ? 'lib=' + encodeURIComponent(lib) + '&' : '') + 'song={song_key}');
 </script>
 <style>body {{ margin: 0; background: #05060f; color: #e9ecf8; font-family: sans-serif; display: grid; place-items: center; min-height: 100vh; }} a {{ color: #b9cbff; }}</style>
 </head>
 <body>
-<p><a href="../#song={song_key}">{e(song)} をプレーヤーで開く</a></p>
+<p><a href="../?song={song_key}">{e(song)} をプレーヤーで開く</a></p>
 </body>
 </html>
 '''
