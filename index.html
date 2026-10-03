@@ -605,7 +605,7 @@
 <dialog id="ioDlg">
   <form method="dialog">
     <h2>書き出し / 読み込み</h2>
-    <p class="hint">下の内容をコピーして保存しておくと、別のブラウザで「読み込み」から復元できます。読み込むと新しいプレイリストとして追加されます。</p>
+    <p class="hint">下の内容をコピーして保存しておくと、別のブラウザで「読み込み」から復元できます。読み込むと、開いているプレイリストが空ならそこに入り、曲が入っていれば新しいプレイリストとして追加されます。</p>
     <textarea id="ioText" spellcheck="false"></textarea>
     <p class="err" id="ioErr"></p>
     <div class="actions">
@@ -1648,9 +1648,16 @@ $('ioCopy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText($('ioText').value); $('ioErr').textContent = 'コピーしました。'; }
   catch { $('ioText').select(); $('ioErr').textContent = '選択した状態にしました。コピーしてください。'; }
 });
+// 読み込み: 開いているのが曲の入っていない自分のプレイリスト（「＋ 新規作成」した直後など）なら、そこに読み込む。
+// 曲が入っていれば消さないように、新しいプレイリストとして追加する
 $('ioImport').addEventListener('click', () => {
-  try { const p = unpack(JSON.parse($('ioText').value)); state.playlists.push(p); $('ioDlg').close(); switchTo(p.id); }
-  catch (e) { $('ioErr').textContent = '読み込めませんでした：' + e.message; }
+  let p;
+  try { p = unpack(JSON.parse($('ioText').value)); }
+  catch (e) { $('ioErr').textContent = '読み込めませんでした：' + e.message; return; }
+  const cur = pl(), i = state.playlists.indexOf(cur);
+  const into = i >= 0 && !cur.readonly && cur !== shared && !cur.items.length;
+  if (into) { p.id = cur.id; state.playlists[i] = p; } else state.playlists.push(p);
+  $('ioDlg').close(); switchTo(p.id);
 });
 
 // ---------- 共有リンクから開いたとき ----------
