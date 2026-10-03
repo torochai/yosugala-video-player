@@ -605,12 +605,12 @@
 <dialog id="ioDlg">
   <form method="dialog">
     <h2>書き出し / 読み込み</h2>
-    <p class="hint">下の内容をコピーして保存しておくと、別のブラウザで「読み込み」から復元できます。読み込むと、開いているプレイリストが空ならそこに入り、曲が入っていれば新しいプレイリストとして追加されます。</p>
+    <p class="hint">下の内容は、このプレイリストの中身です。コピーして保存しておくと、別のブラウザで復元できます。書き換えたり、保存しておいた内容を貼り付けたりして「この内容で上書き」を押すと、このプレイリストがその内容になります。</p>
     <textarea id="ioText" spellcheck="false"></textarea>
     <p class="err" id="ioErr"></p>
     <div class="actions">
       <button class="btn" type="button" id="ioCopy">コピー</button>
-      <button class="btn" type="button" id="ioImport">貼り付けた内容を読み込み</button>
+      <button class="btn" type="button" id="ioImport">この内容で上書き</button>
       <button class="btn" value="cancel">閉じる</button>
     </div>
   </form>
@@ -1648,15 +1648,17 @@ $('ioCopy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText($('ioText').value); $('ioErr').textContent = 'コピーしました。'; }
   catch { $('ioText').select(); $('ioErr').textContent = '選択した状態にしました。コピーしてください。'; }
 });
-// 読み込み: 開いているのが曲の入っていない自分のプレイリスト（「＋ 新規作成」した直後など）なら、そこに読み込む。
-// 曲が入っていれば消さないように、新しいプレイリストとして追加する
-$('ioImport').addEventListener('click', () => {
+// 読み込み: 書き出しの画面は、開いているプレイリストの中身をそのまま編集する画面（JSON）。
+// 「この内容で上書き」で、開いているプレイリストを書き換える（曲が入っていれば確認してから。ID は変えない）
+$('ioImport').addEventListener('click', async () => {
   let p;
   try { p = unpack(JSON.parse($('ioText').value)); }
   catch (e) { $('ioErr').textContent = '読み込めませんでした：' + e.message; return; }
   const cur = pl(), i = state.playlists.indexOf(cur);
-  const into = i >= 0 && !cur.readonly && cur !== shared && !cur.items.length;
-  if (into) { p.id = cur.id; state.playlists[i] = p; } else state.playlists.push(p);
+  if (i < 0 || cur.readonly) { $('ioErr').textContent = 'このプレイリストは書き換えられません。'; return; }
+  if (cur.items.length && !await ask({ title: 'プレイリストを上書き', message: `「${cur.name}」（${cur.items.length} 曲）を、この内容（「${p.name}」${p.items.length} 曲）で上書きしますか？ 元に戻せません。`, ok: '上書き', danger: true })) return;
+  p.id = cur.id; state.playlists[i] = p;
+  if (cur === shared) shared = p;   // 共有リンクで開いた保存前のプレイリストなら、保存前のまま
   $('ioDlg').close(); switchTo(p.id);
 });
 
