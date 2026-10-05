@@ -1528,10 +1528,10 @@ function songShareText(it) {
   const where = [(x.date ? dotDate(x.date) : '') + live, x.venue ? `@ ${x.venue}` : ''].filter(Boolean).join('');
   return `♫ ${it.title} ／ yosugala${where ? ' | ' + where : ''} #yosugala ${songLink(it)}`;
 }
-// 「♫ プレイリスト名（N 曲・作成：名前）／ yosugala #yosugala リンク」
+// 「📋 プレイリスト名（N 曲・作成：名前）／ yosugala #yosugala リンク」
 function plShareText(p) {
   const n = (p.all || p.items).length, by = p.author ? `・作成：${authorName(p.author)}` : '';
-  return `♫ ${p.name}（${n} 曲${by}）／ yosugala #yosugala ${plLink(p)}`;
+  return `📋 ${p.name}（${n} 曲${by}）／ yosugala #yosugala ${plLink(p)}`;
 }
 $('plXShare').addEventListener('click', () => {
   if (!pl().items.length) return;
