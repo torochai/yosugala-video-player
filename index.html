@@ -105,9 +105,9 @@
   @media (min-width: 901px) {
     main { display: grid; grid-template-columns: minmax(0, 1fr) 390px; column-gap: 24px; align-items: start;
       /* ブラウザの幅に合わせて動画を大きくする。ただしページを開いたときに、タイトル・動画・操作バー・その下の曲名と
-         キャプションまでが画面の高さに収まる大きさまで（動画の高さ＝画面の高さ−366px のときの横幅＋右の列・余白ぶん）。
+         キャプション、その下のボタン（この公演の続きを再生など）までが画面の高さに収まる大きさまで（動画の高さ＝画面の高さ−400px のときの横幅＋右の列・余白ぶん）。
          画面が低くても、今までの 1180px までは広げる */
-      max-width: max(1180px, calc((100vh - 366px) * 16 / 9 + 390px + 24px + 48px)); }
+      max-width: max(1180px, calc((100vh - 400px) * 16 / 9 + 390px + 24px + 48px)); }
     .layout { display: contents; }
     .hero, .banner, .layout > section { grid-column: 1; }
     .layout > aside { grid-column: 2; grid-row: 1 / span 3; margin-top: 52px; }   /* 右上の「共有する」ボタンの下から始める */

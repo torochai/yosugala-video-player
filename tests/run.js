@@ -225,10 +225,10 @@ const TESTS = {
       ok(`${w}px で横スクロールが出ない`, await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
       await close(p);
     }
-    for (const [w, h, min] of [[1600, 900, 900], [1920, 1080, 1200]]) {
+    for (const [w, h, min] of [[1600, 900, 850], [1920, 1080, 1150]]) {
       const p = await open('#lib=2025-07-25', { width: w, height: h });
-      const r = await p.evaluate(() => ({ video: Math.round(document.querySelector('.screen').getBoundingClientRect().width), nowBottom: $('nowLive').getBoundingClientRect().bottom, ih: innerHeight }));
-      ok(`PC ${w}×${h}: 動画が広がり、曲名とキャプションが画面に収まる`, r.video >= min && r.nowBottom <= r.ih, r);
+      const r = await p.evaluate(() => ({ video: Math.round(document.querySelector('.screen').getBoundingClientRect().width), nowBottom: document.querySelector('.now').getBoundingClientRect().bottom, ih: innerHeight }));
+      ok(`PC ${w}×${h}: 動画が広がり、曲名・キャプション・その下のボタンが画面に収まる`, r.video >= min && r.nowBottom <= r.ih, r);
       await close(p);
     }
     const ip = await open('', { width: 814, height: 430, mobile: true, ua: IPHONE_UA, screen: { width: 430, height: 932 } });
