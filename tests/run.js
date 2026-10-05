@@ -131,7 +131,7 @@ const TESTS = {
     await p.evaluate(() => { state.playlists.push({ id: 'mine', name: 'マイ', author: 'トロ', desc: '', items: [songRow(45), songRow(53)] }); switchTo('mine'); });
     const link = await copied(p, '#plShare');
     ok('自分のプレイリストの共有リンクは #pl=曲ID…&t=名前&a=作成者', /#pl=45\.53&t=%E3%83%9E%E3%82%A4&a=%E3%83%88%E3%83%AD$/.test(link), link);
-    ok('X: プレイリストを共有', (await xText(p, '#plXShare')) === `📋 マイ - yosugalaライブ映像プレイリスト (2曲) #yosugala ${link}`, await xText(p, '#plXShare'));
+    ok('X: プレイリストを共有', (await xText(p, '#plXShare')) === `📋 マイ - yosugalaライブ映像プレイリスト (2曲) by トロ #yosugala ${link}`, await xText(p, '#plXShare'));
     await switchPl(p, LIVE_0725);
     ok('X: プレイリストを共有（名前が 」 で終わるときは - の前にスペースなし）', /^📋 2025\.07\.25「tour2025 FINAL」- yosugalaライブ映像プレイリスト \(24曲\) #yosugala http:\/\/localhost:\d+\/#lib=2025-07-25$/.test(await xText(p, '#plXShare')), await xText(p, '#plXShare'));
     await switchPl(p, '__live__:2024-11-01|tour2024 aki「春に廻れなかった場所編」Final'); await p.evaluate(() => playIndex(1)); await wait(300);
