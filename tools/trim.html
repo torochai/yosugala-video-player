@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>曲の範囲の確認 - yosugala Live Video Player</title>
+<style>
+  /* 曲の開始・終了（フルライブ映像のチャプター）を確かめて直すためのページ。プレイヤーからはリンクしていない */
+  :root { --bg: #05060f; --panel: #0e1330; --line: rgba(170, 190, 255, .2); --text: #e9ecf8; --muted: #8e96b8; --moon: #b9cbff; --warn: #ffcf8a; --ok: #8fe3b0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; font-size: 14px; line-height: 1.5; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; max-width: 1500px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  h1 { font-size: 1.1rem; margin: 0 0 8px; }
+  .hint { color: var(--muted); font-size: .85rem; margin: 0 0 12px; }
+  .screen { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; }
+  .screen > div, .screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-top: 12px; }
+  .cur { font-size: 1.05rem; font-weight: 700; }
+  .sub { color: var(--muted); font-size: .85rem; }
+  .now { font-variant-numeric: tabular-nums; font-size: 1.6rem; font-weight: 700; color: var(--moon); }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+  .row .label { width: 5.5em; color: var(--muted); }
+  button { font: inherit; color: var(--text); background: #1b2350; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+  button:hover { border-color: var(--moon); }
+  button.primary { background: #3a4aa8; }
+  button.okbtn { background: #1f5a3c; }
+  .val { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 5.5em; display: inline-block; }
+  .changed { color: var(--warn); }
+  ol { list-style: none; margin: 0; padding: 0; max-height: calc(100vh - 140px); overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+  @media (max-width: 900px) { ol { max-height: 60vh; } }
+  li { padding: 8px 10px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  li:hover { background: #121a40; }
+  li.sel { background: #1b2350; }
+  li .t { font-weight: 700; }
+  li .m { color: var(--muted); font-size: .8rem; }
+  .why { color: var(--warn); font-size: .8rem; }
+  .st { float: right; font-size: .8rem; }
+  .st.ok { color: var(--ok); } .st.changed { color: var(--warn); }
+  textarea { width: 100%; min-height: 120px; background: #0a0e24; color: var(--text); border: 1px solid var(--line); border-radius: 8px; font: .8rem ui-monospace, Menlo, monospace; }
+  label.f { color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+<main>
+  <section>
+    <h1>曲の範囲の確認（開始・終了）</h1>
+    <p class="hint">曲を選んで再生し、歌い始め・歌い終わりの位置で「ここを開始に」「ここを終わりに」を押します。直す必要がなければ「このままでOK」。結果はこのブラウザに保存され、最後に「結果をコピー」でまとめて渡せます。
+      キー操作: Space 再生/停止、← → 1秒、Shift+← → 5秒。</p>
+    <div class="screen"><div id="player"></div></div>
+    <div class="box" id="ctrl">
+      <div class="cur" id="curTitle">右（スマホでは下）の一覧から曲を選んでください</div>
+      <div class="sub" id="curSub"></div>
+      <div class="row"><span class="label">再生位置</span><span class="now" id="now">-</span></div>
+      <div class="row"><span class="label">開始</span><span class="val" id="vStart">-</span>
+        <button id="setStart" class="primary">ここを開始に</button>
+        <button data-play="start">開始から再生</button>
+        <button data-play="origStart">元の開始の5秒前から</button>
+      </div>
+      <div class="row"><span class="label">終了</span><span class="val" id="vEnd">-</span>
+        <button id="setEnd" class="primary">ここを終わりに</button>
+        <button data-play="endCheck">終わりの直前5秒を再生</button>
+        <button data-play="curEnd">元の終わりの20秒前から</button>
+        <button data-play="refEnd">普段の長さで見た終わりの20秒前から</button>
+      </div>
+      <div class="row"><span class="label">移動</span>
+        <button data-seek="-5">−5秒</button><button data-seek="-1">−1秒</button>
+        <button id="pp">再生 / 停止</button>
+        <button data-seek="1">＋1秒</button><button data-seek="5">＋5秒</button>
+      </div>
+      <div class="row"><span class="label">判定</span>
+        <button id="markOk" class="okbtn">このままでOK</button>
+        <button id="reset">この曲の変更を取り消す</button>
+        <button id="nextSong">次の曲へ</button>
+      </div>
+    </div>
+    <div class="box">
+      <div class="row" style="margin-top:0"><span id="progress"></span></div>
+      <div class="row"><button id="copy" class="primary">結果をコピー</button><span class="sub" id="copyMsg"></span></div>
+      <textarea id="out" readonly></textarea>
+    </div>
+  </section>
+  <aside>
+    <div class="row" style="margin-top:0">
+      <label class="f"><input type="checkbox" id="showSingles"> 単独で公開された映像も出す</label>
+      <label class="f"><input type="checkbox" id="hideDone"> 確認済みを隠す</label>
+    </div>
+    <ol id="list"></ol>
+  </aside>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const KEY = 'yosugala-trim-v1';   // { "動画ID@元の開始秒": { start, end, ok } }
+let done = {};
+try { done = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
+const saveDone = () => { try { localStorage.setItem(KEY, JSON.stringify(done)); } catch {} };
+const fmt = (sec) => { if (sec == null) return '-'; sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
+  return (h ? `${h}:${String(m).padStart(2, '0')}` : `${m}`) + `:${String(s).padStart(2, '0')}`; };
+const median = (a) => { const b = [...a].sort((x, y) => x - y); return b.length ? b[Math.floor((b.length - 1) / 2)] : null; };
+
+let songs = [], cur = null, player = null, ready = false;
+// 補正キーは「動画ID@元のチャプターの開始秒」（tools/catalog_overrides.json の segments と同じ）
+const keyOf = (s) => `${s.vid}@${s.chapter_start ?? s.start}`;
+const valOf = (s) => ({ start: done[keyOf(s)]?.start ?? s.start, end: done[keyOf(s)]?.end ?? s.end });
+const changed = (s) => { const v = valOf(s); return v.start !== s.start || v.end !== s.end; };
+
+fetch('../catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
+  // 曲の普段の長さ: 単独で公開された映像があればその長さ、なければ全演奏の長さの中央値
+  const lens = {};
+  c.songs.forEach((s) => { if (s.len) (lens[s.song] ||= []).push(s); });
+  const ref = {};
+  Object.entries(lens).forEach(([k, v]) => { const sg = v.filter((x) => x.kind === 'single').map((x) => x.len); ref[k] = median(sg.length ? sg : v.map((x) => x.len)); });
+  // フルライブ映像の1曲目・最後の曲
+  const byVid = {};
+  c.songs.filter((s) => s.kind === 'full').forEach((s) => (byVid[s.vid] ||= []).push(s));
+  const first = new Set(), last = new Set();
+  Object.values(byVid).forEach((v) => { v.sort((a, b) => a.start - b.start); first.add(v[0]); last.add(v[v.length - 1]); });
+  songs = c.songs.map((s) => {
+    const len = (s.end ?? (s.start + s.len)) - s.start, over = ref[s.song] ? len - ref[s.song] : 0, why = [];
+    if (over > 10) why.push(`普段より ${Math.round(over)} 秒長い`);
+    if (first.has(s)) why.push('フルライブの1曲目（SE が入っていそう）');
+    if (last.has(s)) why.push('動画の最後の曲（終演後の映像が入っていそう）');
+    const rank = over > 10 ? 3000 + over : first.has(s) || last.has(s) ? 2000 : s.kind === 'full' ? 1000 + over : over;
+    return { ...s, ref: ref[s.song], over, why, rank };
+  }).sort((a, b) => b.rank - a.rank);
+  renderList(); renderOut();
+});
+
+function renderList() {
+  const ol = $('list'); ol.textContent = '';
+  songs.filter((s) => (s.kind === 'full' || $('showSingles').checked) && !($('hideDone').checked && done[keyOf(s)])).forEach((s) => {
+    const li = document.createElement('li'); li.song = s; if (s === cur) li.className = 'sel';
+    const d = done[keyOf(s)], st = d ? (changed(s) ? '<span class="st changed">直した</span>' : '<span class="st ok">OK</span>') : '';
+    const v = valOf(s);
+    li.innerHTML = `${st}<div class="t"></div><div class="m"></div><div class="why"></div>`;
+    li.querySelector('.t').textContent = `${s.song}（ID ${s.id}）`;
+    li.querySelector('.m').textContent = `${s.date ? s.date.replace(/-/g, '.') : ''} ${s.live || ''} ・ ${fmt(v.start)}〜${fmt(v.end)}（${fmt((v.end ?? s.start + s.len) - v.start)}）`;
+    li.querySelector('.why').textContent = s.why.join(' ／ ');
+    li.addEventListener('click', () => select(s));
+    ol.appendChild(li);
+  });
+  const full = songs.filter((s) => s.kind === 'full'), n = full.filter((s) => done[keyOf(s)]).length;
+  $('progress').textContent = `確認済み ${n} / ${full.length} 曲（フルライブ）・直した曲 ${songs.filter((s) => done[keyOf(s)] && changed(s)).length} 曲`;
+}
+$('showSingles').addEventListener('change', renderList);
+$('hideDone').addEventListener('change', renderList);
+
+function select(s) {
+  cur = s;
+  $('curTitle').textContent = `${s.song}（ID ${s.id}）`;
+  $('curSub').textContent = `${s.date ? s.date.replace(/-/g, '.') : ''} ${s.live || ''} ・ 元の範囲 ${fmt(s.start)}〜${fmt(s.end)} ・ 普段の長さ ${fmt(s.ref)}` + (s.why.length ? ` ・ ${s.why.join(' ／ ')}` : '');
+  renderVals(); renderList();
+  playFrom(s.start);
+}
+function renderVals() {
+  if (!cur) return;
+  const v = valOf(cur);
+  $('vStart').textContent = fmt(v.start); $('vStart').classList.toggle('changed', v.start !== cur.start);
+  $('vEnd').textContent = v.end == null ? '動画の最後' : fmt(v.end); $('vEnd').classList.toggle('changed', v.end !== cur.end);
+}
+function setVal(field, t) {
+  if (!cur) return;
+  const k = keyOf(cur), v = valOf(cur);
+  v[field] = Math.round(t);
+  if (v.end != null && v.end <= v.start) { alert('終わりは開始より後にしてください。'); return; }
+  done[k] = { start: v.start, end: v.end, ok: true }; saveDone(); renderVals(); renderList(); renderOut();
+}
+
+// ---------- YouTube プレイヤー ----------
+window.onYouTubeIframeAPIReady = () => {
+  player = new YT.Player('player', { playerVars: { playsinline: 1, rel: 0 }, events: { onReady: () => { ready = true; if (pending != null) playFrom(pending); }, onStateChange: () => {} } });
+};
+let pending = null;
+function playFrom(t, stopAt) {
+  if (!cur) return;
+  if (!ready) { pending = t; return; }
+  pending = null;
+  const vd = player.getVideoData && player.getVideoData();
+  if (!vd || vd.video_id !== cur.vid) player.loadVideoById({ videoId: cur.vid, startSeconds: Math.max(0, t) });
+  else { player.seekTo(Math.max(0, t), true); player.playVideo(); }
+  stopTimer = stopAt ?? null;
+}
+let stopTimer = null;
+setInterval(() => {
+  if (!ready || !player.getCurrentTime) return;
+  const t = player.getCurrentTime();
+  $('now').textContent = fmt(t) + `（${Math.round(t)} 秒）`;
+  if (stopTimer != null && t >= stopTimer) { player.pauseVideo(); stopTimer = null; }
+}, 200);
+document.querySelectorAll('[data-play]').forEach((b) => b.addEventListener('click', () => {
+  if (!cur) return;
+  const v = valOf(cur), endOf = cur.end ?? (cur.start + cur.len);
+  ({ start: () => playFrom(v.start), origStart: () => playFrom(cur.start - 5),
+     endCheck: () => playFrom((v.end ?? endOf) - 5, v.end ?? endOf),
+     curEnd: () => playFrom(endOf - 20), refEnd: () => playFrom(v.start + (cur.ref || 0) - 20) })[b.dataset.play]();
+}));
+document.querySelectorAll('[data-seek]').forEach((b) => b.addEventListener('click', () => seekBy(+b.dataset.seek)));
+const seekBy = (d) => { if (ready && player.getCurrentTime) player.seekTo(Math.max(0, player.getCurrentTime() + d), true); };
+const togglePlay = () => { if (!ready) return; player.getPlayerState() === YT.PlayerState.PLAYING ? player.pauseVideo() : player.playVideo(); };
+$('pp').addEventListener('click', togglePlay);
+$('setStart').addEventListener('click', () => ready && setVal('start', player.getCurrentTime()));
+$('setEnd').addEventListener('click', () => ready && setVal('end', player.getCurrentTime()));
+$('markOk').addEventListener('click', () => { if (!cur) return; const v = valOf(cur); done[keyOf(cur)] = { ...v, ok: true }; saveDone(); renderList(); renderOut(); });
+$('reset').addEventListener('click', () => { if (!cur) return; delete done[keyOf(cur)]; saveDone(); renderVals(); renderList(); renderOut(); });
+$('nextSong').addEventListener('click', () => {
+  const vis = [...$('list').children].map((li) => li.song);
+  const i = vis.indexOf(cur); if (vis[i + 1]) select(vis[i + 1]);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'TEXTAREA') return;
+  if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); seekBy(e.shiftKey ? -5 : -1); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); seekBy(e.shiftKey ? 5 : 1); }
+});
+
+// ---------- 結果 ----------
+// tools/catalog_overrides.json の segments にそのまま入れられる形（直した曲だけ）。確認済みの数も付ける
+function renderOut() {
+  const seg = {};
+  songs.filter((s) => done[keyOf(s)] && changed(s)).forEach((s) => {
+    const v = valOf(s), o = {};
+    if (v.start !== s.start) o.start = v.start;
+    if (v.end !== s.end) o.end = v.end;
+    o._memo = `${s.song}（${s.live}）`;
+    seg[keyOf(s)] = o;
+  });
+  const okOnly = songs.filter((s) => done[keyOf(s)] && !changed(s)).map((s) => s.id);
+  $('out').value = JSON.stringify({ segments: seg, checked_ok: okOnly }, null, 1);
+}
+$('copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('out').value); $('copyMsg').textContent = 'コピーしました。チャットに貼ってください。'; }
+  catch { $('out').select(); $('copyMsg').textContent = '選択しました。コピーしてください。'; }
+});
+const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
+</script>
+</body>
+</html>

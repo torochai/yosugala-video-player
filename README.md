@@ -37,6 +37,7 @@ git add catalog.json tools/video_cache.json tools/song_ids.json tools/thumb_cach
 - 一度取得した動画の情報は `tools/video_cache.json` に保存され、次回からは新しい動画だけを取得します
 - YouTube のボット確認で止められたときは `python3 tools/update_catalog.py --cookies-from-browser chrome` で実行してください
 - 曲名の表記ゆれ、ライブ名の表示、終了時刻の調整、除外は `tools/catalog_overrides.json` で直せます
+- 曲の開始・終了（フルライブの1曲目の SE、曲のあとの MC・写真撮影など）は、確認用ページ `tools/trim.html`（公開サイトの `/tools/trim.html`）で再生しながら決め、「結果をコピー」した内容を `catalog_overrides.json` の `segments`（`動画ID@元の開始秒` → `start`・`end`）に入れます。開始秒を直しても曲 ID は変わりません
 - タイトルに公演名がない単独映像は `catalog_overrides.json` の `video_lives`（動画ID → ライブ名）で公演を指定します
 - 会場名は `catalog_overrides.json` の `live_venues`（ライブ名 → 会場名）に書きます
 - 公演ごとのセットリストは `catalog_overrides.json` の `setlists`（ライブ名 → `main` 本編・`encore` アンコール・`medley` メドレーの曲・`source` 出典（複数なら配列）・`note` 補足・`encore_video` 本編とアンコールの両方で披露した曲のうち映像がアンコールのほうの曲）に書きます。公演ごとのプレイリストの「このプレイリストについて」に表示します（スマホでは「公演情報」ボタンでそこまでスクロールします）

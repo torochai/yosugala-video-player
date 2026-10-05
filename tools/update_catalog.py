@@ -199,7 +199,13 @@ def main():
             continue
         s['song'] = aliases.get(s['song'], s['song'])
         if key in seg_fix:
-            s.update(seg_fix[key])
+            # 開始・終了の補正（曲の前の SE や、曲のあとの MC・写真撮影を外す）。補正キーは元のチャプターの開始秒のまま
+            fix = {k: v for k, v in seg_fix[key].items() if not k.startswith('_')}
+            if 'start' in fix and fix['start'] != s['start']:
+                s['chapter_start'] = s['start']   # 元の開始秒（確認用ページ tools/trim.html が補正キーを作るのに使う）
+            if s.get('end') is None and 'start' in fix and s.get('len') is not None:
+                s['len'] -= fix['start'] - s['start']   # 終わりが動画の最後の曲（単独映像）は、頭を削ったぶん短くなる
+            s.update(fix)
             if s.get('end') is not None:
                 s['len'] = s['end'] - s['start']
         out.append(s)
