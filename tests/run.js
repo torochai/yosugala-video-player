@@ -237,6 +237,15 @@ const TESTS = {
       ok(`${w}px で横スクロールが出ない`, await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
       await close(p);
     }
+    // 曲名の下の3つのボタン（この公演の続き・別公演の同じ曲・戻る）が1行に収まる
+    for (const [w, h] of [[320, 568], [390, 844], [1280, 900]]) {
+      const p = await open('#lib=toro', { width: w, height: h, mobile: w < 900 });
+      await p.click('#start'); await wait(400); await p.click('#playLive'); await wait(200); await p.click('#playOther'); await wait(200);
+      const r = await p.evaluate(() => { const b = ['playLive', 'playOther', 'playBack'].map((id) => $(id).getBoundingClientRect());
+        return { shown: b.every((x) => x.width > 0), rows: new Set(b.map((x) => Math.round(x.top))).size, back: $('playBack').textContent.trim() }; });
+      ok(`${w}px で曲名の下のボタンと「戻る」が1行`, r.shown && r.rows === 1 && r.back === '戻る', r);
+      await close(p);
+    }
     for (const [w, h, min] of [[1600, 900, 850], [1920, 1080, 1150]]) {
       const p = await open('#lib=2025-07-25', { width: w, height: h });
       const r = await p.evaluate(() => ({ video: Math.round(document.querySelector('.screen').getBoundingClientRect().width), nowBottom: document.querySelector('.now').getBoundingClientRect().bottom, ih: innerHeight }));

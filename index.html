@@ -186,10 +186,16 @@
   .now .live { color: var(--muted); font-size: .82rem; }
   .now .nowacts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .now .nowacts[hidden] { display: none; }
-  .now .nowacts .btn { border-radius: 8px; }   /* 共有ボタン（丸い黒地）と見分けられるよう、角を少し丸めた四角に */
-  .now .nowacts .backbtn { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; padding: 5px 9px; }   /* 戻るは行の右端にアイコンだけ */
+  .now .nowacts .btn { border-radius: 8px; font-size: .74rem; }   /* 共有ボタン（丸い黒地）と見分けられるよう、角を少し丸めた四角に */
+  .now .nowacts .backbtn { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; gap: 3px; padding: 5px 9px; }   /* 戻るは行の右端に、アイコンと「戻る」の文字で */
   .now .nowacts .backbtn[hidden] { display: none; }
-  .backbtn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  @media (max-width: 600px) {
+    /* スマホでは、2つのボタンと戻るボタンが1行に収まるよう、文字を少し小さくし、余白と間隔を詰める */
+    .now .nowacts { gap: 5px; }
+    .now .nowacts .btn { padding: 4px 7px; font-size: .68rem; }
+    .now .nowacts .backbtn { padding: 4px 7px; }
+  }
+  .backbtn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .controls { display: flex; gap: 8px; }
   .msg { margin-top: 10px; color: var(--warn); font-size: .82rem; }
   .msg:empty { display: none; }
@@ -454,10 +460,10 @@
           <div class="live" id="nowLive"></div>
           <!-- 再生中の曲から、その公演の続き・ほかの公演の同じ曲へ -->
           <div class="nowacts" id="nowActs" hidden>
-            <button class="btn small" type="button" id="playLive" hidden>この公演の続きを再生</button>
-            <button class="btn small" type="button" id="playOther" hidden>別公演の同じ曲を再生</button>
-            <button class="btn small backbtn" type="button" id="playBack" hidden aria-label="戻る" title="戻る（「この公演の続きを再生」「別公演の同じ曲を再生」を押す前に戻ります）">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+            <button class="btn small" type="button" id="playLive" hidden>🎫 この公演の続き</button>
+            <button class="btn small" type="button" id="playOther" hidden>🔀 別公演の同じ曲</button>
+            <button class="btn small backbtn" type="button" id="playBack" hidden title="「この公演の続き」「別公演の同じ曲」を押す前に戻ります">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>戻る
             </button>
           </div>
         </div>
