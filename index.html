@@ -432,7 +432,7 @@
         <div class="label">
           <div class="numrow">
             <div class="num" id="nowNum"></div>
-            <!-- X で共有: 「曲を共有」は再生中の曲（曲名・公演・この曲を開くリンク）、「PLを共有」は開いているプレイリスト -->
+            <!-- X で共有: 「曲を共有」は再生中の曲（曲名・公演・この曲を開くリンク）、「プレイリストを共有」は開いているプレイリスト -->
             <span class="xbtns">
               <button class="btn small songshare" type="button" id="songShare" hidden aria-label="この曲を X で共有する" title="この曲を X で共有する">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>
@@ -440,7 +440,7 @@
               </button>
               <button class="btn small songshare" type="button" id="plXShare" hidden aria-label="このプレイリストを X で共有する" title="このプレイリストを X で共有する">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>
-                PLを共有
+                プレイリストを共有
               </button>
             </span>
           </div>
@@ -1522,11 +1522,11 @@ function songLink(it) {
   const base = location.origin + location.pathname.replace(/[^/]*$/, '');
   return `${base}s/${it.sid}.html${isLib(pl()) ? '?lib=' + libKey(pl()) : ''}`;
 }
-// 「♫ 曲名 ／ yosugala | 公演日「公演名」@ 会場名 #yosugala リンク」（分からないものは省く）
+// 「🎥 曲名 ／ yosugala | 公演日「公演名」@ 会場名 #yosugala リンク」（分からないものは省く）
 function songShareText(it) {
   const x = infoOf(it), live = quoteLive(x.live || it.live);
   const where = [(x.date ? dotDate(x.date) : '') + live, x.venue ? `@ ${x.venue}` : ''].filter(Boolean).join('');
-  return `♫ ${it.title} ／ yosugala${where ? ' | ' + where : ''} #yosugala ${songLink(it)}`;
+  return `🎥 ${it.title} ／ yosugala${where ? ' | ' + where : ''} #yosugala ${songLink(it)}`;
 }
 // 「📋 プレイリスト名 - ライブ映像プレイリスト (N曲) #yosugala リンク」（名前が 」 で終わるときは - の前にスペースを入れない）
 function plShareText(p) {
