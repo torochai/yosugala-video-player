@@ -1528,10 +1528,10 @@ function songShareText(it) {
   const where = [(x.date ? dotDate(x.date) : '') + live, x.venue ? `@ ${x.venue}` : ''].filter(Boolean).join('');
   return `🎥 ${it.title} ／ yosugala${where ? ' | ' + where : ''} #yosugala ${songLink(it)}`;
 }
-// 「📋 プレイリスト名 - ライブ映像プレイリスト (N曲) #yosugala リンク」（名前が 」 で終わるときは - の前にスペースを入れない）
+// 「📋 プレイリスト名 - yosugalaライブ映像プレイリスト (N曲) #yosugala リンク」（名前が 」 で終わるときは - の前にスペースを入れない）
 function plShareText(p) {
   const sp = p.name.endsWith('」') ? '' : ' ';
-  return `📋 ${p.name}${sp}- ライブ映像プレイリスト (${(p.all || p.items).length}曲) #yosugala ${plLink(p)}`;
+  return `📋 ${p.name}${sp}- yosugalaライブ映像プレイリスト (${(p.all || p.items).length}曲) #yosugala ${plLink(p)}`;
 }
 $('plXShare').addEventListener('click', () => {
   if (!pl().items.length) return;
