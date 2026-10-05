@@ -192,6 +192,29 @@ const TESTS = {
     await close(p);
   },
 
+  // 曲名の下のボタン: この公演の続きを再生・別公演の同じ曲を再生
+  async nowacts() {
+    const p = await open('#lib=toro');
+    await p.click('#start'); await wait(500);
+    const st = () => p.evaluate(() => ({ pl: pl().id, i: curIndex(), title: $('nowTitle').textContent, live: infoOf(items()[curIndex()]).live, started, loads: window.__loads.length,
+      a: !$('playLive').hidden, b: !$('playOther').hidden }));
+    const s0 = await st();
+    ok('トロ\'s セレクションでは2つとも出る', s0.a && s0.b, s0);
+    await p.click('#playLive'); await wait(300);
+    const s1 = await st();
+    ok('この公演の続きを再生: 止めずに公演のプレイリストの同じ曲へ', s1.pl.startsWith('__live__:2024-02-18') && s1.title === 'indigo' && s1.started && s1.loads === s0.loads && !s1.a, s1);
+    await p.evaluate(() => next(true)); await wait(300);
+    ok('曲が終わるとセットリストの次の曲へ', await p.evaluate((i) => curIndex() === i + 1, s1.i));
+    const before = (await st()).live, t = (await st()).title;
+    await p.click('#playOther'); await wait(300);
+    const s2 = await st();
+    ok('別公演の同じ曲を再生: 曲名で絞った一覧で、別の公演の同じ曲を再生', s2.pl === '__catalog__' && s2.title === t && s2.live !== before && s2.started
+      && await p.evaluate((t) => catQuery === t && items().every((x) => x.title === t), t), s2);
+    await switchPl(p, LIVE_0725); await p.evaluate(() => playIndex(items().findIndex((x) => x.title === 'きっかけ'))); await wait(200);
+    ok('公演のプレイリスト・ほかの公演にない曲では出さない', await p.evaluate(() => $('nowActs').hidden));
+    await close(p);
+  },
+
   // 画面幅ごとのレイアウト
   async layout() {
     for (const [w, h, rows] of [[414, 896, 1], [390, 844, 1], [360, 740, 1], [820, 1180, 1], [1280, 900, 1]]) {
@@ -204,7 +227,7 @@ const TESTS = {
     }
     for (const [w, h, min] of [[1600, 900, 900], [1920, 1080, 1200]]) {
       const p = await open('#lib=2025-07-25', { width: w, height: h });
-      const r = await p.evaluate(() => ({ video: Math.round(document.querySelector('.screen').getBoundingClientRect().width), nowBottom: document.querySelector('.now').getBoundingClientRect().bottom, ih: innerHeight }));
+      const r = await p.evaluate(() => ({ video: Math.round(document.querySelector('.screen').getBoundingClientRect().width), nowBottom: $('nowLive').getBoundingClientRect().bottom, ih: innerHeight }));
       ok(`PC ${w}×${h}: 動画が広がり、曲名とキャプションが画面に収まる`, r.video >= min && r.nowBottom <= r.ih, r);
       await close(p);
     }
