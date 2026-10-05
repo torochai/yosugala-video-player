@@ -21,6 +21,8 @@
 
 ## テストのしかた
 
+- まとめたテスト: `NODE_PATH=$(npm root -g) node tests/run.js`（`node tests/run.js share io` のように名前で絞り込める）。テスト用のサーバーも自分で立てる。変更するたびに全部流し、新しい機能や直した不具合はここにテストを足す。
+- テストには個人情報や公開しないほうがいい情報を入れない（`tests/` も GitHub Pages で公開される）。
 - サーバー: リポジトリで `python3 -m http.server 8765`
 - ブラウザ: Playwright の Chromium（`executablePath: '/opt/pw-browsers/chromium'`）。`playwright install` はしない。
 - YouTube の動画はこの環境では再生されないので、再生まわりは `iframe_api` を偽のプレイヤーに差し替えて確かめる。
