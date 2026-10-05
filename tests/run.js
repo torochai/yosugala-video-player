@@ -210,6 +210,18 @@ const TESTS = {
     const s2 = await st();
     ok('別公演の同じ曲を再生: 曲名で絞った一覧で、別の公演の同じ曲を再生', s2.pl === '__catalog__' && s2.title === t && s2.live !== before && s2.started
       && await p.evaluate((t) => catQuery === t && items().every((x) => x.title === t), t), s2);
+    ok('戻るボタンが出る', await p.evaluate(() => !$('playBack').hidden && backStack.length === 2));
+    await p.click('#playBack'); await wait(200);
+    ok('戻る1回目: 公演のプレイリストの曲へ（絞り込みも元に戻る）', await p.evaluate((s) => pl().id === s.pl && curIndex() === s.i + 1 && catQuery === '', s1));
+    await p.click('#playBack'); await wait(200);
+    ok('戻る2回目: 最初のプレイリストへ。戻り切るとボタンは消える', await p.evaluate(() => pl().id === 'builtin-toro' && curIndex() === 0 && $('playBack').hidden));
+    await p.evaluate(() => { const i = 2; playIndex(i); }); await wait(200);
+    const left = await p.evaluate(() => { const it = items()[curIndex()]; window.__t = it.start + 70; return it.start + 70; });
+    await p.click('#playOther'); await wait(200); await p.evaluate(() => { window.__t = undefined; });
+    await p.click('#playBack'); await wait(200);
+    ok('違う曲に戻るときは離れた位置から再生', await p.evaluate((t) => window.__loads.at(-1).startSeconds === t, left), await p.evaluate(() => window.__loads.at(-1)));
+    await p.click('#playOther'); await wait(200); await switchPl(p, 'builtin-toro');
+    ok('メニューで自分で切り替えると戻る記録は消える', await p.evaluate(() => backStack.length === 0 && $('playBack').hidden));
     await switchPl(p, LIVE_0725); await p.evaluate(() => playIndex(items().findIndex((x) => x.title === 'きっかけ'))); await wait(200);
     ok('公演のプレイリスト・ほかの公演にない曲では出さない', await p.evaluate(() => $('nowActs').hidden));
     await close(p);

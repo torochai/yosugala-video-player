@@ -187,6 +187,9 @@
   .now .nowacts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .now .nowacts[hidden] { display: none; }
   .now .nowacts .btn { border-radius: 8px; }   /* 共有ボタン（丸い黒地）と見分けられるよう、角を少し丸めた四角に */
+  .now .nowacts .backbtn { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; padding: 5px 9px; }   /* 戻るは行の右端にアイコンだけ */
+  .now .nowacts .backbtn[hidden] { display: none; }
+  .backbtn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .controls { display: flex; gap: 8px; }
   .msg { margin-top: 10px; color: var(--warn); font-size: .82rem; }
   .msg:empty { display: none; }
@@ -453,6 +456,9 @@
           <div class="nowacts" id="nowActs" hidden>
             <button class="btn small" type="button" id="playLive" hidden>この公演の続きを再生</button>
             <button class="btn small" type="button" id="playOther" hidden>別公演の同じ曲を再生</button>
+            <button class="btn small backbtn" type="button" id="playBack" hidden aria-label="戻る" title="戻る（「この公演の続きを再生」「別公演の同じ曲を再生」を押す前に戻ります）">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+            </button>
           </div>
         </div>
       </div>
@@ -865,6 +871,8 @@ function unpack(o) {
 
 // ---------- 再生 ----------
 let player = null, ready = false, started = false, curId = null, watchTimer = null;
+// 戻るボタンで戻る先（「この公演の続きを再生」などを押す前のプレイリスト・絞り込み・曲・再生位置）。メニューで自分で切り替えたら消す
+let backStack = [];
 const items = () => pl().items;
 const curIndex = () => items().findIndex((it) => it.id === curId);
 
@@ -877,7 +885,8 @@ function showNow() {
   const lp = it && livePlOf(it);
   $('playLive').hidden = !lp || lp === pl();
   $('playOther').hidden = !it || !otherVersions(it).length;
-  $('nowActs').hidden = $('playLive').hidden && $('playOther').hidden;
+  $('playBack').hidden = !backStack.length;
+  $('nowActs').hidden = $('playLive').hidden && $('playOther').hidden && $('playBack').hidden;
   // ライブ名と公演日・会場名（分かるものだけ）
   // 「公演日: YYYY.MM.DD 「ライブ名」 @ 会場名」（間は半角スペース。分からないものは省く）
   // ライブ名は「」で囲む（中にある「」は『』にする）
@@ -1465,8 +1474,10 @@ function switchTo(id) {
 const livePlOf = (it) => { const x = infoOf(it); return x.date && x.live ? catalogPls.find((p) => p.id === `${LIVE_ID}${x.date}|${x.live}`) : null; };
 // ほかの公演の同じ曲（「すべてのライブ映像 - 曲名順」の中の、公演の違う同じ曲名）
 const otherVersions = (it) => catalogAll.filter((x) => x.title === it.title && infoOf(x).live !== infoOf(it).live);
+const nowPos = () => (player && ready && started && player.getCurrentTime ? { vid: player.getVideoData().video_id, t: Math.floor(player.getCurrentTime()) } : null);
 // プレイリストを切り替えて i 番目の曲を選ぶ。再生中なら今の曲は止めずに続け、終わったら切り替えた先の次の曲へ進む
 function moveTo(id, pick, keepPlaying) {
+  if (curId != null) backStack.push({ pl: state.current, q: catQuery, id: curId, pos: nowPos() });
   if (id !== state.current) { catQuery = ''; $('catSearch').value = ''; catSelected.clear(); selecting = false; }
   if (dupFrom && id !== dupFrom.copyId) dupFrom = null;
   editing = false; state.current = id; save(); resumeAt = null; $('msg').textContent = '';
@@ -1493,9 +1504,23 @@ $('playOther').addEventListener('click', () => {
     return items().indexOf(next);
   }, false);
 });
+// 戻る: 押す前のプレイリスト（絞り込みも）と曲に戻る。流れている映像がその曲の範囲なら止めずに続け、
+// そうでなければ離れたときの位置から再生する
+$('playBack').addEventListener('click', () => {
+  const b = backStack.pop();
+  if (!b) return;
+  if (b.pl !== state.current) { catSelected.clear(); selecting = false; }
+  editing = false; state.current = b.pl; save(); catQuery = b.q || ''; $('catSearch').value = catQuery; $('msg').textContent = '';
+  const i = items().findIndex((x) => x.id === b.id);
+  if (i < 0) { renderAll(); return; }
+  const it = items()[i], now = nowPos();
+  if (now && now.vid === it.vid && now.t >= it.start && (it.end == null || now.t < it.end)) { curId = it.id; rememberPlayed(); renderAll(); scrollCurToTop(); return; }
+  resumeAt = b.pos && b.pos.vid === it.vid ? { id: it.id, t: b.pos.t } : null;
+  renderAll(); playIndex(i);
+});
 const NEW_ID = '__new__';
 $('plSelect').addEventListener('change', (e) => {
-  if (e.target.value !== NEW_ID) return switchTo(e.target.value);
+  if (e.target.value !== NEW_ID) { backStack = []; return switchTo(e.target.value); }
   // 「＋ 新規作成」: 名前を聞いて空のプレイリストを作り、そのまま編集モードにする（キャンセルなら元の選択に戻す）
   e.target.value = pl().id;
   createPlaylist();
