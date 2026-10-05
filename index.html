@@ -748,12 +748,13 @@ function songRow(sid, id = uid()) {
   const x = songById.get(sid);
   return x ? { id, sid, vid: x.vid, start: x.start, end: x.end, title: x.song, live: x.live || '', len: x.len ?? null } : null;
 }
-// プレイリストの曲にカタログの内容を付ける。以前の形式（動画 ID＋開始秒）で保存された曲は曲 ID に置き換え、
-// カタログにない曲は外す
+// 以前の形式（動画 ID＋開始秒）の曲を、カタログの曲に対応させる（開始秒を直した曲は元のチャプターの開始秒でも探す）
+const songAt = (vid, start) => catalog.songs.find((x) => x.vid === vid && (x.start === start || x.chapter_start === start));
+// プレイリストの曲にカタログの内容を付ける。以前の形式で保存された曲は曲 ID に置き換え、カタログにない曲は外す
 function hydrate(p) {
   p.items = p.items.map((it) => {
     let sid = it.sid;
-    if (!Number.isInteger(sid) && it.vid) sid = (catalog.songs.find((x) => x.vid === it.vid && x.start === it.start) || {}).id;
+    if (!Number.isInteger(sid) && it.vid) sid = (songAt(it.vid, it.start) || {}).id;
     return songRow(sid, it.id);
   }).filter(Boolean);
 }
@@ -923,7 +924,7 @@ let resumeAt = null;   // { id, t }: 次にこの曲を再生するときの開�
 function migrateResume() {
   const m = resume && String(resume.id).match(/^(toro|c):([\w-]{11})@(\d+)$/);
   if (!m) return;
-  const x = catalog.songs.find((x) => x.vid === m[2] && x.start === +m[3]);
+  const x = songAt(m[2], +m[3]);
   storeResume(x ? { ...resume, id: `${m[1]}:${x.id}` } : null);
 }
 // カタログで曲の範囲が変わっていても、使うときにもう一度範囲を確かめる
