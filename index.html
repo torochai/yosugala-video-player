@@ -994,7 +994,7 @@ function setRepeat(mode) {
   $('repeat').setAttribute('aria-pressed', mode !== 'off');
   updateNextBtn();
 }
-// 「別公演の同じ曲」で移る、1つの曲名で絞った「すべてのライブ映像 - 曲名順」。最後まで行ったら一番上に戻る
+// 「別公演の同じ曲」で移る、1つの曲名で絞った「すべてのライブ映像 - 曲名順」。リピートの設定によらず、次の公演へ進み、最後まで行ったら一番上に戻る
 const sameSongList = () => state.current === CATALOG_ID && !!catQuery && items().length > 0 && items().every((x) => x.title === catQuery);
 // リピート「全曲」以外で最後の曲を選んでいるときは、「次の曲」は使えない（押しても何もしない）
 const atLastNoWrap = () => state.repeat !== 'all' && !sameSongList() && items().length > 0 && curIndex() === items().length - 1;
@@ -1004,7 +1004,7 @@ function updateNextBtn() { $('next').disabled = atLastNoWrap(); $('last').disabl
 function next(auto) {
   const i = curIndex(), n = items().length;
   if (!auto && atLastNoWrap()) return;
-  if (auto && state.repeat === 'one' && i >= 0) return playIndex(i);
+  if (auto && state.repeat === 'one' && i >= 0 && !sameSongList()) return playIndex(i);   // 同じ曲名の一覧では、リピートによらず次の公演へ
   if (i >= 0 && i < n - 1) return playIndex(i + 1);
   if ((state.repeat === 'all' || sameSongList()) && n) return playIndex(0);
   if (resume && resume.pl === pl().id) storeResume(null);

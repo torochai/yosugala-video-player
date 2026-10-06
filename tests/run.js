@@ -224,6 +224,11 @@ const TESTS = {
     await p.evaluate(() => playIndex(items().length - 1)); await wait(200);
     await p.click('#playOther'); await wait(200);
     ok('一覧の最後で押すと一番上へ', await p.evaluate(() => curIndex() === 0), n);
+    await p.evaluate(() => setRepeat('one')); await p.click('#playOther'); await wait(200);
+    ok('リピート（1曲）でも押すと次の公演の同じ曲へ', await p.evaluate(() => curIndex() === 1));
+    await p.evaluate(() => next(true)); await wait(200);
+    ok('リピート（1曲）でも曲が終わると次の公演の同じ曲へ', await p.evaluate(() => curIndex() === 2));
+    await p.evaluate(() => setRepeat('off'));
     // 戻るは押した回数ぶん。ここでは途中のボタンの分を捨てて、最初の2回（公演の続き・別公演の同じ曲）だけで確かめる
     await p.evaluate(() => { backStack.length = 2; showNow(); });
     ok('戻るボタンが出る', await p.evaluate(() => !$('playBack').hidden && backStack.length === 2));
