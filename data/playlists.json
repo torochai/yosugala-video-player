@@ -1,0 +1,61 @@
+{
+ "_説明": "プレーヤーのプレイリストの定義。builtin はトロ's セレクション（items は data/catalog.json の曲 ID を上から順に）。library はライブラリのプレイリストを表示する順に並べたもので、key は共有リンク（#lib= / ?lib=）での呼び名（どの曲を選びどう並べるかは index.html が key ごとに決める）。key が lives のところに公演ごとのプレイリストが入る（名前と説明は公演の情報から作る）。desc の {about} {help} は texts の文、{count} はそのプレイリストの曲数、{updated} はカタログの更新日に置き換える（about の中の {count} はすべてのライブ映像の曲数）。",
+ "builtin": {
+  "key": "toro",
+  "name": "トロ's セレクション",
+  "author": "トロ",
+  "desc": "トロが個人的に選んだ、yosugala の公式ライブ映像16曲のセレクションです。yosugala 公式のものではありません。\n\n■ 選び方\n公式のライブ映像（単独の動画、またはフルライブ映像の中の1曲）がある曲から選んでいます。MV しかない曲（No Border、マスカレイドナイト、ハルカカナタなど）は入れていません。\n\n■ 並び順\n次の2つをもとに、トロが目安として並べたものです（2026年10月時点）。\n1. YouTube 再生数 … yosugala official チャンネルにある、その曲の公式動画（MV＋個別のライブ映像）の再生数の合計\n2. ライブ演奏率 … LiveFans に登録されたセットリストのうち、その曲が演奏された公演の割合\n2つの順位を平均し、同点のときはライブの定番曲 indigo を上にするなどして決めました。曲の良さや大切さの順番ではありません。\n\n■ 再生について\nフルライブ映像にしか収録されていない曲は、その曲の部分だけを再生します。\n\n出典\nhttps://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q\nhttps://www.livefans.jp/artist/songlist/155618",
+  "items": [
+   45,
+   53,
+   76,
+   42,
+   106,
+   50,
+   7,
+   27,
+   5,
+   26,
+   28,
+   126,
+   103,
+   48,
+   121,
+   104
+  ]
+ },
+ "library": [
+  {
+   "key": "songs",
+   "name": "すべてのライブ映像 - 曲名順",
+   "desc": "{about}\n曲名の順に並べています。{help}"
+  },
+  {
+   "key": "dates",
+   "name": "すべてのライブ映像 - 公演日順",
+   "desc": "{about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。「MCあり」にすると、フルライブ映像の MC も公演の流れのとおりに入ります。{help}"
+  },
+  {
+   "key": "singles",
+   "name": "Official Live Video - 公開日順",
+   "desc": "yosugala official が1曲ずつ公開している公式ライブ映像（Official Live Video）を、公開日の古い順に並べています（{count} 本・{updated} 時点）。フルライブ映像から切り出した曲は入っていません。"
+  },
+  {
+   "key": "mv",
+   "name": "Official Music Video",
+   "desc": "yosugala official の Music Video を、公開日の古い順に並べています（{count} 本・{updated} 時点）。"
+  },
+  {
+   "key": "mc",
+   "name": "ライブMC集",
+   "desc": "フルライブ映像の中で、メンバーが話している区間（MC）を集めたものです（{count} 件・{updated} 時点）。公演日の古い順に並べています。名前の「(○○のまえ)」は、その MC のあとに歌った曲です。"
+  },
+  {
+   "key": "lives"
+  }
+ ],
+ "texts": {
+  "about": "yosugala official の公式ライブ映像を、曲ごとに分けた一覧です（{count} 件・{updated} 時点）。新しい公式ライブ映像が出たら追加していきます。",
+  "help": "曲の右の「＋」、または「選択」でチェックを入れて「選択した曲をプレイリストに追加」で、好きなプレイリストに入れられます。上の欄で曲名やライブ名を絞り込めます。"
+ }
+}

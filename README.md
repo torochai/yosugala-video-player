@@ -28,7 +28,7 @@ https://torochai.github.io/yosugala-video-player/
 
 曲の行には「YYYY.MM.DD「公演名」 @ 会場名」と表示します。
 
-### データは 2 つ
+### データ
 
 - `data/catalog.json`：元データ。**手で直すのはここだけ**です
   - `items`：曲・MC・Music Video の一覧。1 件ずつ `id`（曲 ID）・`title`・`vid`・`start`・`end`・`kind`（`full` フルライブ映像のチャプター / `single` 単独映像 / `mv` Music Video）・`type`（MC は `"mc"`）・`live`（公演名）を持ちます。`chapter_start`・`chapter_end` は範囲を直す前の元のチャプターの位置です
@@ -37,6 +37,7 @@ https://torochai.github.io/yosugala-video-player/
   - `import`：新しい動画を取り込むときの決まり（`aliases` 曲名の表記ゆれ・`live_rules` 動画タイトル（正規表現）→ 公演名・`video_lives` 動画 ID → 公演名・`exclude_videos` / `exclude_entries` 取り込まない動画・チャプター（`動画ID@開始秒`）・`talk_skips` MC の候補として確かめて要らなかった時間帯）
   - `next_id`：次に付ける曲 ID
 - `data/youtube.json`：YouTube から取った動画の情報（タイトル・長さ・公開日・チャプター・MV かどうか・サムネの大きさ）。ツールだけが書きます
+- `data/playlists.json`：プレイリストの定義。`builtin` はトロ's セレクション（名前・作成者・説明と、曲 ID の並び `items`）。`library` はライブラリのプレイリストを表示する順に並べたもので、`key`（共有リンクの呼び名）・`name`・`desc` を持ちます。どの曲を選んでどう並べるかは `index.html` が `key` ごとに決めます（`key` が `lives` のところに公演ごとのプレイリストが入ります）。`desc` の `{count}`・`{updated}`・`{about}`・`{help}` はプレーヤーが置き換えます。手で直したら、そのまま push すれば反映されます
 
 ### 新しい動画を足す
 

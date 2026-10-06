@@ -640,64 +640,10 @@
 </dialog>
 
 <script>
-// ---------- 初期プレイリスト ----------
-// トロ's セレクションの曲（catalog.json の曲 ID。上から順に）
-const DEFAULT_SONGS = [
-  45,    // indigo（progress the night -LIQUIDROOM-）
-  53,    // アステリズム
-  76,    // コノユビトマレ
-  42,    // 夜明けの唄
-  106,   // 何億分の1を
-  50,    // My Dear
-  7,     // aspiration
-  27,    // ろーるぷれいんぐ
-  5,     // Sparkle
-  26,    // ソラノナミダ
-  28,    // 僕に願いを
-  126,   // prologue
-  103,   // オトギバナシ
-  48,    // sailing!!
-  121,   // 四葉のクローバー
-  104,   // きっかけ
-];
-const DEFAULT_NAME = "トロ's セレクション";
-const DEFAULT_AUTHOR = 'トロ';
-const OLD_DEFAULT_NAMES = ['人気曲セレクション 16曲', 'ライブ映像セレクション 16曲', "トロ's ライブ映像セレクション (16)", "トロ's ライブ映像セレクション"];   // 以前の名前（保存済みのものを新しい名前に変える）
-const DEFAULT_DESC = `トロが個人的に選んだ、yosugala の公式ライブ映像16曲のセレクションです。yosugala 公式のものではありません。
-
-■ 選び方
-公式のライブ映像（単独の動画、またはフルライブ映像の中の1曲）がある曲から選んでいます。MV しかない曲（No Border、マスカレイドナイト、ハルカカナタなど）は入れていません。
-
-■ 並び順
-次の2つをもとに、トロが目安として並べたものです（2026年10月時点）。
-1. YouTube 再生数 … yosugala official チャンネルにある、その曲の公式動画（MV＋個別のライブ映像）の再生数の合計
-2. ライブ演奏率 … LiveFans に登録されたセットリストのうち、その曲が演奏された公演の割合
-2つの順位を平均し、同点のときはライブの定番曲 indigo を上にするなどして決めました。曲の良さや大切さの順番ではありません。
-
-■ 再生について
-フルライブ映像にしか収録されていない曲は、その曲の部分だけを再生します。
-
-出典
-https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q
-https://www.livefans.jp/artist/songlist/155618`;
-// 以前の初期説明文（保存済みのものが書き換えられていなければ新しい説明文にする）
-const OLD_DEFAULT_DESCS = [`yosugala official の公式ライブ映像から、人気の高い16曲を人気順に並べたプレイリストです（2026年10月時点の集計）。\n\n■ 人気順の決め方\n公式なファン投票は見つからなかったため、次の2つの順位を平均して総合順位にしました。\n1. YouTube 再生数 … yosugala official チャンネルにある、その曲の公式動画（MV＋個別のライブ映像）の再生数の合計\n2. ライブ演奏率 … LiveFans に登録されたセットリストのうち、その曲が演奏された公演の割合\n同点のときは、ライブでほぼ毎回演奏される定番曲の indigo を上位にするなどして決めています。\n\n■ 映像の選び方\nすべて yosugala official の公式ライブ映像です。フルライブ映像にしか収録されていない曲は、その曲の部分だけを再生します。\n\n■ 数字に表れないこと\n・個別の公式動画がない曲（四葉のクローバーなど）は、再生数の点で不利になっています\n・Spotify などの配信の再生数は含めていません\n・デビュー曲の prologue のように、再生数や演奏回数では測れない曲の大切さは、順位に入れていません\n\n出典\nhttps://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q\nhttps://www.livefans.jp/artist/songlist/155618`, `yosugala official の公式ライブ映像から、人気の高い16曲を人気順に並べたプレイリストです（2026年10月時点の集計）。\n\n■ 人気順の決め方\n公式なファン投票は見つからなかったため、次の2つの順位を平均して総合順位にしました。\n1. YouTube 再生数 … yosugala official チャンネルにある、その曲の公式動画（MV＋個別のライブ映像）の再生数の合計\n2. ライブ演奏率 … LiveFans に登録されたセットリストのうち、その曲が演奏された公演の割合\n同点のときは、ライブでほぼ毎回演奏される定番曲の indigo を上位にするなどして決めています。\n\n■ 映像の選び方\nすべて yosugala official の公式ライブ映像です。フルライブ映像にしか収録されていない曲は、その曲の部分だけを再生します。\n\n■ 数字に表れないこと\n・個別の公式動画がない曲（四葉のクローバーなど）は、再生数の点で不利になっています\n・Spotify などの配信の再生数は含めていません\n・デビュー曲の prologue のように、再生数や演奏回数では測れない曲の大切さは、順位に入れていません\n\n出典\nhttps://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q\nhttps://www.livefans.jp/artist/songlist/155618`, `トロが個人的に選んだ、yosugala の公式ライブ映像16曲のセレクションです。yosugala 公式のものではありません。
-
-■ 選び方
-公式のライブ映像（単独の動画、またはフルライブ映像の中の1曲）がある曲から選んでいます。MV しかない曲（No Border、マスカレイドナイト、ハルカカナタなど）は入れていません。
-
-■ 並び順
-次の2つをもとに、トロが目安として並べたものです（2026年10月時点）。
-1. YouTube 再生数 … yosugala official チャンネルにある、その曲の公式動画（MV＋個別のライブ映像）の再生数の合計
-2. ライブ演奏率 … LiveFans に登録されたセットリストのうち、その曲が演奏された公演の割合
-2つの順位を平均し、同点のときはライブの定番曲 indigo を上にするなどして決めました。曲の良さや大切さの順番ではありません。
-
-■ 再生について
-フルライブ映像にしか収録されていない曲は、その曲の部分だけを再生します。
-
-出典
-https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q
-https://www.livefans.jp/artist/songlist/155618`];
+// ---------- プレイリストの定義 ----------
+// トロ's セレクション（builtin）とライブラリのプレイリストの名前・説明・共有リンクの呼び名は data/playlists.json に書く。
+// カタログ（data/catalog.json）と一緒に読み込み、届いたら applyDefs でトロ's セレクションを作り直す
+let DEFS = null;
 
 // ---------- アイコン（SVG） ----------
 const ICON = {
@@ -730,43 +676,51 @@ const itemLen = (it) => it.end != null ? it.end - it.start : (it.len ?? null);
 
 // ---------- 保存 ----------
 const KEY = 'yosugala-live-selection-v1';
-// トロのプレイリストは組み込み（読み取り専用）。毎回ここに書いた内容で作り直す
+// トロのプレイリストは組み込み（読み取り専用）。毎回 data/playlists.json の builtin で作り直す
 const BUILTIN_ID = 'builtin-toro';
 // プレイリストの曲は { id: 行の ID, sid: 曲 ID } で持ち、カタログを読み込んだら動画・開始・終了・曲名などを付ける（songRow）。
 // 組み込みの行の ID は「toro:曲 ID」で固定する（開くたびに変わると、続きから再生する曲を覚えられない）
+// data/playlists.json が届くまでは中身のない仮のもの（曲の表示はカタログと一緒に届いてから）
 function defaultPlaylist() {
-  return { id: BUILTIN_ID, key: 'toro', builtin: true, readonly: true, name: DEFAULT_NAME, author: DEFAULT_AUTHOR, desc: DEFAULT_DESC,
-           items: DEFAULT_SONGS.map((sid) => ({ id: `toro:${sid}`, sid })) };
+  const b = DEFS ? DEFS.builtin : { key: 'toro', name: '', author: '', desc: '', items: [] };
+  return { id: BUILTIN_ID, key: b.key, builtin: true, readonly: true, name: b.name, author: b.author, desc: b.desc,
+           items: b.items.map((sid) => ({ id: `toro:${sid}`, sid })) };
 }
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
     if (s && Array.isArray(s.playlists) && s.playlists.length) {
       s.playlists = s.playlists.filter((p) => p && Array.isArray(p.items));
-      s.playlists.forEach((p) => {
-        p.items = p.items.filter((it) => it && Number.isInteger(it.sid));
-        if (OLD_DEFAULT_NAMES.includes(p.name)) p.name = DEFAULT_NAME;
-        if (p.desc == null) p.desc = p.name === DEFAULT_NAME ? DEFAULT_DESC : '';
-        if (OLD_DEFAULT_DESCS.includes(p.desc)) p.desc = DEFAULT_DESC;
-        if (p.author == null) p.author = p.name === DEFAULT_NAME ? DEFAULT_AUTHOR : '';
-      });
-      // 組み込みプレイリストを正しい内容に置き換える（以前に編集していた場合は、その内容をコピーとして残す）
-      const sig = (p) => p.items.map((it) => it.sid).join(',');
-      const fresh = defaultPlaylist();
-      const out = [];
-      s.playlists.forEach((p) => {
-        const isDefault = p.builtin || p.id === BUILTIN_ID || p.name === DEFAULT_NAME;
-        if (!isDefault) return out.push(p);
-        if (!p.builtin && p.items.length && sig(p) !== sig(fresh))
-          out.push({ ...p, id: uid(), name: p.name + '（編集したコピー）', builtin: undefined, readonly: undefined });
-        if (s.current === p.id) s.current = BUILTIN_ID;
-      });
-      s.playlists = [fresh, ...out];
+      s.playlists.forEach((p) => { p.items = p.items.filter((it) => it && Number.isInteger(it.sid)); });
+      if (!s.playlists.some((p) => p.id === BUILTIN_ID)) s.playlists.unshift(defaultPlaylist());
       return s;
     }
   } catch {}
   const p = defaultPlaylist();
   return { current: p.id, playlists: [p] };
+}
+// data/playlists.json が届いたら: トロ's セレクションを定義の内容で作り直す
+// （以前に編集していた場合は、その内容をコピーとして残す）。共有リンクで開いた保存前のプレイリスト（shared）には触らない
+function applyDefs(defs) {
+  DEFS = defs;
+  const b = defs.builtin;
+  state.playlists.forEach((p) => {
+    if (p === shared) return;
+    if (p.desc == null) p.desc = p.name === b.name ? b.desc : '';
+    if (p.author == null) p.author = p.name === b.name ? b.author : '';
+  });
+  const sig = (p) => p.items.map((it) => it.sid).join(',');
+  const fresh = defaultPlaylist();
+  const out = [];
+  state.playlists.forEach((p) => {
+    const isDefault = p !== shared && (p.builtin || p.id === BUILTIN_ID || p.name === b.name);
+    if (!isDefault) return out.push(p);
+    if (!p.builtin && p.items.length && sig(p) !== sig(fresh))
+      out.push({ ...p, id: uid(), name: p.name + '（編集したコピー）', builtin: undefined, readonly: undefined });
+    if (state.current === p.id) state.current = BUILTIN_ID;
+    if (state.lastPlayed === p.id) state.lastPlayed = BUILTIN_ID;
+  });
+  state.playlists = [fresh, ...out];
 }
 let state = load();
 // ページを開いたときは、最後に曲を再生したプレイリストから始める（開いただけのものは覚えない）。
@@ -832,7 +786,6 @@ const normq = (x) => String(x || '').normalize('NFKC').toLowerCase();
 // 記号の入った曲名を、読みや似た記号でも絞り込めるようにする（曲名 → 検索に足す言葉）
 const SONG_READINGS = { '◯×ゲーム': 'マルバツゲーム まるばつげーむ ○×ゲーム 〇×ゲーム oxゲーム' };
 const dotDate = (d) => d.replace(/-/g, '.');
-const CAT_HELP = '曲の右の「＋」、または「選択」でチェックを入れて「選択した曲をプレイリストに追加」で、好きなプレイリストに入れられます。上の欄で曲名やライブ名を絞り込めます。';
 // tools = true のもの（すべてのライブ映像の2つ）だけ、曲名・ライブ名で絞り込める。
 // それ以外（Official Live Video・公演ごと）はトロ's セレクションと同じ、ふつうの読み取り専用プレイリスト
 // （「＋」と「選択」はどのプレイリストでも使える）
@@ -852,7 +805,11 @@ function catalogPlaylist(id, key, name, base, desc, tools = false, live = false,
 }
 const pl = () => catalogPls.find((p) => p.id === state.current)
   || state.playlists.find((p) => p.id === state.current) || state.playlists[0];
-fetch('data/catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
+// 説明文の {名前} を vars の値に置き換える（data/playlists.json の desc・texts）
+const fillText = (t, vars) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+const getJson = (u) => fetch(u, { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(u); return r.json(); });
+Promise.all([getJson('data/catalog.json'), getJson('data/playlists.json')]).then(([c, defs]) => {
+  applyDefs(defs);
   catalog = c;
   c.items.forEach((x) => songById.set(x.id, x));
   applyTrim();
@@ -880,46 +837,55 @@ fetch('data/catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c)
     });
     return out.length > list.length ? out.map(toItem) : null;
   };
-  const about = `yosugala official の公式ライブ映像を、曲ごとに分けた一覧です（${catalogAll.length} 件・${c.updated} 時点）。新しい公式ライブ映像が出たら追加していきます。`;
-  catalogPls = [
-    catalogPlaylist(CATALOG_ID, 'songs', 'すべてのライブ映像 - 曲名順', catalogAll, `${about}\n曲名の順に並べています。${CAT_HELP}`, true),
-    catalogPlaylist(CATALOG_DATE_ID, 'dates', 'すべてのライブ映像 - 公演日順', byDate.map(toItem), `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。「MCあり」にすると、フルライブ映像の MC も公演の流れのとおりに入ります。${CAT_HELP}`, true, false, withMcOf(byDate)),
-  ];
-  // Official Live Video: 1曲ずつ公開された映像（フルライブ映像から切り出したものは入れない）を公開日の古い順に
-  const singles = visible.filter((x) => x.kind === 'single')
+  // ライブラリのプレイリスト: data/playlists.json の library の順に、key ごとに曲を選んで並べる（名前・説明は定義から）
+  const singles = visible.filter((x) => x.kind === 'single')   // Official Live Video: 1曲ずつ公開された映像を公開日の古い順に
     .sort((a, b) => a.published.localeCompare(b.published) || a.title.localeCompare(b.title)).map(toItem);
-  catalogPls.push(catalogPlaylist(SINGLES_ID, 'singles', 'Official Live Video - 公開日順', singles,
-    `yosugala official が1曲ずつ公開している公式ライブ映像（Official Live Video）を、公開日の古い順に並べています（${singles.length} 本・${c.updated} 時点）。フルライブ映像から切り出した曲は入っていません。`));
-  // Official Music Video: 公開日の古い順
-  const mvs = c.items.filter(isMv).sort((a, b) => a.published.localeCompare(b.published) || a.title.localeCompare(b.title)).map(toItem);
-  if (mvs.length) catalogPls.push(catalogPlaylist(MV_ID, 'mv', 'Official Music Video', mvs,
-    `yosugala official の Music Video を、公開日の古い順に並べています（${mvs.length} 本・${c.updated} 時点）。`));
+  const mvs = c.items.filter(isMv).sort((a, b) => a.published.localeCompare(b.published) || a.title.localeCompare(b.title)).map(toItem);   // 公開日の古い順
   // MC: 公演日の古い順、同じ映像の中は時間の順
   const talks = c.items.filter(isMc).sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999') || a.vid.localeCompare(b.vid) || a.start - b.start).map(toItem);
-  if (talks.length) catalogPls.push(catalogPlaylist(MC_ID, 'mc', 'ライブMC集', talks,
-    `フルライブ映像の中で、メンバーが話している区間（MC）を集めたものです（${talks.length} 件・${c.updated} 時点）。公演日の古い順に並べています。名前の「(○○のまえ)」は、その MC のあとに歌った曲です。`));
+  // key → { id: プレイリストの ID（保存・続きから再生に使うので変えない）, list: 曲, tools: 絞り込み欄, withMc: 「MCあり」の並び }
+  const BUILD = {
+    songs: () => ({ id: CATALOG_ID, list: catalogAll, tools: true }),
+    dates: () => ({ id: CATALOG_DATE_ID, list: byDate.map(toItem), tools: true, withMc: withMcOf(byDate) }),
+    singles: () => ({ id: SINGLES_ID, list: singles }),
+    mv: () => (mvs.length ? { id: MV_ID, list: mvs } : null),
+    mc: () => (talks.length ? { id: MC_ID, list: talks } : null),
+  };
+  const texts = defs.texts || {};
+  const about = fillText(texts.about, { count: catalogAll.length, updated: c.updated });
+  catalogPls = [];
+  (defs.library || []).forEach((d) => {
+    if (d.key === 'lives') return livePlaylists().forEach((q) => catalogPls.push(q));
+    const b = BUILD[d.key] && BUILD[d.key]();
+    if (!b) return;
+    const desc = fillText(d.desc, { about, help: texts.help || '', count: b.list.length, updated: c.updated });
+    catalogPls.push(catalogPlaylist(b.id, d.key, d.name, b.list, desc, !!b.tools, false, b.withMc || null));
+  });
   // 公演ごと（公演日が分かるものだけ）。新しい公演が上
   //   フルライブ映像がある公演は、フルライブ映像のチャプターだけをその順に（単独映像と重なるチャプターも使う）
   //   フルライブ映像がない公演は、単独映像をセットリスト順に
-  const lives = new Map();
-  visible.filter((x) => x.date && x.live).forEach((x) => {
-    const k = `${x.date}|${x.live}`;
-    if (!lives.has(k)) lives.set(k, []);
-    lives.get(k).push(x);
-  });
-  // 公演の呼び名は公演日。同じ日に公演が2つあるときだけ「公演日|公演名」
-  const perDate = (d) => [...lives.keys()].filter((k) => k.startsWith(d + '|')).length;
-  [...lives.entries()].sort((a, b) => b[0].localeCompare(a[0])).forEach(([k, songs]) => {
-    const full = songs.filter((x) => x.kind === 'full');
-    const list = full.length ? full.sort((a, b) => a.vid.localeCompare(b.vid) || a.start - b.start) : songs.slice().sort(byLive);
-    if (!list.length) return;
-    const { date, live, venue } = list[0];
-    catalogPls.push(catalogPlaylist(LIVE_ID + k, perDate(date) > 1 ? k : date, `${dotDate(date)}${quoteLive(live)}`, list.map(toItem),
-      // 公演情報: ◻️ 公演名 / ◻️ 公演日 / ◻️ 会場 のあとにセットリスト（見出しと字下げはセットリストと同じ形。プレイリストの説明文は入れない）
-      [['公演名', quoteLive(live)], ['公演日', dotDate(date)], ['会場', venue]].filter(([, v]) => v)
-        .map(([k, v]) => `◻️ ${k}\n　${v}`).join('\n\n')
-      + setlistText((c.lives || {})[live], full.length ? null : new Set(list.map((x) => x.title))), false, true, withMcOf(list)));
-  });
+  function livePlaylists() {
+    const lives = new Map(), out = [];
+    visible.filter((x) => x.date && x.live).forEach((x) => {
+      const k = `${x.date}|${x.live}`;
+      if (!lives.has(k)) lives.set(k, []);
+      lives.get(k).push(x);
+    });
+    // 公演の呼び名は公演日。同じ日に公演が2つあるときだけ「公演日|公演名」
+    const perDate = (d) => [...lives.keys()].filter((k) => k.startsWith(d + '|')).length;
+    [...lives.entries()].sort((a, b) => b[0].localeCompare(a[0])).forEach(([k, songs]) => {
+      const full = songs.filter((x) => x.kind === 'full');
+      const list = full.length ? full.sort((a, b) => a.vid.localeCompare(b.vid) || a.start - b.start) : songs.slice().sort(byLive);
+      if (!list.length) return;
+      const { date, live, venue } = list[0];
+      out.push(catalogPlaylist(LIVE_ID + k, perDate(date) > 1 ? k : date, `${dotDate(date)}${quoteLive(live)}`, list.map(toItem),
+        // 公演情報: ◻️ 公演名 / ◻️ 公演日 / ◻️ 会場 のあとにセットリスト（見出しと字下げはセットリストと同じ形。プレイリストの説明文は入れない）
+        [['公演名', quoteLive(live)], ['公演日', dotDate(date)], ['会場', venue]].filter(([, v]) => v)
+          .map(([k, v]) => `◻️ ${k}\n　${v}`).join('\n\n')
+        + setlistText((c.lives || {})[live], full.length ? null : new Set(list.map((x) => x.title))), false, true, withMcOf(list)));
+    });
+    return out;
+  }
   renderAll(); openSharedLib(); applyResume();
 }).catch(() => { $('msg').textContent = 'ライブ映像の一覧を読み込めませんでした。ページを再読み込みしてください。'; });
 

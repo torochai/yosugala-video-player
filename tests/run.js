@@ -70,6 +70,17 @@ const TESTS = {
     ok('トロ\'s セレクション（16曲、1曲目 indigo）', r.name === "トロ's セレクション" && r.n === 16 && r.first === 'indigo' && r.rows === 16, r);
     ok('行 ID は「toro:曲 ID」', r.row === 'toro:45' && r.sid === 45, r);
     ok('ブラウザには曲 ID だけ保存', JSON.stringify(r.stored) === '{"id":"toro:45","sid":45}', r.stored);
+    // プレイリストの定義（data/playlists.json）: トロ's セレクションの曲はどれもカタログにある。library の key はどれもプレイリストになり、その順に並ぶ
+    const defs = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'playlists.json'), 'utf8'));
+    const pd = await p.evaluate((d) => {
+      const ids = new Set(catalog.items.map((x) => x.id)), b = state.playlists.find((q) => q.id === BUILTIN_ID);
+      const order = [...new Set(catalogPls.map((q) => (q.live ? 'lives' : q.key)))];
+      return { missing: d.builtin.items.filter((i) => !ids.has(i)), builtin: b.name === d.builtin.name && b.desc === d.builtin.desc && b.author === d.builtin.author
+        && b.items.map((it) => it.sid).join() === d.builtin.items.join(), order: order.join(), want: d.library.map((x) => x.key).join(),
+        names: catalogPls.filter((q) => !q.live).every((q) => q.name === d.library.find((x) => x.key === q.key).name), unfilled: catalogPls.filter((q) => /\{\w+\}/.test(q.desc)).map((q) => q.key) };
+    }, defs);
+    ok('トロ\'s セレクションとライブラリのプレイリストは data/playlists.json の定義どおり（曲はどれもカタログにあり、並びは library の順、説明の {…} は残らない）',
+      !pd.missing.length && pd.builtin && pd.order === pd.want && pd.names && !pd.unfilled.length, pd);
     // assets/・data/ に置いたファイル: manifest・アイコン・背景・カード画像・カタログが読める。
     // manifest は assets/ にあるので、アプリの範囲と開くページは "../"（サイトのトップ）にする
     const files = await p.evaluate(async () => {
