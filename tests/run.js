@@ -297,17 +297,19 @@ const TESTS = {
     ok('元のチャプターの位置と今の設定の位置が出る', t[0] !== t[1] && t[1] === t[2] && t[3] !== t[4] && t[4] === t[5], t);
     ok('調整していなければ書き出すものはない', await p.evaluate(() => $('out').value === '' && $('download').disabled));
     await p.evaluate(() => { window.__t = cur.start + 2; }); await p.click('#setStart');
-    await p.evaluate(() => { window.__t = cur.start + 200; }); await p.click('#setEnd');
-    await p.click('[data-nudge="end"][data-d="5"]'); await p.click('[data-nudge="end"][data-d="-5"]'); await p.click('[data-nudge="end"][data-d="1"]');
+    await p.evaluate(() => { window.__t = cur.start + 200; });   // 操作バーの ±5秒・±1秒で再生位置を動かしてから「ここを終わりに」
+    await p.click('.bar [data-seek="5"]'); await p.click('.bar [data-seek="-5"]'); await p.click('.bar [data-seek="1"]'); await p.click('#setEnd');
     const out = JSON.parse(await p.inputValue('#out')), k = Object.keys(out.segments);
-    ok('±5秒・±1秒で動かせて、書き出しは調整した曲だけの segments（キーは 動画ID@元の開始秒、開始・終了とも）', k.length === 1 && k[0] === `${fixed.vid}@${fixed.chapter_start}`
+    ok('操作バーの ±5秒・±1秒で位置を合わせられ、書き出しは調整した曲だけの segments（キーは 動画ID@元の開始秒、開始・終了とも）', k.length === 1 && k[0] === `${fixed.vid}@${fixed.chapter_start}`
       && out.segments[k[0]].start === fixed.start + 2 && out.segments[k[0]].end === fixed.start + 201, out);
     ok('一覧に「調整済み」', await p.evaluate(() => $('list').querySelector('li.sel .badge.changed').textContent === '調整済み'));
     // 単独映像も調整できる（元は 0 秒〜動画の最後）
     const single = all.find((s) => s.kind === 'single' && !('chapter_start' in s));
     await p.evaluate((id) => select(songs.find((s) => s.id === id)), single.id); await wait(200);
     ok('単独映像の元の位置は 0:00〜動画の最後', await p.evaluate(() => $('oStart').textContent === '0:00' && $('oEnd').textContent === '動画の最後'));
-    await p.click('[data-nudge="start"][data-d="1"]');
+    await p.evaluate(() => { window.__t = 1; }); await p.click('#setStart');
+    ok('操作バーの前の曲・次の曲で、一覧の前後の曲へ', await p.evaluate(() => { const vis = visible(), i = vis.indexOf(cur);
+      $('nextSong').click(); const moved = cur === vis[i + 1]; $('prevSong').click(); return moved && cur === vis[i]; }));
     const dl = p.waitForEvent('download'); await p.click('#download');
     const file = await dl, body = JSON.parse(fs.readFileSync(await file.path(), 'utf8'));
     ok('ファイルに書き出せる（調整した2曲）', /^yosugala-segments-\d{8}-\d{4}\.json$/.test(file.suggestedFilename()) && Object.keys(body.segments).length === 2
@@ -332,7 +334,7 @@ const TESTS = {
       return g.getAttribute('href').startsWith('tools/trim.html') && !g.textContent.trim() && Math.abs(g.getBoundingClientRect().right - h.right) < 2
         && $('trimOn').getBoundingClientRect().right <= g.getBoundingClientRect().left; }));
     const tt = await pp.ctx.newPage(); await tt.goto(BASE + 'tools/trim.html'); await tt.waitForFunction(() => $('list').children.length > 0);
-    await tt.evaluate((id) => select(songs.find((s) => s.id === id)), song.id); await wait(200); await tt.click('[data-nudge="end"][data-d="5"]'); await wait(300);
+    await tt.evaluate((id) => select(songs.find((s) => s.id === id)), song.id); await wait(200); await tt.evaluate((e) => { window.__t = e; }, song.end + 1); await tt.click('#setEnd'); await wait(300);
     const r2 = await range();
     ok('調整ツールで直すと、開いているプレーヤーにすぐ反映', r2.e === song.end + 1 && r2.ie === r2.e, r2);
     await tt.click('#reset'); await wait(300);
@@ -350,7 +352,7 @@ const TESTS = {
     await m.waitForFunction(() => $('list').children.length > 0);
     await m.click('#list li'); await wait(300); await m.evaluate(() => scrollTo(0, 600)); await wait(200);
     ok('スマホ: 横スクロールが出ず、動画は画面の上に残る', await m.evaluate(() => document.documentElement.scrollWidth <= innerWidth
-      && Math.round(document.querySelector('.screen').getBoundingClientRect().top) === 0));
+      && Math.round(document.querySelector('.stage').getBoundingClientRect().top) === 0));
     await close(m);
   },
 };

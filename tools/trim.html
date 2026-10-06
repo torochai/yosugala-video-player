@@ -9,8 +9,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  /* 曲の開始・終了を確かめて直すためのページ。プレイヤーからはリンクしていない */
-  :root { --bg: #05060f; --panel: rgba(14, 19, 48, .82); --line: rgba(170, 190, 255, .2); --text: #e9ecf8; --muted: #8e96b8; --moon: #b9cbff; --warn: #ffcf8a; }
+  /* 曲の開始・終了（再生範囲）を確かめて直すページ。プレーヤーのタイトル行のギアから開く */
+  :root {
+    --bg: #05060f; --glass: rgba(18, 24, 54, .72); --glass-2: rgba(30, 40, 84, .6);
+    --line: rgba(170, 190, 255, .14); --line-2: rgba(170, 190, 255, .28);
+    --text: #e9ecf8; --muted: #8e96b8; --moon: #b9cbff; --dawn: #f3b7c3; --warn: #ffcf8a; --danger: #ff8a9a;
+  }
   * { box-sizing: border-box; }
   html { background: var(--bg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   body { margin: 0; background: var(--bg); color: var(--text); font-family: "Zen Kaku Gothic New", -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; font-size: 14px; line-height: 1.5; }
@@ -31,60 +35,111 @@
   .brand a { color: inherit; text-decoration: none; }
   .brand .sub { display: block; font-style: italic; font-size: .5em; letter-spacing: .12em; text-shadow: none; filter: drop-shadow(0 0 8px rgba(5,6,15,.9));
     background: linear-gradient(90deg, #b9cbff, #f3b7c3 60%, #ffd8a8); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  main { position: relative; z-index: 1; }
-  h1, .hint { text-shadow: 0 0 10px rgba(5,6,15,.95), 0 0 2px rgba(5,6,15,.9); }
-  li { background: rgba(10, 14, 36, .7); }
-  main { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; max-width: 1500px; margin: 0 auto; }
-  h1 { font-size: 1.1rem; margin: 0 0 6px; }
-  .note { font-size: .82rem; margin: 0 0 8px; padding: 8px 10px; border-radius: 8px; color: var(--text);
-    background: rgba(14, 19, 48, .82); border: 1px solid rgba(255, 207, 138, .4); }
-  .hint { color: #c3c9e4; font-size: .82rem; margin: 0 0 10px; }
-  .screen { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; }
+  main { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 20px; padding: 16px; max-width: 1500px; margin: 0 auto; align-items: start; }
+  h1 { font-size: 1.1rem; margin: 0 0 6px; text-shadow: 0 0 10px rgba(5,6,15,.95); }
+  .note { font-size: .8rem; margin: 0 0 12px; padding: 8px 10px; border-radius: 10px; background: var(--glass); border: 1px solid rgba(255, 207, 138, .4); }
+
+  /* ---- 動画と操作バー（プレーヤーと同じ見た目） ---- */
+  .stage { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: #000; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
+  .screen { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; }
   .screen > div, .screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-top: 12px; }
-  .cur { font-size: 1.05rem; font-weight: 700; }
-  .sub { color: var(--muted); font-size: .82rem; }
-  .now { font-variant-numeric: tabular-nums; font-size: 1.4rem; font-weight: 700; color: var(--moon); }
+  .bar { display: flex; align-items: center; gap: 4px; padding: 8px 10px; background: linear-gradient(180deg, #0b1030, #070a1c); border-top: 1px solid var(--line); }
+  .bicon { background: none; border: 0; color: var(--text); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; flex: none; padding: 0; touch-action: manipulation; }
+  .bicon:hover { background: var(--glass-2); color: #fff; box-shadow: 0 0 12px rgba(185,203,255,.25); }
+  .bicon:disabled, .bicon:disabled:hover { opacity: .3; cursor: default; background: none; box-shadow: none; }
+  .bicon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .bicon svg .fill { fill: currentColor; stroke: none; }
+  .bicon svg text { fill: currentColor; stroke: none; font: 700 8px "Zen Kaku Gothic New", sans-serif; }
+  .bicon[data-seek] { font: 700 .82rem "Zen Kaku Gothic New", sans-serif; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+  .bicon.main { width: 40px; height: 40px; border: 1px solid var(--line-2); }
+  .bicon.main svg { width: 18px; height: 18px; }
+  .time { font-variant-numeric: tabular-nums; font-size: .78rem; color: var(--muted); white-space: nowrap; flex: none; padding: 0 2px; min-width: 4.2em; text-align: right; }
+  /* シークバー: 曲のまわりだけ。調整後の範囲を色の帯で、元のチャプター・今の設定を縦線で重ねる */
+  .seekwrap { position: relative; flex: 1; min-width: 80px; margin: 0 8px; height: 30px; }
+  .track { position: absolute; left: 7px; right: 7px; top: 50%; height: 4px; margin-top: -2px; background: rgba(255,255,255,.14); border-radius: 2px; pointer-events: none; }
+  .band { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: linear-gradient(90deg, #6f86ff, #b48cff 55%, var(--dawn)); }
+  .tick { position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; border-radius: 1px; }
+  .tick.orig { background: var(--muted); }
+  .tick.cur { background: #fff; opacity: .8; top: -4px; bottom: -4px; }
+  #seek { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; }
+  #seek::-webkit-slider-runnable-track { height: 4px; background: transparent; }
+  #seek::-moz-range-track { height: 4px; background: transparent; }
+  #seek::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px rgba(185,203,255,.8); }
+  #seek::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 8px rgba(185,203,255,.8); }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .72rem; color: var(--muted); margin-top: 6px; }
+  .legend i { display: inline-block; vertical-align: middle; margin-right: 5px; }
+  .legend .lb { width: 18px; height: 4px; border-radius: 2px; background: linear-gradient(90deg, #6f86ff, #b48cff 55%, var(--dawn)); }
+  .legend .lo { width: 2px; height: 12px; background: var(--muted); }
+  .legend .lc { width: 2px; height: 10px; background: #fff; opacity: .8; }
+
+  /* ---- 曲名と調整 ---- */
+  .nowinfo { margin-top: 14px; text-shadow: 0 0 10px rgba(5,6,15,.95), 0 0 2px rgba(5,6,15,.9); }
+  .nowinfo .t { font-size: 1.35rem; font-weight: 700; line-height: 1.3; }
+  .nowinfo .m { color: var(--muted); font-size: .82rem; }
+  .tag { display: inline-block; font-size: .7rem; padding: 0 8px; margin-left: 6px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); }
+  .panel { background: var(--glass); border: 1px solid var(--line); border-radius: 14px; padding: 12px; margin-top: 12px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card { background: rgba(5,6,15,.35); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .card .ch { display: flex; align-items: baseline; gap: 10px; }
+  .card .lab { color: var(--muted); font-size: .8rem; }
+  .card .big { font-variant-numeric: tabular-nums; font-size: 1.6rem; font-weight: 700; letter-spacing: .02em; }
+  .card .sm, .lenrow { color: var(--muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
+  .lenrow { margin-top: 10px; }
+  .panel > .btns { margin-top: 10px; }
+  .lenrow b { color: var(--text); font-size: .95rem; }
+  .changed, .lenrow b.changed { color: var(--warn); }
   .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
-  button { font: inherit; color: var(--text); background: #1b2350; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; touch-action: manipulation; }
-  button:hover { border-color: var(--moon); }
-  button:disabled { opacity: .4; cursor: default; }
-  button.primary { background: #3a4aa8; }
-  /* 元のチャプター・今の設定・調整後の表 */
-  table.pos { width: 100%; border-collapse: collapse; margin-top: 10px; font-variant-numeric: tabular-nums; }
-  table.pos th, table.pos td { padding: 4px 6px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
-  table.pos th { color: var(--muted); font-weight: 400; font-size: .8rem; }
-  table.pos td.adj { font-weight: 700; font-size: 1.05rem; }
-  .changed { color: var(--warn); }
-  .edit { margin-top: 10px; }
-  .edit .row .label { width: 3em; color: var(--muted); }
-  /* 調整後の開始・終了を動かすボタン（スマホでは次の行に） */
-  .nudges { display: inline-flex; gap: 6px; }
-  ol { list-style: none; margin: 8px 0 0; padding: 0; max-height: calc(100vh - 90px); overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
-  li { padding: 8px 10px; border-bottom: 1px solid var(--line); cursor: pointer; }
-  li:hover { background: rgba(18, 26, 64, .9); }
-  li.sel { background: #1b2350; }
+  /* ボタンはどれも同じ高さ・同じ文字の大きさ。並んだボタンは同じ幅にそろえる（.btns） */
+  .btn { font: inherit; background: var(--glass-2); color: var(--text); border: 1px solid var(--line-2); border-radius: 999px; padding: 0 12px; font-size: .8rem;
+    min-height: 36px; line-height: 1.2; cursor: pointer; touch-action: manipulation; transition: border-color .2s, box-shadow .2s; }
+  .btns { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; margin-top: 8px; }
+  .btns .btn { width: 100%; padding: 4px 6px; }
+  .btn:hover { border-color: var(--moon); box-shadow: 0 0 14px rgba(185,203,255,.25); }
+  .btn:disabled, .btn:disabled:hover { opacity: .4; cursor: default; box-shadow: none; border-color: var(--line-2); }
+  .btn.primary { background: linear-gradient(90deg, #6f86ff, #b48cff 55%, var(--dawn)); border-color: transparent; color: #0a0e24; font-weight: 700; }
+  .btn.ghost { color: #c3c9e4; }
+  .btn.danger { color: var(--danger); }
+  .sub { color: var(--muted); font-size: .8rem; }
+  textarea { width: 100%; min-height: 90px; margin-top: 8px; background: rgba(5,6,15,.5); color: var(--text); border: 1px solid var(--line); border-radius: 10px; font: .76rem ui-monospace, Menlo, monospace; }
+
+  /* ---- 曲の一覧（プレーヤーのプレイリスト欄と同じ見た目） ---- */
+  aside.panel { margin-top: 0; padding: 12px; position: sticky; top: 12px; }
+  .listhead { display: flex; align-items: baseline; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-bottom: 8px; }
+  input[type=search] { width: 100%; font: inherit; color: var(--text); background: rgba(5,6,15,.5); border: 1px solid var(--line-2); border-radius: 999px; padding: 7px 14px; }
+  label.f { color: var(--muted); font-size: .8rem; }
+  ol { list-style: none; margin: 8px 0 0; padding: 0; max-height: calc(100vh - 190px); overflow: auto; }
+  li { padding: 8px 10px; border-radius: 10px; cursor: pointer; border: 1px solid transparent; }
+  li + li { margin-top: 2px; }
+  li:hover { background: rgba(30, 40, 84, .45); }
+  li.sel { background: rgba(111, 134, 255, .18); border-color: var(--line-2); }
   li .t { font-weight: 700; }
-  li .m { color: var(--muted); font-size: .8rem; }
-  .badge { float: right; font-size: .75rem; margin-left: 6px; color: var(--muted); }
+  li .m { color: var(--muted); font-size: .76rem; }
+  .badge { float: right; font-size: .7rem; margin-left: 6px; color: var(--muted); }
   .badge.changed { color: var(--warn); }
-  input[type=search] { width: 100%; font: inherit; color: var(--text); background: #0a0e24; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
-  label.f { color: var(--muted); font-size: .85rem; }
-  textarea { width: 100%; min-height: 100px; margin-top: 8px; background: #0a0e24; color: var(--text); border: 1px solid var(--line); border-radius: 8px; font: .78rem ui-monospace, Menlo, monospace; }
+
   @media (max-width: 900px) {
     main { grid-template-columns: 1fr; padding: 0 0 16px; gap: 0; }
-    main > section, main > aside { padding: 0 12px; }
+    main > section, main > aside { margin-left: 12px; margin-right: 12px; }
     header.hero { padding: calc(14px + env(safe-area-inset-top)) 12px 0; }
     .eyebrow { letter-spacing: .12em; }
-    h1, .hint { padding-top: 10px; }
-    /* スマホでは動画を上に固定して、下の操作・一覧をスクロールしても見えるように */
-    .screen { position: sticky; top: 0; z-index: 2; border-radius: 0; margin: 0 -12px; width: calc(100% + 24px); }
-    button { padding: 8px 6px; min-height: 40px; font-size: 13px; }
-    .row { gap: 4px; }
-    .box { padding: 10px; }
-    .edit .row .label { width: 2.4em; }
-    .nudges { flex-basis: 100%; gap: 4px; padding-left: calc(2.4em + 4px); }
+    h1 { padding-top: 10px; }
+    /* スマホでは動画と操作バーを上に固定して、下の調整・一覧をスクロールしても見えるように */
+    .stage { position: sticky; top: 0; z-index: 3; border-radius: 0; border-left: 0; border-right: 0; margin: 0 -12px; }
+    /* 操作バーはシークバーを1段目、ボタンを2段目に */
+    .bar { flex-wrap: wrap; justify-content: space-between; gap: 0 2px; padding: 4px 8px 6px; }
+    .seekwrap { order: -1; flex: 1 1 calc(100% - 5em); margin: 0 4px 0 2px; }
+    .time { order: -1; }
+    .bicon { width: 40px; height: 40px; }
+    .cards { grid-template-columns: 1fr; }
+    .panel { padding: 10px; }
+    .card { padding: 10px; }
+    .btn { min-height: 40px; }
+    aside.panel { position: static; margin-top: 12px; }
     ol { max-height: none; }
+  }
+  @media (max-width: 360px) {
+    .btns { gap: 4px; }
+    .btns .btn { font-size: .74rem; padding: 4px 3px; }
   }
 </style>
 </head>
@@ -98,59 +153,66 @@
     <h1>再生範囲調整ツール</h1>
     <p class="note">調整した値は、このブラウザのプレーヤーにすぐ反映されます（このブラウザだけです。ほかの端末やほかの人のプレーヤーには反映されません）。
       正式に変更したいときは、「書き出す」でできたファイルを添えて、プレーヤーの開発者に連絡してください。</p>
-    <p class="hint">曲を選んで再生し、歌い始め・歌い終わりの位置で「ここを開始に」「ここを終わりに」を押すか、±1秒・±5秒で合わせます。
-      「書き出す」で調整した曲だけをまとめてファイルにできます。
-      キー操作: Space 再生/停止、← → 1秒、Shift+← → 5秒。</p>
-    <div class="screen"><div id="player"></div></div>
-    <div class="box">
-      <div class="cur" id="curTitle">一覧から曲を選んでください</div>
-      <div class="sub" id="curSub"></div>
-      <div class="row"><span class="sub">再生位置</span><span class="now" id="now">-</span></div>
-      <div class="row">
-        <button data-seek="-5">−5秒</button><button data-seek="-1">−1秒</button>
-        <button id="pp">再生 / 停止</button>
-        <button data-seek="1">＋1秒</button><button data-seek="5">＋5秒</button>
-      </div>
-      <table class="pos">
-        <tr><th></th><th>元のチャプター</th><th>今の設定</th><th>調整後</th></tr>
-        <tr><th>開始</th><td id="oStart">-</td><td id="cStart">-</td><td class="adj" id="vStart">-</td></tr>
-        <tr><th>終了</th><td id="oEnd">-</td><td id="cEnd">-</td><td class="adj" id="vEnd">-</td></tr>
-        <tr><th>長さ</th><td id="oLen">-</td><td id="cLen">-</td><td class="adj" id="vLen">-</td></tr>
-      </table>
-      <div class="edit">
-        <div class="row"><span class="label">開始</span>
-          <button id="setStart" class="primary">ここを開始に</button>
-          <button data-play="start">開始から再生</button>
-          <span class="nudges"><button data-nudge="start" data-d="-5">−5秒</button><button data-nudge="start" data-d="-1">−1秒</button><button data-nudge="start" data-d="1">＋1秒</button><button data-nudge="start" data-d="5">＋5秒</button></span>
-        </div>
-        <div class="row"><span class="label">終了</span>
-          <button id="setEnd" class="primary">ここを終わりに</button>
-          <button data-play="end" title="終わりの5秒前から終わりまで再生">終わりを確認</button>
-          <span class="nudges"><button data-nudge="end" data-d="-5">−5秒</button><button data-nudge="end" data-d="-1">−1秒</button><button data-nudge="end" data-d="1">＋1秒</button><button data-nudge="end" data-d="5">＋5秒</button></span>
-        </div>
-        <div class="row"><span class="label">元の</span>
-          <button data-play="oStart">元の開始から再生</button>
-          <button data-play="oEnd" title="元の終わりの5秒前から元の終わりまで再生">元の終わりを確認</button>
-        </div>
-        <div class="row">
-          <button id="reset">この曲の調整を取り消す</button>
-          <button id="clearAll">すべての調整をリセット</button>
-          <button id="prevSong">前の曲へ</button><button id="nextSong">次の曲へ</button>
-        </div>
+    <div class="stage">
+      <div class="screen"><div id="player"></div></div>
+      <div class="bar">
+        <button class="bicon" type="button" id="prevSong" aria-label="前の曲" title="前の曲"></button>
+        <button class="bicon" type="button" data-seek="-5" aria-label="5秒戻る" title="5秒戻る（Shift+←）"></button>
+        <button class="bicon" type="button" data-seek="-1" aria-label="1秒戻る" title="1秒戻る（←）"></button>
+        <button class="bicon main" type="button" id="pp" aria-label="再生 / 一時停止" title="再生 / 一時停止（Space）"></button>
+        <button class="bicon" type="button" data-seek="1" aria-label="1秒進む" title="1秒進む（→）"></button>
+        <button class="bicon" type="button" data-seek="5" aria-label="5秒進む" title="5秒進む（Shift+→）"></button>
+        <button class="bicon" type="button" id="nextSong" aria-label="次の曲" title="次の曲"></button>
+        <div class="seekwrap"><div class="track" id="track"></div><input type="range" id="seek" min="0" max="1" step="1" value="0" aria-label="再生位置"></div>
+        <span class="time" id="now">-</span>
       </div>
     </div>
-    <div class="box">
-      <div id="count" class="sub"></div>
-      <div class="row">
-        <button id="download" class="primary">書き出す（ファイル）</button>
-        <button id="copy">コピー</button>
-        <span class="sub" id="msg"></span>
+    <div class="legend"><span><i class="lb"></i>調整後の範囲</span><span><i class="lo"></i>元のチャプター</span><span><i class="lc"></i>今の設定</span></div>
+
+    <div class="nowinfo">
+      <div class="t" id="curTitle">一覧から曲を選んでください</div>
+      <div class="m" id="curSub"></div>
+    </div>
+    <div class="panel">
+      <div class="cards">
+        <div class="card">
+          <div class="ch"><span class="lab">開始</span><span class="big" id="vStart">-</span></div>
+          <div class="sm">元のチャプター <span id="oStart">-</span> ・ 今の設定 <span id="cStart">-</span></div>
+          <div class="btns">
+            <button class="btn primary" type="button" id="setStart" title="今の再生位置を開始にする">ここを開始に</button>
+            <button class="btn" type="button" data-play="start" title="調整後の開始から再生">▶ 開始</button>
+            <button class="btn ghost" type="button" data-play="oStart" title="元のチャプターの開始から再生">▶ 元の開始</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="lab">終了</span><span class="big" id="vEnd">-</span></div>
+          <div class="sm">元のチャプター <span id="oEnd">-</span> ・ 今の設定 <span id="cEnd">-</span></div>
+          <div class="btns">
+            <button class="btn primary" type="button" id="setEnd" title="今の再生位置を終了にする">ここを終了に</button>
+            <button class="btn" type="button" data-play="end" title="調整後の終了の5秒前から終了まで再生">▶ 終了</button>
+            <button class="btn ghost" type="button" data-play="oEnd" title="元のチャプターの終了の5秒前から終了まで再生">▶ 元の終了</button>
+          </div>
+        </div>
       </div>
+      <div class="lenrow">長さ <b id="vLen">-</b>（元のチャプター <span id="oLen">-</span> ・ 今の設定 <span id="cLen">-</span>）</div>
+      <div class="btns">
+        <button class="btn" type="button" id="reset" title="この曲の調整を取り消して、今の設定に戻す">この曲をリセット</button>
+        <button class="btn danger" type="button" id="clearAll" title="すべての曲の調整を取り消す">すべてリセット</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div id="count" class="sub"></div>
+      <div class="btns">
+        <button class="btn primary" type="button" id="download">書き出す（ファイル）</button>
+        <button class="btn" type="button" id="copy">コピー</button>
+      </div>
+      <div class="sub" id="msg"></div>
       <textarea id="out" readonly></textarea>
     </div>
   </section>
-  <aside>
-    <div class="row"><input type="search" id="q" placeholder="曲名・ライブ名で絞り込み"></div>
+  <aside class="panel">
+    <div class="listhead"><span>全曲（公演日の順）</span><span id="listCount"></span></div>
+    <input type="search" id="q" placeholder="曲名・ライブ名で絞り込み">
     <div class="row"><label class="f"><input type="checkbox" id="onlyChanged"> 調整した曲だけ</label></div>
     <ol id="list"></ol>
   </aside>
@@ -165,6 +227,15 @@ const saveAdj = () => { try { localStorage.setItem(KEY, JSON.stringify(adj)); } 
 const fmt = (sec) => { if (sec == null) return '-'; sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
   return (h ? `${h}:${String(m).padStart(2, '0')}` : `${m}`) + `:${String(s).padStart(2, '0')}`; };
 const dot = (d) => (d ? d.replace(/-/g, '.') : '');
+// 操作バーのアイコン（プレーヤーと同じ形。±秒は文字で −5 −1 ＋1 ＋5）
+const ICON = {
+  play: '<svg viewBox="0 0 24 24"><path class="fill" d="M7 4.5v15l12.5-7.5z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24"><rect class="fill" x="6" y="4.5" width="4" height="15" rx="1"/><rect class="fill" x="14" y="4.5" width="4" height="15" rx="1"/></svg>',
+  prev: '<svg viewBox="0 0 24 24"><path d="M6 5v14"/><path class="fill" d="M19 5.5v13L9 12z"/></svg>',
+  next: '<svg viewBox="0 0 24 24"><path d="M18 5v14"/><path class="fill" d="M5 5.5v13L15 12z"/></svg>',
+};
+$('prevSong').innerHTML = ICON.prev; $('nextSong').innerHTML = ICON.next; $('pp').innerHTML = ICON.play;
+document.querySelectorAll('[data-seek]').forEach((b) => { const d = +b.dataset.seek; b.textContent = d < 0 ? `−${-d}` : `+${d}`; });
 
 let songs = [], cur = null, player = null, ready = false;
 const keyOf = (s) => `${s.vid}@${s.chapter_start ?? s.start}`;
@@ -196,8 +267,11 @@ function visible() {
   return songs.filter((s) => (!$('onlyChanged').checked || changed(s)) && (!q || `${s.song} ${s.live} ${s.date}`.toLowerCase().includes(q)));
 }
 function renderList() {
-  const ol = $('list'); ol.textContent = '';
-  visible().forEach((s) => {
+  const ol = $('list'), vis = visible(); ol.textContent = '';
+  $('listCount').textContent = `${vis.length} 曲`;
+  const i = vis.indexOf(cur);
+  $('prevSong').disabled = i <= 0; $('nextSong').disabled = i < 0 || i >= vis.length - 1;
+  vis.forEach((s) => {
     const li = document.createElement('li'); li.song = s; if (s === cur) li.className = 'sel';
     const v = valOf(s);
     li.innerHTML = '<span class="badge changed"></span><span class="badge"></span><div class="t"></div><div class="m"></div>';
@@ -215,7 +289,11 @@ $('onlyChanged').addEventListener('change', renderList);
 function select(s) {
   cur = s;
   $('curTitle').textContent = `${s.song}（ID ${s.id}）`;
-  $('curSub').textContent = `${dot(s.date)} ${s.live || ''}` + (s.kind === 'single' ? ' ・ 単独映像' : ' ・ フルライブ映像') + (s.hidden ? ' ・ プレイヤーでは非表示（単独映像あり）' : '');
+  $('curSub').textContent = `${dot(s.date)} ${s.live || ''}${s.venue ? ' @ ' + s.venue : ''}`;
+  for (const t of [s.kind === 'single' ? '単独映像' : 'フルライブ映像', s.hidden ? '非表示（単独映像あり）' : '']) {
+    if (!t) continue;
+    const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = t; $('curSub').appendChild(tag);
+  }
   renderVals(); renderList();
   playFrom(valOf(s).start);
 }
@@ -227,6 +305,21 @@ function renderVals() {
   $('vStart').textContent = fmt(v.start); $('vEnd').textContent = endText(v.end); $('vLen').textContent = fmt(lenOf(cur, v));
   $('vStart').classList.toggle('changed', v.start !== c.start); $('vEnd').classList.toggle('changed', v.end !== c.end);
   $('vLen').classList.toggle('changed', v.start !== c.start || v.end !== c.end);
+  renderMarks();
+}
+// シークバーは曲のまわり（元のチャプター・今の設定・調整後のどれもが入る範囲の前後 15 秒）だけにする
+let win = null;
+function renderMarks() {
+  if (!cur) return;
+  const o = origOf(cur), c = curOf(cur), v = valOf(cur), ends = [o, c, v].map(endOf).filter((x) => x != null);
+  const lo = Math.max(0, Math.min(o.start, c.start, v.start) - 15), hi = Math.max(...ends, v.start + 1) + 15;
+  win = { lo, hi };
+  $('seek').min = lo; $('seek').max = hi;
+  const pct = (t) => `${((t - lo) / (hi - lo)) * 100}%`, tr = $('track');
+  tr.innerHTML = '<div class="band"></div><div class="tick orig"></div><div class="tick orig"></div><div class="tick cur"></div><div class="tick cur"></div>';
+  const band = tr.querySelector('.band'); band.style.left = pct(v.start); band.style.width = `calc(${pct(endOf(v) ?? hi)} - ${pct(v.start)})`;
+  const [o1, o2, c1, c2] = tr.querySelectorAll('.tick');
+  o1.style.left = pct(o.start); o2.style.left = pct(endOf(o) ?? hi); c1.style.left = pct(c.start); c2.style.left = pct(endOf(c) ?? hi);
 }
 function setVal(field, t) {
   if (!cur) return false;
@@ -253,26 +346,25 @@ function playFrom(t, stop) {
   else { player.seekTo(Math.max(0, t), true); player.playVideo(); }
   stopAt = stop ?? null;
 }
+let dragging = false;
 setInterval(() => {
   if (!ready || !player.getCurrentTime) return;
   const t = player.getCurrentTime();
-  $('now').textContent = `${fmt(t)}（${Math.round(t)} 秒）`;
+  $('now').textContent = fmt(t); $('now').title = `${Math.round(t)} 秒`;
+  if (!dragging) $('seek').value = t;
+  const playing = player.getPlayerState() === YT.PlayerState.PLAYING;
+  if ($('pp').dataset.playing !== String(playing)) { $('pp').dataset.playing = playing; $('pp').innerHTML = playing ? ICON.pause : ICON.play; }
   if (stopAt != null && t >= stopAt) { player.pauseVideo(); stopAt = null; }
 }, 200);
+$('seek').addEventListener('pointerdown', () => { dragging = true; });
+$('seek').addEventListener('change', () => { dragging = false; });
+$('seek').addEventListener('input', () => { if (ready) player.seekTo(+$('seek').value, true); });
 const endOf = (v) => v.end ?? vidLen(cur);
 document.querySelectorAll('[data-play]').forEach((b) => b.addEventListener('click', () => {
   if (!cur) return;
   const v = valOf(cur), o = origOf(cur);
   ({ start: () => playFrom(v.start), end: () => playFrom(endOf(v) - 5, endOf(v)),
      oStart: () => playFrom(o.start), oEnd: () => playFrom(endOf(o) - 5, endOf(o)) })[b.dataset.play]();
-}));
-// 調整後の開始・終了を1秒ずつ動かし、動かした位置を再生して確かめる
-document.querySelectorAll('[data-nudge]').forEach((b) => b.addEventListener('click', () => {
-  if (!cur) return;
-  const f = b.dataset.nudge, v = valOf(cur), base = f === 'end' ? endOf(v) : v.start;
-  if (base == null || !setVal(f, base + +b.dataset.d)) return;
-  const n = valOf(cur);
-  f === 'start' ? playFrom(n.start) : playFrom(n.end - 3, n.end);
 }));
 document.querySelectorAll('[data-seek]').forEach((b) => b.addEventListener('click', () => seekBy(+b.dataset.seek)));
 const seekBy = (d) => { if (ready && player.getCurrentTime) player.seekTo(Math.max(0, player.getCurrentTime() + d), true); };
