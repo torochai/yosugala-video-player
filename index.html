@@ -412,7 +412,7 @@
     <p class="eyebrow">UNOFFICIAL FAN-MADE PLAYER</p>
     <h1><a class="home" href="./" title="トップに戻る">yosugala<span class="sub">Live Video Player</span></a></h1>
     <div class="herotools">
-      <a class="trimon" id="trimOn" href="tools/trim.html" hidden title="再生範囲調整ツールで調整した値で再生しています（このブラウザだけ）">調整<span class="tl">値で再生</span>中</a>
+      <a class="trimon" id="trimOn" href="tools/trim.html" hidden title="この曲は、再生範囲調整ツールで調整した値で再生しています（このブラウザだけ）">調整<span class="tl">値で再生</span>中</a>
       <a class="gear" id="trimGear" href="tools/trim.html" title="再生範囲調整ツール" aria-label="再生範囲調整ツール">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </a>
@@ -790,25 +790,24 @@ function hydrate(p) { p.items = p.items.map((it) => songRow(it.sid, it.id)).filt
 // 値は調整ツールが保存する { "動画ID@元のチャプターの開始秒": { start, end } }。調整ツールを別のタブで開いていれば、調整するたびにすぐ反映する
 const TRIM_KEY = 'yosugala-trim-v1';
 const baseRange = new Map();   // 曲 ID → catalog.json の開始・終了・長さ（調整する前）
-let trimCount = 0;
+const trimmed = new Set();   // 調整ツールの値で再生する曲の ID
 function applyTrim() {
   let adj = {};
   try { adj = JSON.parse(localStorage.getItem(TRIM_KEY)) || {}; } catch {}
-  trimCount = 0;
+  trimmed.clear();
   songById.forEach((x, sid) => {
     if (!baseRange.has(sid)) baseRange.set(sid, { start: x.start, end: x.end, len: x.len });
     const b = baseRange.get(sid), a = adj[`${x.vid}@${x.chapter_start ?? b.start}`];
     if (a && Number.isFinite(a.start) && (a.start !== b.start || a.end !== b.end)) {
       const vidEnd = b.end == null && b.len != null ? b.start + b.len : null;   // 終わりが「動画の最後」の単独映像
       const e = a.end ?? vidEnd;
-      Object.assign(x, { start: a.start, end: a.end ?? null, len: e == null ? b.len : e - a.start }); trimCount++;
+      Object.assign(x, { start: a.start, end: a.end ?? null, len: e == null ? b.len : e - a.start }); trimmed.add(sid);
     } else Object.assign(x, b);
   });
   // 作ってあるプレイリスト・ライブ映像の一覧の曲にも反映する
   const sync = (it) => { const x = songById.get(it.sid); if (x) Object.assign(it, { start: x.start, end: x.end, len: x.len ?? null }); };
   state.playlists.forEach((p) => p.items.forEach(sync));
   catalogPls.forEach((p) => p.all.forEach(sync));
-  $('trimOn').hidden = !trimCount;
 }
 window.addEventListener('storage', (e) => { if (catalog && (e.key === TRIM_KEY || e.key === null)) { applyTrim(); renderAll(); } });
 window.addEventListener('pageshow', (e) => { if (catalog && e.persisted) { applyTrim(); renderAll(); } });   // 調整ツールから戻るボタンで戻ったとき
@@ -949,6 +948,8 @@ function showNow() {
   $('barTitle').innerHTML = '';
   if (it) { const n = document.createElement('span'); n.className = 'bn'; n.textContent = pad(i + 1);
     $('barTitle').append(n, document.createTextNode(it.title)); }
+  // 「調整値で再生中」は、今の曲を調整ツールの値で再生しているときだけ
+  $('trimOn').hidden = !(it && trimmed.has(it.sid));
   // 再生範囲調整ツールは、今の曲を選んだ状態で開く
   $('trimGear').href = $('trimOn').href = 'tools/trim.html' + (it ? `?song=${it.sid}` : '');
   document.title = it && started ? `${it.title} - yosugala Live Video Player` : 'yosugala Live Video Player';

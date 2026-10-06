@@ -330,8 +330,10 @@ const TESTS = {
     const pp = await open('#lib=toro', { seed: { 'yosugala-trim-v1': { [`${song.vid}@${song.start}`]: { start: song.start + 3, end: song.end - 4 } } } });
     const range = () => pp.evaluate((id) => { const x = songById.get(id), it = catalogPls[0].all.find((i) => i.sid === id);
       return { s: x.start, e: x.end, len: x.len, is: it.start, ie: it.end, on: !$('trimOn').hidden }; }, song.id);
+    ok('調整していない曲を再生しているときは「調整値で再生中」を出さない', await pp.evaluate((id) => items()[curIndex()].sid !== id && $('trimOn').hidden, song.id));
+    await pp.evaluate((id) => { switchTo(CATALOG_ID); playIndex(items().findIndex((i) => i.sid === id)); }, song.id); await wait(200);
     const r1 = await range();
-    ok('プレーヤーに調整ツールの値が反映され、「調整値で再生中」が出る', r1.s === song.start + 3 && r1.e === song.end - 4 && r1.len === song.len - 7 && r1.is === r1.s && r1.ie === r1.e && r1.on, r1);
+    ok('プレーヤーに調整ツールの値が反映され、調整した曲では「調整値で再生中」が出る', r1.s === song.start + 3 && r1.e === song.end - 4 && r1.len === song.len - 7 && r1.is === r1.s && r1.ie === r1.e && r1.on, r1);
     ok('タイトル行の右端に調整ツールへのギア（文字なし）', await pp.evaluate(() => { const g = document.querySelector('.herotools .gear'), h = document.querySelector('.hero').getBoundingClientRect();
       return g.getAttribute('href').startsWith('tools/trim.html') && !g.textContent.trim() && Math.abs(g.getBoundingClientRect().right - h.right) < 2
         && $('trimOn').getBoundingClientRect().right <= g.getBoundingClientRect().left; }));
@@ -349,6 +351,12 @@ const TESTS = {
       const r = li.getBoundingClientRect(), o = ol.getBoundingClientRect();
       return cur.id === sid && li.song.id === sid && r.top >= o.top && r.bottom <= o.bottom; }, sid));
     await close(pp);
+    // カタログが調整値に追いついたら（同じ値になったら）、その曲は調整なしとして扱い、マークも出さない
+    const caught = all.find((s) => s.kind === 'single' && 'chapter_start' in s);
+    const pc = await open('#lib=toro', { seed: { 'yosugala-trim-v1': { [`${caught.vid}@${caught.chapter_start}`]: { start: caught.start, end: caught.end } } } });
+    await pc.evaluate((id) => { switchTo(CATALOG_ID); playIndex(items().findIndex((i) => i.sid === id)); }, caught.id); await wait(200);
+    ok('カタログが調整値と同じになった曲では「調整値で再生中」を出さない', await pc.evaluate((id) => items()[curIndex()].sid === id && !trimmed.has(id) && $('trimOn').hidden, caught.id));
+    await close(pc);
     // スマホ: 横にはみ出さず、動画は上に固定
     const m = await open('tools/trim.html', { width: 390, height: 844, mobile: true });
     await m.waitForFunction(() => $('list').children.length > 0);
