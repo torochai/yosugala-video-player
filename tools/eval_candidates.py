@@ -8,7 +8,7 @@
     python3 tools/eval_candidates.py --audio --set mc_talk_ratio=0.3 -v   # しきい値を変える・外れたものを一つずつ出す
     python3 tools/eval_candidates.py 動画ID …                # 動画を指定する
 
-正解: カタログの曲（kind = full。範囲は segments の補正後）と MC（type = mc）。talk_skips は「MC ではない」正解として数える。
+正解: カタログの曲（kind = full）と MC（type = mc）。import.talk_skips は「MC ではない」正解として数える。
 対応づけ: 候補と正解が、短いほうの長さの半分以上重なっていれば同じものとみなす（重なりの大きい順に 1 対 1）。
 出すもの: 見つけ漏れ（正解にあって候補にない）・余計な候補（候補にあって正解にない）の数と、開始・終了のずれ（秒）。
 動画の情報は data/youtube.json を使う（概要欄は入っていないので、--no-chapters のときは音声だけで曲を探す）。
@@ -65,9 +65,10 @@ def main():
     opts, params = fc.opts_from(a), fc.parse_set(a.set)
     opts['no_chapters'] = a.no_chapters
     opts['transcribe'] = False   # 比べるのに文字起こしはいらない
-    songs = fc.load(os.path.join(ROOT, 'data', 'catalog.json'), {}).get('songs', [])
+    cat = fc.load(os.path.join(ROOT, 'data', 'catalog.json'), {})
+    songs = cat.get('items', [])
     cache = fc.load(os.path.join(ROOT, 'data', 'youtube.json'), {})
-    skips = set(fc.load(os.path.join(HERE, 'catalog_overrides.json'), {}).get('talk_skips', []))
+    skips = set(cat.get('import', {}).get('talk_skips', []))
     vids = a.vids or sorted({s['vid'] for s in songs if s['kind'] == 'full'}, key=lambda v: cache.get(v, {}).get('upload_date') or '')
     print(f'条件: {"音声あり" if a.audio else "音声なし"}・{"チャプターなし" if a.no_chapters else "チャプターあり"}'
           + (f'・{", ".join(f"{k}={v:g}" for k, v in params.items())}' if params else ''))
@@ -80,7 +81,7 @@ def main():
         got = fc.build(vid, {**opts, 'info': {**cache[vid], 'id': vid}}, params)
         rows = {}
         for kind in ('song', 'mc'):
-            truth = sorted([(s['start'], s['end'], s['song']) for s in songs if s['vid'] == vid and s['kind'] == 'full'
+            truth = sorted([(s['start'], s['end'], s['title']) for s in songs if s['vid'] == vid and s['kind'] == 'full'
                             and (s.get('type') == 'mc') == (kind == 'mc')])
             cand = [(c['start'], c['end'], c['title']) for c in got if c['type'] == kind]
             r = score(cand, truth); r['vid'] = vid; r['c'] = cand; r['t'] = truth

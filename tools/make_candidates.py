@@ -8,7 +8,7 @@
     同じ公演の MC には、公演の中の順に ①②③… を付ける
     チャプター名が「バンド紹介」「ending MC」など MC 以外の名前ならその名前を使う
   - すでにカタログに入っている MC（type = "mc"）と重なる時間帯は入れない
-  - 確かめて要らなかった時間帯（catalog_overrides.json の talk_skips に「動画ID@開始秒」）は入れない
+  - 確かめて要らなかった時間帯（catalog.json の import.talk_skips に「動画ID@開始秒」）は入れない
 話しているかどうかは分からないので、調整ツールで聞いて、要らないものに「不要」の印を付ける。
 
 ファイルの形: { "candidates": [ { id: 仮 ID（1 からの数字）, kind: "full" | "single", type: "song" | "mc", title, vid, start, end, date, live, venue }, … ] }
@@ -30,11 +30,10 @@ CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
 
 def main(vids):
     with open(os.path.join(ROOT, 'data', 'catalog.json'), encoding='utf-8') as f:
-        songs = json.load(f)['songs']
+        cat = json.load(f)
+    songs, skips = cat['items'], set(cat.get('import', {}).get('talk_skips', []))
     with open(os.path.join(ROOT, 'data', 'youtube.json'), encoding='utf-8') as f:
         cache = json.load(f)
-    with open(os.path.join(HERE, 'catalog_overrides.json'), encoding='utf-8') as f:
-        skips = set(json.load(f).get('talk_skips', []))
     full, have = {}, []
     for s in songs:
         if s['kind'] == 'full' and s.get('type', 'song') == 'song':
@@ -56,7 +55,7 @@ def main(vids):
                 rest = [n for n in names if not SE_RE.match(n)]
                 if rest or not names:   # チャプター名が SE・opening だけの時間帯は入れない
                     name = rest[0] if len(rest) == 1 and not MC_RE.match(rest[0]) else 'MC'
-                    talks.append({'name': name, 'after': prev['song'], 'before': s['song'] if s else None, 'start': t, 'end': st})
+                    talks.append({'name': name, 'after': prev['title'], 'before': s['title'] if s else None, 'start': t, 'end': st})
             if s:
                 t, prev = max(t, s['end'] if s['end'] is not None else dur), s
         n_mc = sum(1 for x in talks if x['name'] == 'MC')

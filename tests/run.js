@@ -87,13 +87,13 @@ const TESTS = {
     const both = await p.evaluate(() => {
       const all = catalogPls.find((q) => q.id === CATALOG_ID).all.filter((x) => infoOf(x).date === '2024-02-18' && x.title === 'ソラノナミダ').map((x) => infoOf(x).kind);
       const live = catalogPls.find((q) => q.id === '__live__:2024-02-18|progress the night -LIQUIDROOM-').all.filter((x) => x.title === 'ソラノナミダ').map((x) => infoOf(x).kind);
-      return { all, live, total: catalogPls.find((q) => q.id === CATALOG_ID).all.length, catalog: catalog.songs.filter((x) => x.type !== 'mc' && x.kind !== 'mv').length };
+      return { all, live, total: catalogPls.find((q) => q.id === CATALOG_ID).all.length, catalog: catalog.items.filter((x) => x.type !== 'mc' && x.kind !== 'mv').length };
     });
     ok('すべてのライブ映像にはフルライブ映像のチャプターと単独映像の両方、公演のプレイリストはフルライブ映像のチャプター',
       both.all.sort().join() === 'full,single' && both.live.join() === 'full' && both.total === both.catalog, both);
     // ライブMC集: MC（type = "mc"）だけを公演日順に。曲の一覧・公演のプレイリストには入らない
     const mc = await p.evaluate(() => {
-      const ids = catalog.songs.filter((x) => x.type === 'mc').map((x) => x.id), q = catalogPls.find((x) => x.id === MC_ID);
+      const ids = catalog.items.filter((x) => x.type === 'mc').map((x) => x.id), q = catalogPls.find((x) => x.id === MC_ID);
       const inSongs = catalogPls.filter((x) => x.id !== MC_ID).some((x) => x.all.some((i) => ids.includes(i.sid)));
       const dates = q.all.map((i) => infoOf(i).date);
       return { name: q.name, n: q.all.length, all: ids.length, inSongs, sorted: dates.every((d, i) => !i || dates[i - 1] <= d) };
@@ -105,7 +105,7 @@ const TESTS = {
       const it = items()[curIndex()]; return { pl: pl().id, title: it.title, after: it.start >= m.end - 5 && it.vid === m.vid, show: !$('playOther').hidden };
     });
     const mv = await p.evaluate(() => {
-      const ids = catalog.songs.filter((x) => x.kind === 'mv').map((x) => x.id), q = catalogPls.find((x) => x.id === MV_ID);
+      const ids = catalog.items.filter((x) => x.kind === 'mv').map((x) => x.id), q = catalogPls.find((x) => x.id === MV_ID);
       const inSongs = catalogPls.filter((x) => x.id !== MV_ID).some((x) => x.all.some((i) => ids.includes(i.sid)));
       const pub = q.all.map((i) => infoOf(i).published);
       switchTo(MV_ID); playIndex(0);
@@ -233,7 +233,7 @@ const TESTS = {
       await close(s);
     }
     // 再生位置のリンク（s/曲ID.html?t=動画の秒）: その曲を選び、PLAY でその位置から始める
-    const s57start = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'catalog.json'), 'utf8')).songs.find((x) => x.id === 57).start;
+    const s57start = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'catalog.json'), 'utf8')).items.find((x) => x.id === 57).start;
     const sp = await open(`s/57.html?lib=2024-11-01&t=${s57start + 83}`);
     const r1 = await sp.evaluate(() => ({ title: $('nowTitle').textContent, url: location.search + location.hash, msg: $('msg').textContent }));
     await sp.click('#start'); await wait(400);
@@ -456,10 +456,20 @@ const TESTS = {
         && /曲: 正解 102・候補 102・見つけた 102・見つけ漏れ 0・余計 0/.test(ev.stdout) && /MC: 正解 27・/.test(ev.stdout), ev.stdout.slice(-300) + ev.stderr);
       // MV の概要欄判定: 偽の yt-dlp で、新しい動画 3 本（概要欄に「- MusicVideo」・タイトルだけ MV の形・Vlog）
       const copy = path.join(tmp, 'repo'), bin = path.join(tmp, 'bin');
-      for (const f of spawnSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' }).stdout.trim().split('\n')) {
+      // リポジトリの今のファイル（まだコミットしていないものも。消したものは除く）を一時フォルダに写す
+      for (const f of spawnSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: ROOT, encoding: 'utf8' }).stdout.trim().split('\n')) {
+        if (!fs.existsSync(path.join(ROOT, f))) continue;
         fs.mkdirSync(path.dirname(path.join(copy, f)), { recursive: true }); fs.copyFileSync(path.join(ROOT, f), path.join(copy, f));
       }
-      for (const f of ['tools/update_catalog.py']) fs.copyFileSync(path.join(ROOT, f), path.join(copy, f));
+      const readCat = () => JSON.parse(fs.readFileSync(path.join(copy, 'data', 'catalog.json'), 'utf8'));
+      const writeCat = (c) => fs.writeFileSync(path.join(copy, 'data', 'catalog.json'), JSON.stringify(c, null, 1) + '\n');
+      const snap = () => fs.readFileSync(path.join(copy, 'data', 'catalog.json'), 'utf8').replace(/"updated": "[^"]*"/, '') + fs.readdirSync(path.join(copy, 's')).sort().map((f) => fs.readFileSync(path.join(copy, 's', f), 'utf8')).join('');
+      // --offline は計算で出す値と案内ページを作り直すだけ。今のカタログはそのまま（中身・並び・案内ページが変わらない）
+      const before = snap();
+      const off = spawnSync('python3', ['tools/update_catalog.py', '--offline'], { cwd: copy, encoding: 'utf8' });
+      ok('update_catalog --offline: 今のカタログを作り直しても中身・案内ページが変わらない', off.status === 0 && snap() === before, off.stdout.slice(-300) + off.stderr);
+      // 手で直した曲は、新しい動画を足すときに消えない（すでにある動画には触らない）
+      const c0 = readCat(); c0.items.find((x) => x.id === 57).title = '手で直したタイトル'; writeCat(c0);
       fs.mkdirSync(bin);
       fs.writeFileSync(path.join(bin, 'yt-dlp'), `#!/usr/bin/env python3
 import json, sys
@@ -477,9 +487,33 @@ else:
                       'description': {'NEWMVDESC01': 'yosugala\\n- MusicVideo\\n', 'NEWTITLE001': 'ティーザー', 'NEWVLOG0001': 'vlog'}[v]}))
 `, { mode: 0o755 });
       const up = spawnSync('python3', ['tools/update_catalog.py'], { cwd: copy, encoding: 'utf8', env: { ...process.env, PATH: `${bin}:${process.env.PATH}` } });
-      const mv = up.status === 0 ? JSON.parse(fs.readFileSync(path.join(copy, 'data', 'catalog.json'), 'utf8')).songs.filter((s) => s.kind === 'mv' && s.vid.startsWith('NEW')) : [];
+      const mv = up.status === 0 ? JSON.parse(fs.readFileSync(path.join(copy, 'data', 'catalog.json'), 'utf8')).items.filter((s) => s.kind === 'mv' && s.vid.startsWith('NEW')) : [];
       ok('update_catalog: 新しい動画は概要欄の「- MusicVideo」で MV を判定（タイトルだけ MV の形の動画・Vlog は入れない。曲名は「」の中）',
-        mv.length === 1 && mv[0].vid === 'NEWMVDESC01' && mv[0].song === '新曲' && mv[0].published === '2026-10-01', up.status === 0 ? mv : up.stdout.slice(-300) + up.stderr);
+        mv.length === 1 && mv[0].vid === 'NEWMVDESC01' && mv[0].title === '新曲' && mv[0].published === '2026-10-01', up.status === 0 ? mv : up.stdout.slice(-300) + up.stderr);
+      const c1 = up.status === 0 ? readCat() : { items: [] };
+      ok('update_catalog: 新しい曲には next_id から ID を付け、手で直した曲はそのまま', mv[0] && mv[0].id === c0.next_id && c1.next_id === c0.next_id + 1
+        && c1.items.find((x) => x.id === 57).title === '手で直したタイトル' && c1.items.length === c0.items.length + 1 && fs.existsSync(path.join(copy, 's', `${c0.next_id}.html`)), mv[0]);
+      // 調整ツールの書き出しを catalog.json に書き込む（apply_edits.py）
+      const full = c1.items.find((x) => x.kind === 'full' && x.type !== 'mc' && !('chapter_start' in x) && !('chapter_end' in x));
+      const edits = { segments: { [`${full.vid}@${full.start}`]: { start: full.start + 3, end: full.end - 2, _memo: 'テスト' } }, titles: { 45: '直したタイトル' },
+        add: [{ id: 1, kind: 'full', type: 'mc', title: 'MC (テストのまえ)', vid: full.vid, start: full.end + 1, end: full.end + 40, date: '', live: full.live, venue: '' }] };
+      fs.writeFileSync(path.join(tmp, 'edits.json'), JSON.stringify(edits));
+      const ap = spawnSync('python3', ['tools/apply_edits.py', path.join(tmp, 'edits.json')], { cwd: copy, encoding: 'utf8' });
+      const c2 = ap.status === 0 ? readCat() : { items: [] }, f2 = c2.items.find((x) => x.id === full.id) || {}, mc = c2.items.find((x) => x.id === c1.next_id) || {};
+      ok('apply_edits: 範囲（元のチャプターの位置を chapter_start・chapter_end に残す）・タイトル・候補の追加（新しい曲 ID）を catalog.json に書き込む', ap.status === 0
+        && f2.start === full.start + 3 && f2.end === full.end - 2 && f2.chapter_start === full.start && f2.chapter_end === full.end && f2.len === full.end - full.start - 5
+        && c2.items.find((x) => x.id === 45).title === '直したタイトル' && mc.type === 'mc' && mc.title === 'MC (テストのまえ)' && mc.live === full.live && mc.date === full.date
+        && c2.next_id === c1.next_id + 1, ap.stdout.slice(-300) + ap.stderr);
+      // 範囲を元に戻すと chapter_start・chapter_end は消える。見つからない曲があれば何も書き込まない
+      fs.writeFileSync(path.join(tmp, 'edits2.json'), JSON.stringify({ segments: { [`${full.vid}@${full.start}`]: { start: full.start, end: full.end } } }));
+      const ap2 = spawnSync('python3', ['tools/apply_edits.py', path.join(tmp, 'edits2.json')], { cwd: copy, encoding: 'utf8' });
+      const f3 = readCat().items.find((x) => x.id === full.id);
+      fs.writeFileSync(path.join(tmp, 'edits3.json'), JSON.stringify({ titles: { 45: 'もう一度' }, segments: { 'NOSUCHVIDEO@0': { start: 1, end: 2 } } }));
+      const kept = fs.readFileSync(path.join(copy, 'data', 'catalog.json'), 'utf8');
+      const ap3 = spawnSync('python3', ['tools/apply_edits.py', path.join(tmp, 'edits3.json')], { cwd: copy, encoding: 'utf8' });
+      ok('apply_edits: 元の範囲に戻すと chapter_start・chapter_end を消す。見つからない曲があれば catalog.json を変えない', ap2.status === 0
+        && f3.start === full.start && f3.end === full.end && !('chapter_start' in f3) && !('chapter_end' in f3)
+        && ap3.status !== 0 && ap3.stderr.includes('NOSUCHVIDEO@0') && fs.readFileSync(path.join(copy, 'data', 'catalog.json'), 'utf8') === kept, ap3.stderr);
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
@@ -488,7 +522,7 @@ else:
   async editor() {
     const p = await open('editor.html');
     await p.waitForFunction(() => $('list').children.length > 0);
-    const all = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'catalog.json'), 'utf8')).songs;
+    const all = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'catalog.json'), 'utf8')).items;
     ok('プレーヤーのタイトル（プレーヤーへのリンク）が出る', await p.evaluate(() => document.querySelector('.brand a').getAttribute('href') === './'
       && document.querySelector('.brand').textContent.includes('yosugala')));
     ok('一覧は初めは名前順（catalog.json の曲名順と同じ）', await p.evaluate((ids) => [...$('list').children].map((li) => li.song.id).join() === ids.join()
@@ -522,11 +556,25 @@ else:
       && document.querySelector('[data-undo="end"]').disabled; }, fixed));
     await p.evaluate(() => { window.__t = cur.start + 199; }); await p.click('#setEnd');
     // 登録済みの曲のタイトルを書き換える（書き出しの titles に曲 ID で入る。元のタイトルに戻すと調整なし）
-    await p.fill('#candTitle', `${fixed.song}（直したタイトル）`); await p.dispatchEvent('#candTitle', 'change');
+    await p.fill('#candTitle', `${fixed.title}（直したタイトル）`); await p.dispatchEvent('#candTitle', 'change');
     const t1 = await p.evaluate(() => ({ titles: JSON.parse($('out').value).titles, head: $('curTitle').textContent, row: $('list').querySelector('li.sel .t').textContent }));
-    ok('登録済みの曲のタイトルを書き換えられ、書き出しの titles に曲 ID で入る', t1.titles && t1.titles[fixed.id] === `${fixed.song}（直したタイトル）`
-      && t1.head === `${fixed.song}（直したタイトル）（ID ${fixed.id}）` && t1.row === t1.head, t1);
-    await p.fill('#candTitle', fixed.song); await p.dispatchEvent('#candTitle', 'change');
+    ok('登録済みの曲のタイトルを書き換えられ、書き出しの titles に曲 ID で入る', t1.titles && t1.titles[fixed.id] === `${fixed.title}（直したタイトル）`
+      && t1.head === `${fixed.title}（直したタイトル）（ID ${fixed.id}）` && t1.row === t1.head, t1);
+    // この書き出し（範囲とタイトル）を tools/apply_edits.py で catalog.json に書き込める（一時フォルダに写したデータで）
+    {
+      const os = require('os'), { spawnSync } = require('child_process');
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'yosugala-apply-'));
+      try {
+        for (const d of ['tools', 'data']) fs.cpSync(path.join(ROOT, d), path.join(tmp, d), { recursive: true });
+        fs.writeFileSync(path.join(tmp, 'edits.json'), await p.inputValue('#out'));
+        const ap = spawnSync('python3', ['tools/apply_edits.py', 'edits.json'], { cwd: tmp, encoding: 'utf8' });
+        const x = ap.status === 0 ? JSON.parse(fs.readFileSync(path.join(tmp, 'data', 'catalog.json'), 'utf8')).items.find((s) => s.id === fixed.id) : {};
+        ok('ライブラリ編集ツールの書き出しを apply_edits.py で catalog.json に書き込める（範囲・タイトル。元のチャプターの位置はそのまま）', ap.status === 0
+          && x.start === fixed.start + 2 && x.end === fixed.start + 199 && x.title === `${fixed.title}（直したタイトル）`
+          && x.chapter_start === fixed.chapter_start && x.chapter_end === fixed.chapter_end, ap.status === 0 ? x : ap.stderr);
+      } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+    }
+    await p.fill('#candTitle', fixed.title); await p.dispatchEvent('#candTitle', 'change');
     ok('登録済みの曲では種類（曲 / MC）の切り替えは出さない', await p.evaluate(() => getComputedStyle($('typeSeg')).display === 'none' && $('dropToggle').hidden));
     ok('元のタイトルに戻すと titles から消える', await p.evaluate(() => !JSON.parse($('out').value).titles));
     ok('一覧に「調整済み」', await p.evaluate(() => $('list').querySelector('li.sel .badge.changed').textContent === '調整済み'));
@@ -616,7 +664,7 @@ else:
     const tt = await pp.ctx.newPage(); await tt.goto(BASE + 'editor.html'); await tt.waitForFunction(() => $('list').children.length > 0);
     await tt.evaluate((id) => select(songs.find((s) => s.id === id)), song.id); await wait(200); await tt.evaluate((e) => { window.__t = e; }, song.end + 1); await tt.click('#setEnd'); await wait(300);
     await tt.fill('#candTitle', 'タイトルを直した曲'); await tt.dispatchEvent('#candTitle', 'change'); await wait(300);
-    ok('編集ツールで直したタイトルも、開いているプレーヤーにすぐ反映', await pp.evaluate((id) => songById.get(id).song === 'タイトルを直した曲'
+    ok('編集ツールで直したタイトルも、開いているプレーヤーにすぐ反映', await pp.evaluate((id) => songById.get(id).title === 'タイトルを直した曲'
       && catalogPls[0].all.find((i) => i.sid === id).title === 'タイトルを直した曲' && $('nowTitle').textContent === 'タイトルを直した曲', song.id));
     const r2 = await range();
     ok('編集ツールで直すと、開いているプレーヤーにすぐ反映', r2.e === song.end + 1 && r2.ie === r2.e, r2);

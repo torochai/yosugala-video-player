@@ -321,7 +321,7 @@ $('askForm').addEventListener('submit', (e) => { e.preventDefault(); askFinish(t
 $('askCancel').addEventListener('click', () => askFinish(null));
 $('askDlg').addEventListener('close', () => { if (!$('askDlg').open) askFinish(null); });
 const notice = (title, message) => ask({ title, message, notice: true });
-// 調整した値 { "動画ID@元のチャプターの開始秒": { start, end } }（キーは tools/catalog_overrides.json の segments と同じ）
+// 調整した値 { "動画ID@元のチャプターの開始秒": { start, end } }（キーは catalog.json の vid と chapter_start。なければ start）
 const KEY = 'yosugala-trim-v1';
 let adj = {};
 try { adj = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
@@ -352,8 +352,8 @@ const TITLE_KEY = 'yosugala-trim-titles-v1';
 let titles = {};
 try { titles = JSON.parse(localStorage.getItem(TITLE_KEY)) || {}; } catch {}
 const saveTitles = () => { try { localStorage.setItem(TITLE_KEY, JSON.stringify(titles)); } catch {} };
-const titleChanged = (s) => s.id != null && titles[s.id] != null && titles[s.id] !== s.song;
-const nameOf = (s) => (s.cand ? s.cand.title : titleChanged(s) ? titles[s.id] : s.song);
+const titleChanged = (s) => s.id != null && titles[s.id] != null && titles[s.id] !== s.title;
+const nameOf = (s) => (s.cand ? s.cand.title : titleChanged(s) ? titles[s.id] : s.title);
 const anyChanged = (s) => changed(s) || titleChanged(s);   // 範囲かタイトルを調整した曲
 // 長さ（終わりが「動画の最後」の単独映像は、動画の長さから）
 const vidLen = (s) => (s.end == null ? s.start + s.len : null);
@@ -373,7 +373,7 @@ const saveCands = () => { try { localStorage.setItem(CAND_KEY, JSON.stringify(ca
 const isCand = (s) => !!(s && s.cand);
 const dropped = (s) => isCand(s) && drop.has(keyOf(s));
 function candSongs() {
-  return cands.map((c, i) => ({ song: c.title, vid: c.vid, start: c.start, end: c.end, len: c.end == null ? null : c.end - c.start,
+  return cands.map((c, i) => ({ title: c.title, vid: c.vid, start: c.start, end: c.end, len: c.end == null ? null : c.end - c.start,
     date: c.date, live: c.live, venue: c.venue, kind: c.kind, type: c.type, cand: c, id: null, ord: 100000 + i }));
 }
 const candLabel = (s) => (s.type === 'mc' ? 'MC 候補' : '曲の候補');
@@ -426,7 +426,7 @@ $('candTitle').addEventListener('change', () => {
   const v = $('candTitle').value.trim();
   if (isCand(cur)) { cur.cand.title = v || cur.cand.title; saveCands(); setSongs(); }
   else {
-    if (!v || v === cur.song) delete titles[cur.id]; else titles[cur.id] = v;   // 元のタイトルに戻したら調整なし
+    if (!v || v === cur.title) delete titles[cur.id]; else titles[cur.id] = v;   // 元のタイトルに戻したら調整なし
     saveTitles();
   }
   select(cur, 'none'); renderOut();
@@ -439,7 +439,7 @@ $('dropToggle').addEventListener('click', () => {
 
 fetch('data/catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   // catalog.json の並び（曲名順。同じ曲の中は公演日の古い順。プレーヤーの「すべてのライブ映像 - 曲名順」と同じ）を名前順として覚えておく
-  catalogSongs = c.songs.map((s, i) => ({ ...s, ord: i }));
+  catalogSongs = c.items.map((s, i) => ({ ...s, ord: i }));
   setSongs();
   renderList(); renderOut();
   // プレーヤーのギアから開いたとき（?song=曲ID）は、その曲を選んでおく（PC では一覧もその曲までスクロール）
@@ -474,7 +474,7 @@ function scrollToSel(page) {
 }
 function visible() {
   const q = $('q').value.trim().toLowerCase();
-  return songs.filter((s) => (!$('onlyChanged').checked || anyChanged(s)) && (!$('onlyCand').checked || isCand(s)) && (!q || `${nameOf(s)} ${s.song} ${s.live} ${s.date}`.toLowerCase().includes(q)));
+  return songs.filter((s) => (!$('onlyChanged').checked || anyChanged(s)) && (!$('onlyCand').checked || isCand(s)) && (!q || `${nameOf(s)} ${s.title} ${s.live} ${s.date}`.toLowerCase().includes(q)));
 }
 function renderList() {
   const ol = $('list'), vis = visible(); ol.textContent = '';
@@ -642,12 +642,12 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---------- 書き出し ----------
-// 調整した曲だけを、tools/catalog_overrides.json の segments にそのまま入れられる形で（開始・終了の両方を書く）
+// 調整した曲だけを segments に（開始・終了の両方を書く）。書き出したファイルは tools/apply_edits.py で catalog.json に書き込む
 // 候補は、不要の印のないものを add に（種類・名前・調整した範囲で）。不要の印を付けたものは書き出さない
 function renderOut() {
   const seg = {};
   songs.filter((s) => !isCand(s) && changed(s)).forEach((s) => { const v = valOf(s); seg[keyOf(s)] = { start: v.start, end: v.end, _memo: `${nameOf(s)}（${dot(s.date)} ${s.live}）` }; });
-  // タイトルを書き換えた曲（catalog_overrides.json の titles: 曲 ID → タイトル）
+  // タイトルを書き換えた曲（titles: 曲 ID → タイトル）
   const tit = {};
   songs.filter((s) => !isCand(s) && titleChanged(s)).sort((a, b) => a.id - b.id).forEach((s) => { tit[s.id] = titles[s.id]; });
   const n = songs.filter((s) => !isCand(s) && anyChanged(s)).length;

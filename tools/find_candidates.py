@@ -265,7 +265,8 @@ def transcribe(vid, work, extra, spans, model_name, given_audio=None):
 def build(vid, opts, params=None, known=None):
     """1 本の動画の候補（曲・MC）を作る。known: すでにカタログにあるもの（skip_songs・mcs・talk_skips）。None なら何も除かない"""
     params = {**PARAMS, **(params or {})}
-    ov = load(os.path.join(HERE, 'catalog_overrides.json'), {})
+    cat = load(os.path.join(ROOT, 'data', 'catalog.json'), {})
+    imp, lives = cat.get('import', {}), cat.get('lives', {})
     info = video_info(vid, opts['work'], opts['extra']) if not opts.get('info') else opts['info']
     dur = info.get('duration') or 0
     title = info.get('title', '')
@@ -338,10 +339,10 @@ def build(vid, opts, params=None, known=None):
 
     single = uc.parse_single(title)
     kind = 'single' if single and not chapters else 'full'
-    live = ov.get('video_lives', {}).get(vid) or uc.live_by_rule([(re.compile(p, re.I), n) for p, n in ov.get('live_rules', [])], title,
-                                                                 single[1] if single else uc.parse_full_live(title))
-    date = ov.get('live_dates', {}).get(live) or uc.title_date(title)
-    venue = ov.get('live_venues', {}).get(live, '')
+    live = imp.get('video_lives', {}).get(vid) or uc.live_by_rule([(re.compile(p, re.I), n) for p, n in imp.get('live_rules', [])], title,
+                                                                  single[1] if single else uc.parse_full_live(title))
+    date = lives.get(live, {}).get('date') or uc.title_date(title)
+    venue = lives.get(live, {}).get('venue', '')
     out = []
     for x in songs:
         out.append({'kind': kind, 'type': 'song', 'title': x['title'], 'vid': vid, 'start': x['start'], 'end': x['end'],
@@ -356,12 +357,12 @@ def build(vid, opts, params=None, known=None):
 
 
 def known_from_catalog():
-    """カタログにすでにある曲（動画ID と元の開始秒）・MC と、talk_skips"""
-    songs = load(os.path.join(ROOT, 'data', 'catalog.json'), {}).get('songs', [])
-    ov = load(os.path.join(HERE, 'catalog_overrides.json'), {})
+    """カタログにすでにある曲（動画ID と元の開始秒）・MC と、import.talk_skips"""
+    cat = load(os.path.join(ROOT, 'data', 'catalog.json'), {})
+    songs = cat.get('items', [])
     return {'songs': {(s['vid'], s.get('chapter_start', s['start'])) for s in songs if s.get('type') != 'mc'},
             'mcs': [(s['vid'], s['start'], s['end']) for s in songs if s.get('type') == 'mc'],
-            'skips': set(ov.get('talk_skips', []))}
+            'skips': set(cat.get('import', {}).get('talk_skips', []))}
 
 
 def parse_set(items):

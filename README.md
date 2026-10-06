@@ -16,7 +16,7 @@ https://torochai.github.io/yosugala-video-player/
 映像はすべて YouTube の埋め込みで公式動画を再生しています。映像・楽曲の権利は yosugala および各権利者に帰属します。
 このページは yosugala 公式とは関係ありません。
 
-## ライブ映像の一覧（catalog.json）の更新
+## ライブ映像の一覧（data/catalog.json）
 
 プレイヤーのライブラリにある次のプレイリストは `data/catalog.json` から作られます。
 
@@ -28,32 +28,41 @@ https://torochai.github.io/yosugala-video-player/
 
 曲の行には「YYYY.MM.DD「公演名」 @ 会場名」と表示します。
 
-公式チャンネルに新しいライブ映像が出たら、次のコマンドで更新して push してください（yt-dlp が必要です）。
+### データは 2 つ
+
+- `data/catalog.json`：元データ。**手で直すのはここだけ**です
+  - `items`：曲・MC・Music Video の一覧。1 件ずつ `id`（曲 ID）・`title`・`vid`・`start`・`end`・`kind`（`full` フルライブ映像のチャプター / `single` 単独映像 / `mv` Music Video）・`type`（MC は `"mc"`）・`live`（公演名）を持ちます。`chapter_start`・`chapter_end` は範囲を直す前の元のチャプターの位置です
+  - `len`・`published`・`date`・`venue`・`no`（公演の中の曲順）・`duplicate_of` は計算で出す値です。手で直さず、`update_catalog.py` に付け直させます
+  - `lives`：公演ごとの `date`（公演日）・`venue`（会場名）とセットリスト（`main` 本編・`encore` アンコール・`medley` メドレーの曲・`source` 出典（複数なら配列）・`note` 補足・`encore_video` 本編とアンコールの両方で披露した曲のうち映像がアンコールのほうの曲）。セットリストは公演ごとのプレイリストの「このプレイリストについて」に表示します
+  - `import`：新しい動画を取り込むときの決まり（`aliases` 曲名の表記ゆれ・`live_rules` 動画タイトル（正規表現）→ 公演名・`video_lives` 動画 ID → 公演名・`exclude_videos` / `exclude_entries` 取り込まない動画・チャプター（`動画ID@開始秒`）・`talk_skips` MC の候補として確かめて要らなかった時間帯）
+  - `next_id`：次に付ける曲 ID
+- `data/youtube.json`：YouTube から取った動画の情報（タイトル・長さ・公開日・チャプター・MV かどうか・サムネの大きさ）。ツールだけが書きます
+
+### 新しい動画を足す
+
+公式チャンネルに新しいライブ映像・Music Video が出たら、次のコマンドで足して push してください（yt-dlp が必要です）。
 
 ```bash
 python3 tools/update_catalog.py
-git add data/ tools/song_ids.json tools/thumb_cache.json s/ && git commit -m "Update catalog" && git push
+git add data/ s/ && git commit -m "Update catalog" && git push
 ```
 
-- 曲には曲 ID（1 からの連番）を付けます。プレイリスト・共有リンク・書き出しの JSON・曲の案内ページ（`s/曲ID.html`）は、この ID で曲を指します。ID は `tools/song_ids.json` に保存し、一度付けたら変えません（新しい曲には古い動画順に続きの番号を付けます。開始秒や曲名を直しても ID はそのままです）
-
-- 単独の「Official Live Video」は1曲として、フルライブ映像はチャプターで曲ごとに分けて登録します（MC・SE などは除外）
+- `data/catalog.json` にまだ 1 曲も入っていない動画だけを足します。すでにある曲・MC には触らないので、手で直した内容は消えません
+- 単独の「Official Live Video」は1曲として、フルライブ映像はチャプターで曲ごとに分けて足します（MC・SE などは除外）。曲名は `import.aliases` でそろえ、公演名は `import.video_lives` → `import.live_rules` → 動画タイトル の順で決めます。新しい公演は `lives` に足します（公演日はタイトルの日付から。会場名は手で書きます）
+- 曲 ID は `next_id` から順に付けます。プレイリスト・共有リンク・書き出しの JSON・曲の案内ページ（`s/曲ID.html`）は、この ID で曲を指します。一度付けた ID は変えず、使い回しません
 - 一度取得した動画の情報は `data/youtube.json` に保存され、次回からは新しい動画だけを取得します
 - YouTube のボット確認で止められたときは `python3 tools/update_catalog.py --cookies-from-browser chrome` で実行してください
-- 曲名の表記ゆれ、ライブ名の表示、終了時刻の調整、除外は `tools/catalog_overrides.json` で直せます
-- 曲の開始・終了（フルライブの1曲目の SE、曲のあとの MC・写真撮影など）は、ライブラリ編集ツール `editor.html`（プレーヤーのタイトル行の右端のギアから開けます。スマホでも使えます）で全曲を再生しながら、元のチャプターの位置・今の設定と見比べて調整します。調整した値はそのブラウザのプレーヤーにだけすぐ反映され（タイトル行に「調整値で再生中」と出ます）、「書き出す」で調整した曲だけをまとめた JSON ファイルができます。その中身を `catalog_overrides.json` の `segments`（`動画ID@元の開始秒` → `start`・`end`）に入れると、全員のプレーヤーに反映されます。開始秒を直しても曲 ID は変わりません
-- タイトルも同じツールで書き換えられます。書き出しの `titles`（曲 ID → タイトル）を `catalog_overrides.json` の `titles` に入れます。曲 ID は元のチャプター名で付けるので、タイトルを変えても ID は変わりません
-- タイトルに公演名がない単独映像は `catalog_overrides.json` の `video_lives`（動画ID → ライブ名）で公演を指定します
-- 会場名は `catalog_overrides.json` の `live_venues`（ライブ名 → 会場名）に書きます
-- 公演ごとのセットリストは `catalog_overrides.json` の `setlists`（ライブ名 → `main` 本編・`encore` アンコール・`medley` メドレーの曲・`source` 出典（複数なら配列）・`note` 補足・`encore_video` 本編とアンコールの両方で披露した曲のうち映像がアンコールのほうの曲）に書きます。公演ごとのプレイリストの「このプレイリストについて」に表示します（スマホでは「公演情報」ボタンでそこまでスクロールします）
-- 公演の中の曲順は、フルライブ映像があればチャプターの順です（単独映像は、同じ曲のチャプターのすぐあとに入ります）。フルライブ映像がない公演は `setlists` の曲順で決めます
-- 補正ファイルだけを直したときは `python3 tools/update_catalog.py --offline` で、YouTube に接続せずに `data/youtube.json` から作り直せます
-- 公演日はタイトルの日付から取ります。タイトルに日付がない公演は `catalog_overrides.json` の `live_dates`（ライブ名 → 公演日）に書いてください。同じ曲の中は公演日の古い順に並びます（公開日 `published` もデータに入っていますが、画面には出しません）
-- 同じ公演・同じ曲にフルライブ映像のチャプターと単独映像があるときは、どちらもプレイヤーに表示します（チャプターには、重なっている単独映像の動画 ID を `duplicate_of` に書きます）
-- MC（メンバーが話している区間）は `catalog_overrides.json` の `talks`（`vid`・`start`・`end`・`title`）に書きます。カタログでは `type: "mc"` になり、プレイヤーの「ライブMC集」にだけ入ります（曲の一覧・公演のプレイリストには入りません）。名前は「MC① (次の曲のまえ)」の形です
-- 新しい MC の候補は `python3 tools/make_candidates.py > candidates.json` で作り、ライブラリ編集ツールの「候補を読み込む」で要不要・名前・範囲を確かめて書き出します。書き出しの `add` を `talks` に入れると、曲 ID が付きます
 - Official Music Video は、公式チャンネルの再生リスト「MusicVideo」の動画と、タイトルがちょうど「yosugala - 曲名」の動画（再生リストに入っていない新しい MV のため）を `kind: "mv"` で入れます。公開日は YouTube の RSS から取ります。プレイヤーでは「Official Music Video」にだけ入ります
   - 新しい動画（ライブ映像以外）は、1 回に 10 本まで動画ごとの情報を取り、概要欄に「- MusicVideo」の行があれば MV、なければ MV にしません（再生リスト・タイトルより優先。結果は `data/youtube.json` の `desc_mv` に残ります）。YouTube に止められて取れなかった動画は、再生リスト・タイトルで判定します。タイトルが「yosugala - 曲名」の形でない MV は、「」の中を曲名にします
+
+### 手で直す
+
+- `data/catalog.json` を直したら `python3 tools/update_catalog.py --offline` を実行してください。YouTube には接続せず、計算で出す値と案内ページ（`s/`）を作り直します
+- 曲の開始・終了（フルライブの1曲目の SE、曲のあとの MC・写真撮影など）とタイトルは、ライブラリ編集ツール `editor.html`（プレーヤーのタイトル行の右端のギアから開けます。スマホでも使えます）で全曲を再生しながら、元のチャプターの位置・今の設定と見比べて調整できます。調整した値はそのブラウザのプレーヤーにだけすぐ反映され（タイトル行に「調整値で再生中」と出ます）、「書き出す」で調整した曲だけをまとめた JSON ファイルができます。`python3 tools/apply_edits.py 書き出したファイル.json` で `data/catalog.json` に書き込むと、全員のプレーヤーに反映されます。範囲やタイトルを直しても曲 ID は変わりません
+- 公演の中の曲順は、フルライブ映像があればチャプターの順です（単独映像は、同じ曲のチャプターのすぐあとに入ります）。フルライブ映像がない公演は `lives` のセットリストの曲順で決めます。同じ曲の中は公演日の古い順に並びます（公開日 `published` もデータに入っていますが、画面には出しません）
+- 同じ公演・同じ曲にフルライブ映像のチャプターと単独映像があるときは、どちらもプレイヤーに表示します（チャプターには、重なっている単独映像の動画 ID を `duplicate_of` に書きます）
+- MC（メンバーが話している区間）は `type: "mc"` の項目です。プレイヤーの「ライブMC集」にだけ入ります（曲の一覧・公演のプレイリストには入りません）。名前は「MC① (次の曲のまえ)」の形です
+- 新しい MC の候補は `python3 tools/make_candidates.py > candidates.json` で作り、ライブラリ編集ツールの「候補を読み込む」で要不要・名前・範囲を確かめて書き出します。`apply_edits.py` で書き込むと、書き出しの `add` が新しい曲 ID 付きで `items` に入ります
 
 ## 新しいライブ動画の曲・MC の候補を作る（手元の PC で）
 
