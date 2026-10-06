@@ -361,6 +361,15 @@ const TESTS = {
     await pc.evaluate((id) => { switchTo(CATALOG_ID); playIndex(items().findIndex((i) => i.sid === id)); }, caught.id); await wait(200);
     ok('カタログが調整値と同じになった曲では「調整値で再生中」を出さない', await pc.evaluate((id) => items()[curIndex()].sid === id && !trimmed.has(id) && $('trimOn').hidden, caught.id));
     await close(pc);
+    // 「フルライブ映像より」は映像の種類で付ける（開始を調整した単独映像には付けない）
+    const pb = await open('#lib=toro');
+    const badge = await pb.evaluate((ids) => { switchTo(CATALOG_ID);
+      return ids.map((id) => { const i = items().findIndex((x) => x.sid === id); playIndex(i);
+        return { id, now: !!$('nowLive').querySelector('.tag'), row: !!document.querySelectorAll('#list .row')[i]?.querySelector('.tag') }; });
+    }, [caught.id, all.find((s) => s.kind === 'full' && !s.hidden).id]);
+    const [bs, bf] = badge;   // 開始を調整した単独映像、フルライブ映像の曲
+    ok('「フルライブ映像より」は開始を調整した単独映像には付かず、フルライブ映像の曲には付く', !bs.now && !bs.row && bf.now && bf.row, badge);
+    await close(pb);
     // スマホ: 横にはみ出さず、動画は上に固定
     const m = await open('tools/trim.html', { width: 390, height: 844, mobile: true });
     await m.waitForFunction(() => $('list').children.length > 0);

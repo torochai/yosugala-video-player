@@ -941,7 +941,7 @@ function showNow() {
   const x = it ? infoOf(it) : {};
   $('nowLive').textContent = it ? [x.date ? `公演日: ${dotDate(x.date)}` : '', quoteLive(x.live || it.live), x.venue ? `@ ${x.venue}` : '']
     .filter(Boolean).join(' ') : '';
-  if (it && (it.start || it.end != null)) {   // フルライブ映像から切り出した曲にはバッジ
+  if (it && infoOf(it).kind === 'full') {   // フルライブ映像から切り出した曲にはバッジ（開始を調整した単独映像には付けない）
     const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'フルライブ映像より';
     $('nowLive').appendChild(tag);
   }
@@ -1316,8 +1316,8 @@ function renderList() {
     const t = document.createElement('span'); t.className = 't'; t.textContent = it.title;
     const s = document.createElement('span'); s.className = 's';
     const liveText = liveLine(it);   // YYYY.MM.DD「ライブ名」 @ 会場名
-    // フルライブ映像から切り出した曲（途中から始まる・途中で終わる）には「フルライブ映像より」バッジを付ける。
-    const partial = !!(it.start || it.end != null);
+    // フルライブ映像から切り出した曲には「フルライブ映像より」バッジを付ける（映像の種類で決める。開始を調整した単独映像には付けない）
+    const partial = infoOf(it).kind === 'full';
     s.textContent = liveText;
     if (partial) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'フルライブ映像より'; s.appendChild(tag); }
     main.append(t, s);
