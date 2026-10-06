@@ -234,6 +234,24 @@ const TESTS = {
     await sp2.click('#start'); await wait(400);
     ok('再生位置が曲の範囲の外なら曲の頭から', (await startSec(sp2)) === s57start && await sp2.evaluate(() => $('nowTitle').textContent === 'sailing!!' && !$('msg').textContent.includes('共有された位置')));
     await close(sp2);
+    // ライブMC集・Official Music Video は ?lib=mc / mv（以前は ID の頭を切った _mc__ / _mv__ になって開けなかった）
+    const m = await open('#lib=mc');
+    ok('ライブMC集・Music Video の共有リンクは #lib=mc / #lib=mv で開ける', await m.evaluate(() => pl().id === MC_ID) && (await copied(m, '#plShare')).endsWith('#lib=mc'));
+    await m.evaluate(() => { const i = items().findIndex((x) => x.sid === 134); playIndex(i); window.__t = items()[i].start + 30; }); await wait(300);
+    const tm = await xText(m, '#posShare');
+    ok('X: ライブMC集の再生位置のリンクは ?lib=mc', /\/s\/134\.html\?lib=mc&t=\d+$/.test(tm), tm);
+    await m.evaluate(() => { window.__t = undefined; switchTo(MV_ID); });
+    ok('Official Music Video の共有リンクは #lib=mv', (await copied(m, '#plShare')).endsWith('#lib=mv'));
+    await close(m);
+    const mv = await open('#lib=mv');
+    ok('#lib=mv で Official Music Video が開く', await mv.evaluate(() => pl().id === MV_ID));
+    await close(mv);
+    for (const u of ['s/134.html?lib=_mc__&t=3263', 's/134.html?lib=nosuchlive&t=3263']) {
+      const o = await open(u);
+      const r = await o.evaluate(() => ({ pl: pl().id, sid: (items()[curIndex()] || {}).sid, msg: $('msg').textContent }));
+      ok(`以前の形・見つからないプレイリストのリンクでも曲を開く（${u}）`, r.pl === '__catalog_mc__' && r.sid === 134 && r.msg.includes('共有された位置'), r);
+      await close(o);
+    }
     const page = fs.readFileSync(path.join(ROOT, 's/57.html'), 'utf8');
     ok('案内ページに X のカード用の情報', page.includes('og:image" content="https://i.ytimg.com/vi/EiobVwTprto/') && page.includes('♫ sailing!! ／ yosugala'));
   },
