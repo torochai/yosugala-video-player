@@ -1047,6 +1047,19 @@ function setRepeat(mode) {
 }
 // 「別公演の同じ曲」で移る、1つの曲名で絞った「すべてのライブ映像 - 曲名順」。リピートの設定によらず、次の公演へ進み、最後まで行ったら一番上に戻る
 const sameSongList = () => state.current === CATALOG_ID && !!catQuery && items().length > 0 && items().every((x) => x.title === catQuery);
+// 同じ曲名の一覧で、i 番目の次に再生する曲: 同じ公演のもの（フルライブ版と単独映像）は飛ばして次の公演へ（最後なら一番上へ）。
+// 次の公演にフルライブ版と単独映像の両方があるときは単独映像
+function nextLiveIndex(i) {
+  const l = items(), n = l.length, liveOf = (x) => { const y = infoOf(x); return `${y.date}|${y.live || x.live}`; };
+  const here = liveOf(l[i]);
+  for (let k = 1; k < n; k++) {
+    const j = (i + k) % n, live = liveOf(l[j]);
+    if (live === here) continue;
+    const single = l.findIndex((x) => liveOf(x) === live && infoOf(x).kind === 'single');
+    return single >= 0 ? single : j;
+  }
+  return (i + 1) % n;   // 一覧が全部同じ公演のときは、そのまま次へ
+}
 // リピート「全曲」以外で最後の曲を選んでいるときは、「次の曲」は使えない（押しても何もしない）
 const atLastNoWrap = () => state.repeat !== 'all' && !sameSongList() && items().length > 0 && curIndex() === items().length - 1;
 // 最後の曲を選んでいるときは、「最後の曲から再生」も使えない（リピートの設定によらない）
@@ -1055,7 +1068,8 @@ function updateNextBtn() { $('next').disabled = atLastNoWrap(); $('last').disabl
 function next(auto) {
   const i = curIndex(), n = items().length;
   if (!auto && atLastNoWrap()) return;
-  if (auto && state.repeat === 'one' && i >= 0 && !sameSongList()) return playIndex(i);   // 同じ曲名の一覧では、リピートによらず次の公演へ
+  if (sameSongList() && i >= 0) return playIndex(nextLiveIndex(i));   // 同じ曲名の一覧では、リピートによらず次の公演へ
+  if (auto && state.repeat === 'one' && i >= 0) return playIndex(i);
   if (i >= 0 && i < n - 1) return playIndex(i + 1);
   if ((state.repeat === 'all' || sameSongList()) && n) return playIndex(0);
   if (resume && resume.pl === pl().id) storeResume(null);
@@ -1559,7 +1573,7 @@ $('playOther').addEventListener('click', () => {
   moveTo(CATALOG_ID, () => {
     catQuery = it.title; $('catSearch').value = it.title;
     const l = items(), i = l.indexOf(it);
-    if (here) return (i + 1) % l.length;
+    if (here) return nextLiveIndex(i);
     const j = l.findIndex((x) => x.sid === it.sid);
     return j >= 0 ? j : l.findIndex((x) => x.title === it.title && infoOf(x).live === infoOf(it).live);
   }, !here);

@@ -236,6 +236,17 @@ const TESTS = {
     ok('リピート（1曲）でも押すと次の公演の同じ曲へ', await p.evaluate(() => curIndex() === 1));
     await p.evaluate(() => next(true)); await wait(200);
     ok('リピート（1曲）でも曲が終わると次の公演の同じ曲へ', await p.evaluate(() => curIndex() === 2));
+    // 同じ公演のフルライブ版と単独映像は飛ばし、次の公演にどちらもあるときは単独映像へ（ソラノナミダ: 2024.02.18 は両方ある）
+    const hop = await p.evaluate(() => {
+      switchTo(CATALOG_ID); catQuery = 'ソラノナミダ'; $('catSearch').value = catQuery; renderAll();
+      const key = (x) => `${infoOf(x).date}:${infoOf(x).kind}`, seq = [];
+      playIndex(0); seq.push(key(items()[curIndex()]));
+      for (let k = 0; k < 4; k++) { next(true); seq.push(key(items()[curIndex()])); }
+      $('playOther').click(); seq.push(key(items()[curIndex()]));
+      return seq;
+    });
+    ok('同じ曲名の一覧では同じ公演を飛ばし、一周して戻った公演は単独映像', hop.join() ===
+      ['2024-02-18:full', '2024-11-01:full', '2025-02-08:full', '2024-02-18:single', '2024-11-01:full', '2025-02-08:full'].join(), hop);
     await p.evaluate(() => setRepeat('off'));
     // 戻るは押した回数ぶん。ここでは途中のボタンの分を捨てて、最初の2回（公演の続き・別公演の同じ曲）だけで確かめる
     await p.evaluate(() => { backStack.length = 2; showNow(); });
@@ -299,7 +310,10 @@ const TESTS = {
       && document.querySelector('.brand').textContent.includes('yosugala')));
     ok('一覧は初めは名前順（catalog.json の曲名順と同じ）', await p.evaluate((ids) => [...$('list').children].map((li) => li.song.id).join() === ids.join()
       && document.querySelector('[data-order="name"]').getAttribute('aria-pressed') === 'true', all.map((s) => s.id)));
+    await p.evaluate(() => { select(songs[songs.length - 1]); $('list').scrollTop = 0; });
     await p.click('[data-order="id"]');
+    ok('並び順を変えると、再生中の曲が見える位置へ', await p.evaluate(() => { const r = $('list').querySelector('li.sel').getBoundingClientRect(), o = $('list').getBoundingClientRect();
+      return $('list').scrollTop > 0 && r.top >= o.top && r.bottom <= o.bottom; }));
     ok('ID順に切り替えられる', await p.evaluate(() => { const ids = [...$('list').children].map((li) => li.song.id); return ids.every((x, i) => !i || ids[i - 1] < x); }));
     await p.click('[data-order="date"]');
     ok('公演日順に切り替えられる', await p.evaluate(() => { const d = [...$('list').children].map((li) => li.song.date || '9999'); return d.every((x, i) => !i || d[i - 1] <= x); }));

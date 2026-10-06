@@ -278,11 +278,7 @@ fetch('../catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) =
   renderList(); renderOut();
   // プレーヤーのギアから開いたとき（?song=曲ID）は、その曲を選んでおく（PC では一覧もその曲までスクロール）
   const first = songs.find((s) => s.id === +new URLSearchParams(location.search).get('song'));
-  if (first) {
-    select(first);
-    const ol = $('list'), li = ol.querySelector('li.sel');
-    if (li && ol.scrollHeight > ol.clientHeight) ol.scrollTop += li.getBoundingClientRect().top - ol.getBoundingClientRect().top - ol.clientHeight / 3;
-  }
+  if (first) { select(first); scrollToSel(false); }
 });
 
 // 並び順: 名前順（初めは）・公演日順（同じ映像の中は開始の順）・ID順。選んだ順はこのブラウザに覚えておく
@@ -300,8 +296,16 @@ function sortSongs() {
 }
 document.querySelectorAll('[data-order]').forEach((b) => b.addEventListener('click', () => {
   order = b.dataset.order; try { localStorage.setItem(ORDER_KEY, order); } catch {}
-  sortSongs(); renderList();
+  sortSongs(); renderList(); scrollToSel(true);   // 並び順を変えたら、再生中の曲の位置へ
 }));
+// 一覧を、選んでいる曲（再生中の曲）が見える位置までスクロールする。
+// PC は一覧の中だけ。スマホ（一覧がページと一緒に流れる）は page = true のときだけページごと動かす
+function scrollToSel(page) {
+  const ol = $('list'), li = ol.querySelector('li.sel');
+  if (!li) return;
+  if (ol.scrollHeight > ol.clientHeight) ol.scrollTop += li.getBoundingClientRect().top - ol.getBoundingClientRect().top - ol.clientHeight / 3;
+  else if (page) li.scrollIntoView({ block: 'center' });
+}
 function visible() {
   const q = $('q').value.trim().toLowerCase();
   return songs.filter((s) => (!$('onlyChanged').checked || changed(s)) && (!q || `${s.song} ${s.live} ${s.date}`.toLowerCase().includes(q)));
