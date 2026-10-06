@@ -994,8 +994,10 @@ function setRepeat(mode) {
   $('repeat').setAttribute('aria-pressed', mode !== 'off');
   updateNextBtn();
 }
+// 「別公演の同じ曲」で移る、1つの曲名で絞った「すべてのライブ映像 - 曲名順」。最後まで行ったら一番上に戻る
+const sameSongList = () => state.current === CATALOG_ID && !!catQuery && items().length > 0 && items().every((x) => x.title === catQuery);
 // リピート「全曲」以外で最後の曲を選んでいるときは、「次の曲」は使えない（押しても何もしない）
-const atLastNoWrap = () => state.repeat !== 'all' && items().length > 0 && curIndex() === items().length - 1;
+const atLastNoWrap = () => state.repeat !== 'all' && !sameSongList() && items().length > 0 && curIndex() === items().length - 1;
 // 最後の曲を選んでいるときは、「最後の曲から再生」も使えない（リピートの設定によらない）
 const atLast = () => items().length > 0 && curIndex() === items().length - 1;
 function updateNextBtn() { $('next').disabled = atLastNoWrap(); $('last').disabled = atLast(); }
@@ -1004,7 +1006,7 @@ function next(auto) {
   if (!auto && atLastNoWrap()) return;
   if (auto && state.repeat === 'one' && i >= 0) return playIndex(i);
   if (i >= 0 && i < n - 1) return playIndex(i + 1);
-  if (state.repeat === 'all' && n) return playIndex(0);
+  if ((state.repeat === 'all' || sameSongList()) && n) return playIndex(0);
   if (resume && resume.pl === pl().id) storeResume(null);
   started = false; cueIndex(0); scrollCurToTop();   // 最後まで聞き終えたら1曲目に戻し、リストも一番上へ
 }
@@ -1498,17 +1500,20 @@ $('playLive').addEventListener('click', () => {
   if (!lp) return;
   moveTo(lp.id, () => { const l = items(); const i = l.findIndex((x) => x.sid === it.sid); return i >= 0 ? i : l.findIndex((x) => x.title === it.title); }, true);
 });
-// 別公演の同じ曲を再生: 「すべてのライブ映像 - 曲名順」をその曲名で絞り込み、次の公演の同じ曲を再生する（最後なら最初へ）
+// 別公演の同じ曲: 「すべてのライブ映像 - 曲名順」をその曲名で絞り込んだ一覧に移る。
+// 再生中なら今の曲は止めずに続け、終わったら一覧の次の公演の同じ曲へ進む（最後なら一番上へ）。
+// もうその一覧にいるときは、次の公演の同じ曲を再生する（最後なら一番上へ）
 $('playOther').addEventListener('click', () => {
   const it = items()[curIndex()];
   if (!it || !otherVersions(it).length) return;
-  const live = infoOf(it).live;
+  const here = sameSongList() && catQuery === it.title;
   moveTo(CATALOG_ID, () => {
     catQuery = it.title; $('catSearch').value = it.title;
-    const l = items().filter((x) => x.title === it.title), here = l.findIndex((x) => infoOf(x).live === live);
-    const next = l.slice(here + 1).concat(l.slice(0, here + 1)).find((x) => infoOf(x).live !== live);
-    return items().indexOf(next);
-  }, false);
+    const l = items(), i = l.indexOf(it);
+    if (here) return (i + 1) % l.length;
+    const j = l.findIndex((x) => x.sid === it.sid);
+    return j >= 0 ? j : l.findIndex((x) => x.title === it.title && infoOf(x).live === infoOf(it).live);
+  }, !here);
 });
 // 戻る: 押す前のプレイリスト（絞り込みも）と曲に戻る。流れている映像がその曲の範囲なら止めずに続け、
 // そうでなければ離れたときの位置から再生する

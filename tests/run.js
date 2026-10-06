@@ -192,7 +192,7 @@ const TESTS = {
     await close(p);
   },
 
-  // 曲名の下のボタン: この公演の続きを再生・別公演の同じ曲を再生
+  // 曲名の下のボタン: この公演の続き・別公演の同じ曲・戻る
   async nowacts() {
     const p = await open('#lib=toro');
     await p.click('#start'); await wait(500);
@@ -205,11 +205,27 @@ const TESTS = {
     ok('この公演の続きを再生: 止めずに公演のプレイリストの同じ曲へ', s1.pl.startsWith('__live__:2024-02-18') && s1.title === 'indigo' && s1.started && s1.loads === s0.loads && !s1.a, s1);
     await p.evaluate(() => next(true)); await wait(300);
     ok('曲が終わるとセットリストの次の曲へ', await p.evaluate((i) => curIndex() === i + 1, s1.i));
-    const before = (await st()).live, t = (await st()).title;
+    const s1b = await st();
     await p.click('#playOther'); await wait(300);
     const s2 = await st();
-    ok('別公演の同じ曲を再生: 曲名で絞った一覧で、別の公演の同じ曲を再生', s2.pl === '__catalog__' && s2.title === t && s2.live !== before && s2.started
-      && await p.evaluate((t) => catQuery === t && items().every((x) => x.title === t), t), s2);
+    ok('別公演の同じ曲: 止めずに、曲名で絞った一覧の今の曲へ', s2.pl === '__catalog__' && s2.title === s1b.title && s2.live === s1b.live && s2.started
+      && s2.loads === s1b.loads && s2.b && await p.evaluate((t) => catQuery === t && items().length > 1 && items().every((x) => x.title === t), s1b.title), s2);
+    await p.evaluate(() => next(true)); await wait(300);
+    const s2b = await st();
+    ok('曲が終わると別の公演の同じ曲へ', s2b.title === s1b.title && s2b.live !== s1b.live && s2b.loads === s1b.loads + 1, s2b);
+    await p.click('#playOther'); await wait(300);
+    const s2c = await st();
+    ok('一覧に移ったあとにもう一度押すと、次の公演の同じ曲を再生', s2c.pl === '__catalog__' && s2c.i === s2b.i + 1 && s2c.title === s1b.title && s2c.loads === s2b.loads + 1, s2c);
+    const n = await p.evaluate(() => items().length);
+    await p.evaluate(() => { setRepeat('off'); playIndex(items().length - 1); }); await wait(200);
+    ok('一覧の最後でも「次の曲」を押せる', await p.evaluate(() => !$('next').disabled));
+    await p.evaluate(() => next(true)); await wait(200);
+    ok('一覧の最後の曲が終わると一番上へ（リピートがオフでも）', await p.evaluate(() => curIndex() === 0 && started));
+    await p.evaluate(() => playIndex(items().length - 1)); await wait(200);
+    await p.click('#playOther'); await wait(200);
+    ok('一覧の最後で押すと一番上へ', await p.evaluate(() => curIndex() === 0), n);
+    // 戻るは押した回数ぶん。ここでは途中のボタンの分を捨てて、最初の2回（公演の続き・別公演の同じ曲）だけで確かめる
+    await p.evaluate(() => { backStack.length = 2; showNow(); });
     ok('戻るボタンが出る', await p.evaluate(() => !$('playBack').hidden && backStack.length === 2));
     await p.click('#playBack'); await wait(200);
     ok('戻る1回目: 公演のプレイリストの曲へ（絞り込みも元に戻る）', await p.evaluate((s) => pl().id === s.pl && curIndex() === s.i + 1 && catQuery === '', s1));
@@ -217,7 +233,7 @@ const TESTS = {
     ok('戻る2回目: 最初のプレイリストへ。戻り切るとボタンは消える', await p.evaluate(() => pl().id === 'builtin-toro' && curIndex() === 0 && $('playBack').hidden));
     await p.evaluate(() => { const i = 2; playIndex(i); }); await wait(200);
     const left = await p.evaluate(() => { const it = items()[curIndex()]; window.__t = it.start + 70; return it.start + 70; });
-    await p.click('#playOther'); await wait(200); await p.evaluate(() => { window.__t = undefined; });
+    await p.click('#playOther'); await wait(200); await p.evaluate(() => { window.__t = undefined; next(true); }); await wait(200);
     await p.click('#playBack'); await wait(200);
     ok('違う曲に戻るときは離れた位置から再生', await p.evaluate((t) => window.__loads.at(-1).startSeconds === t, left), await p.evaluate(() => window.__loads.at(-1)));
     await p.click('#playOther'); await wait(200); await switchPl(p, 'builtin-toro');
