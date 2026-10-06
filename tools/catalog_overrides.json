@@ -1,6 +1,5 @@
 {
-  "_説明": "update_catalog.py が catalog.json を作るときの手直し。prefer_single_over_full=true なら、単独映像と重なるフルライブのチャプターに hidden の印を付けてプレイヤーで非表示にする（データには残る）。aliases=曲名の統一、live_rules=動画タイトル(正規表現)→表示するライブ名、segments=「動画ID@開始秒」ごとの開始・終了の修正、exclude_videos/exclude_entries=除外 live_dates=ライブ名→公演日（タイトルに日付がない公演用。並び順と表示に使う）。 video_lives=動画ID→ライブ名（タイトルに公演名がない動画用） live_venues=ライブ名→会場名（「@ 会場名」で表示） setlists=ライブ名→セットリスト（main=本編, encore=アンコール, medley=メドレーの曲, source=出典（URL。複数なら配列）, note=補足, encore_video=本編とアンコールの両方で披露した曲のうち、映像がアンコールのほうの曲）。プレイリストの説明に表示し、フルライブ映像がない公演では曲順にも使う。",
-  "prefer_single_over_full": true,
+  "_説明": "update_catalog.py が catalog.json を作るときの手直し。aliases=曲名の統一、live_rules=動画タイトル(正規表現)→表示するライブ名、segments=「動画ID@開始秒」ごとの開始・終了の修正、exclude_videos/exclude_entries=除外 live_dates=ライブ名→公演日（タイトルに日付がない公演用。並び順と表示に使う）。 video_lives=動画ID→ライブ名（タイトルに公演名がない動画用） live_venues=ライブ名→会場名（「@ 会場名」で表示） setlists=ライブ名→セットリスト（main=本編, encore=アンコール, medley=メドレーの曲, source=出典（URL。複数なら配列）, note=補足, encore_video=本編とアンコールの両方で披露した曲のうち、映像がアンコールのほうの曲）。プレイリストの説明に表示し、フルライブ映像がない公演では曲順にも使う。",
   "aliases": {
     "MyDear": "My Dear",
     "sparkle": "Sparkle",

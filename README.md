@@ -22,7 +22,7 @@ https://torochai.github.io/yosugala-video-player/
 - すべてのライブ映像 - 公演日順（公演日の古い順。同じ公演の中はセットリスト順）
 - Official Live Video - 公開日順（1曲ずつ公開された映像だけ。公開日の古い順）
 - 公演ごとのプレイリスト「YYYY.MM.DD「公演名」」（新しい公演が上。曲はセットリスト順）
-  - フルライブ映像がある公演は、フルライブ映像のチャプターだけで作ります（単独映像と重なって非表示にしているチャプターも使います）。フルライブ映像がない公演は単独映像で作ります
+  - フルライブ映像がある公演は、フルライブ映像のチャプターだけで作ります（単独映像もある曲も、チャプターのほうを使います）。フルライブ映像がない公演は単独映像で作ります
 
 曲の行には「YYYY.MM.DD「公演名」 @ 会場名」と表示します。
 
@@ -43,7 +43,7 @@ git add catalog.json tools/video_cache.json tools/song_ids.json tools/thumb_cach
 - タイトルに公演名がない単独映像は `catalog_overrides.json` の `video_lives`（動画ID → ライブ名）で公演を指定します
 - 会場名は `catalog_overrides.json` の `live_venues`（ライブ名 → 会場名）に書きます
 - 公演ごとのセットリストは `catalog_overrides.json` の `setlists`（ライブ名 → `main` 本編・`encore` アンコール・`medley` メドレーの曲・`source` 出典（複数なら配列）・`note` 補足・`encore_video` 本編とアンコールの両方で披露した曲のうち映像がアンコールのほうの曲）に書きます。公演ごとのプレイリストの「このプレイリストについて」に表示します（スマホでは「公演情報」ボタンでそこまでスクロールします）
-- 公演の中の曲順は、フルライブ映像があればチャプターの順です（単独映像は、非表示にした同じ曲のチャプターの位置に入ります）。フルライブ映像がない公演は `setlists` の曲順で決めます
+- 公演の中の曲順は、フルライブ映像があればチャプターの順です（単独映像は、同じ曲のチャプターのすぐあとに入ります）。フルライブ映像がない公演は `setlists` の曲順で決めます
 - 補正ファイルだけを直したときは `python3 tools/update_catalog.py --offline` で、YouTube に接続せずに `video_cache.json` から作り直せます
 - 公演日はタイトルの日付から取ります。タイトルに日付がない公演は `catalog_overrides.json` の `live_dates`（ライブ名 → 公演日）に書いてください。同じ曲の中は公演日の古い順に並びます（公開日 `published` もデータに入っていますが、画面には出しません）
-- 同じ公演・同じ曲の単独映像があるフルライブのチャプターは、`catalog.json` に `"hidden": true`（理由 `hidden_reason`、重なっている単独映像 `duplicate_of`）の印を付けてプレイヤーでは表示しません。表示に戻すときは `catalog_overrides.json` の `prefer_single_over_full` を `false` にして再実行します
+- 同じ公演・同じ曲にフルライブ映像のチャプターと単独映像があるときは、どちらもプレイヤーに表示します（チャプターには、重なっている単独映像の動画 ID を `duplicate_of` に書きます）

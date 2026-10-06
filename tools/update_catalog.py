@@ -211,15 +211,13 @@ def main():
             if s.get('end') is not None:
                 s['len'] = s['end'] - s['start']
         out.append(s)
-    # 同じ公演・同じ曲の単独映像があるときは、フルライブのチャプターに「非表示」の印を付ける（データには残す）
-    if ov.get('prefer_single_over_full', True):
-        singles = {(x['live'], x['song']): x['vid'] for x in out if x['kind'] == 'single' and x['live']}
-        hidden = 0
-        for x in out:
-            key = (x['live'], x['song'])
-            if x['kind'] == 'full' and key in singles:
-                x.update(hidden=True, hidden_reason='単独映像あり', duplicate_of=singles[key]); hidden += 1
-        print(f'単独映像と重なるフルライブのチャプター {hidden} 件に非表示の印を付けました')
+    # 同じ公演・同じ曲の単独映像があるフルライブのチャプターには、その単独映像の動画 ID を duplicate_of に書く
+    # （どちらもプレイヤーに表示する。公演の中の曲順で、単独映像をチャプターの位置に入れるのに使う）
+    singles = {(x['live'], x['song']): x['vid'] for x in out if x['kind'] == 'single' and x['live']}
+    for x in out:
+        key = (x['live'], x['song'])
+        if x['kind'] == 'full' and key in singles:
+            x['duplicate_of'] = singles[key]
     # 公演日: 補正ファイルの live_dates → タイトルの日付 の順で決める（分からなければ空）
     live_dates = ov.get('live_dates', {})
     for x in out:
@@ -237,8 +235,8 @@ def main():
     live_venues = ov.get('live_venues', {})
     for x in out:
         x['venue'] = live_venues.get(x['live'], '')
-    # 公演の中の曲順 no（1 から）: 表示するものだけに付ける
-    #   フルライブのチャプター → 開始時刻の順。単独映像 → 非表示にした同じ曲のチャプターの位置
+    # 公演の中の曲順 no（1 から）
+    #   フルライブのチャプター → 開始時刻の順。単独映像 → 同じ曲のチャプターの位置（チャプターのすぐあと）
     #   フルライブ映像がない公演 → 補正ファイルの setlists（本編・アンコールの曲順）。どれでも分からなければ最後に公開日順
     setlists = ov.get('setlists', {})
     for live in {x['live'] for x in out if x['live']}:
@@ -250,14 +248,14 @@ def main():
 
         def pos(x):
             if x['kind'] == 'full':
-                return (0, x['start'], '')
+                return (0, x['start'], 0)
             if (x['vid'], x['song']) in chapter_at:
-                return (0, chapter_at[(x['vid'], x['song'])], '')
+                return (0, chapter_at[(x['vid'], x['song'])], 1)
             if x['song'] in setlist:
                 i = len(setlist) - 1 - setlist[::-1].index(x['song']) if x['song'] in encore_video else setlist.index(x['song'])
-                return (1, i, '')
+                return (1, i, 0)
             return (2, 0, x['published'])
-        for i, x in enumerate(sorted((x for x in group if not x.get('hidden')), key=pos)):
+        for i, x in enumerate(sorted(group, key=pos)):
             x['no'] = i + 1
     # 同じ曲の中は公演日の古い順（公演日が分からないものは公開日で比べる）
     out.sort(key=lambda s: (s['song'].casefold(), s['date'] or s['published']))
@@ -271,13 +269,10 @@ def main():
     assign_ids(out)
 
     with open(OUT, 'w', encoding='utf-8') as f:
-        visible = sum(1 for x in out if not x.get('hidden'))
-        json.dump({'updated': datetime.date.today().isoformat(), 'count': visible, 'total': len(out),
-                   'hidden': len(out) - visible, 'lives': lives, 'songs': out},
+        json.dump({'updated': datetime.date.today().isoformat(), 'count': len(out), 'lives': lives, 'songs': out},
                   f, ensure_ascii=False, indent=1)
     names = sorted({s['song'] for s in out}, key=str.casefold)
-    vis = sum(1 for x in out if not x.get('hidden'))
-    print(f'catalog.json を更新しました: 全 {len(out)} 件（表示 {vis} 件・非表示 {len(out) - vis} 件／{len(names)} 曲）')
+    print(f'catalog.json を更新しました: 全 {len(out)} 件（{len(names)} 曲）')
     print('曲名一覧: ' + ' / '.join(names))
     # 曲ごとの案内ページ（X で曲を共有したときのリンク先）もカタログに合わせて作り直す
     sys.path.insert(0, HERE); sys.dont_write_bytecode = True

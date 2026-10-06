@@ -70,6 +70,14 @@ const TESTS = {
     ok('トロ\'s セレクション（16曲、1曲目 indigo）', r.name === "トロ's セレクション" && r.n === 16 && r.first === 'indigo' && r.rows === 16, r);
     ok('行 ID は「toro:曲 ID」', r.row === 'toro:45' && r.sid === 45, r);
     ok('ブラウザには曲 ID だけ保存', JSON.stringify(r.stored) === '{"id":"toro:45","sid":45}', r.stored);
+    // すべてのライブ映像には、同じ公演・同じ曲のフルライブ映像のチャプターと単独映像の両方が出る。公演のプレイリストはフルライブ映像のチャプターで
+    const both = await p.evaluate(() => {
+      const all = catalogPls.find((q) => q.id === CATALOG_ID).all.filter((x) => infoOf(x).date === '2024-02-18' && x.title === 'ソラノナミダ').map((x) => infoOf(x).kind);
+      const live = catalogPls.find((q) => q.id === '__live__:2024-02-18|progress the night -LIQUIDROOM-').all.filter((x) => x.title === 'ソラノナミダ').map((x) => infoOf(x).kind);
+      return { all, live, total: catalogPls.find((q) => q.id === CATALOG_ID).all.length, catalog: catalog.songs.length };
+    });
+    ok('すべてのライブ映像にはフルライブ映像のチャプターと単独映像の両方、公演のプレイリストはフルライブ映像のチャプター',
+      both.all.sort().join() === 'full,single' && both.live.join() === 'full' && both.total === both.catalog, both);
     ok('カタログのプレイリストができる', r.lib > 5, r.lib);
     ok('URL で曲を追加する画面はない', await p.evaluate(() => !document.getElementById('addSong') && !document.getElementById('songDlg')));
     await close(p);
@@ -289,7 +297,16 @@ const TESTS = {
     const all = JSON.parse(fs.readFileSync(path.join(ROOT, 'catalog.json'), 'utf8')).songs;
     ok('プレーヤーのタイトル（プレーヤーへのリンク）が出る', await p.evaluate(() => document.querySelector('.brand a').getAttribute('href') === '../'
       && document.querySelector('.brand').textContent.includes('yosugala')));
-    ok('一覧に全曲（単独映像・非表示の曲も）が並ぶ', await p.evaluate(() => $('list').children.length) === all.length);
+    ok('一覧は初めは名前順（catalog.json の曲名順と同じ）', await p.evaluate((ids) => [...$('list').children].map((li) => li.song.id).join() === ids.join()
+      && document.querySelector('[data-order="name"]').getAttribute('aria-pressed') === 'true', all.map((s) => s.id)));
+    await p.click('[data-order="id"]');
+    ok('ID順に切り替えられる', await p.evaluate(() => { const ids = [...$('list').children].map((li) => li.song.id); return ids.every((x, i) => !i || ids[i - 1] < x); }));
+    await p.click('[data-order="date"]');
+    ok('公演日順に切り替えられる', await p.evaluate(() => { const d = [...$('list').children].map((li) => li.song.date || '9999'); return d.every((x, i) => !i || d[i - 1] <= x); }));
+    await p.reload(); await p.waitForFunction(() => $('list').children.length > 0);
+    ok('選んだ並び順はブラウザに残る', await p.evaluate(() => document.querySelector('[data-order="date"]').getAttribute('aria-pressed') === 'true'));
+    await p.click('[data-order="name"]');
+    ok('一覧に全曲（単独映像もフルライブ映像のチャプターも）が並ぶ', await p.evaluate(() => $('list').children.length) === all.length);
     // 開始・終了を直してある曲: 元のチャプターと今の設定が並ぶ
     const fixed = all.find((s) => s.kind === 'full' && 'chapter_end' in s && 'chapter_start' in s);
     await p.evaluate((id) => select(songs.find((s) => s.id === id)), fixed.id); await wait(200);
@@ -365,10 +382,11 @@ const TESTS = {
     const pb = await open('#lib=toro');
     const badge = await pb.evaluate((ids) => { switchTo(CATALOG_ID);
       return ids.map((id) => { const i = items().findIndex((x) => x.sid === id); playIndex(i);
-        return { id, now: !!$('nowLive').querySelector('.tag'), row: !!document.querySelectorAll('#list .row')[i]?.querySelector('.tag') }; });
+        return { id, now: $('nowLive').querySelector('.tag')?.textContent, row: document.querySelectorAll('#list .row')[i]?.querySelector('.tag')?.textContent }; });
     }, [caught.id, all.find((s) => s.kind === 'full' && !s.hidden).id]);
     const [bs, bf] = badge;   // 開始を調整した単独映像、フルライブ映像の曲
-    ok('「フルライブ映像より」は開始を調整した単独映像には付かず、フルライブ映像の曲には付く', !bs.now && !bs.row && bf.now && bf.row, badge);
+    ok('バッジは映像の種類で: 開始を調整した単独映像は「単独映像」、フルライブ映像の曲は「フルライブ映像より」',
+      bs.now === '単独映像' && bs.row === '単独映像' && bf.now === 'フルライブ映像より' && bf.row === 'フルライブ映像より', badge);
     await close(pb);
     // スマホ: 横にはみ出さず、動画は上に固定
     const m = await open('tools/trim.html', { width: 390, height: 844, mobile: true });

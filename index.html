@@ -310,7 +310,7 @@
   .row .main { min-width: 0; text-align: left; background: none; border: 0; padding: 0; cursor: pointer; }
   .row .t { display: block; overflow-wrap: anywhere; letter-spacing: .02em; }
   .row .s { display: block; color: var(--muted); font-size: .74rem; overflow-wrap: anywhere; }
-  /* 「フルライブ映像より」バッジ */
+  /* 映像の種類のバッジ（「フルライブ映像より」「単独映像」） */
   .tag { display: inline-block; margin-left: 6px; padding: 0 6px; border: 1px solid var(--line-2); border-radius: 999px;
     font-size: .66rem; font-weight: 400; line-height: 1.5; color: var(--moon); vertical-align: 1px; white-space: nowrap; }
   .row .d { color: var(--muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
@@ -839,8 +839,8 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   // 保存してあるプレイリスト・共有リンクのプレイリストに、カタログの内容を付ける
   state.playlists.forEach(hydrate);
   save(); showSharedBanner();
-  // hidden の付いたもの（単独映像と重なるフルライブのチャプターなど）は一覧に出さない
-  const visible = c.songs.filter((x) => !x.hidden);
+  // 同じ公演・同じ曲にフルライブ映像のチャプターと単独映像があるときは、どちらも一覧に出す
+  const visible = c.songs;
   const toItem = (x) => songRow(x.id, `c:${x.id}`);
   catalogAll = visible.map(toItem);   // catalog.json の並び = 曲名順（同じ曲の中は公演日の古い順）
   // 公演日順: 公演日の古い順、同じ公演の中はセットリスト順（公演日が分からないものは最後に公開日順）
@@ -852,7 +852,7 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
     catalogPlaylist(CATALOG_DATE_ID, 'すべてのライブ映像 - 公演日順', byDate, `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。${CAT_HELP}`, true),
   ];
   // Official Live Video: 1曲ずつ公開された映像（フルライブ映像から切り出したものは入れない）を公開日の古い順に
-  const singles = c.songs.filter((x) => x.kind === 'single' && !x.hidden)
+  const singles = c.songs.filter((x) => x.kind === 'single')
     .sort((a, b) => a.published.localeCompare(b.published) || a.song.localeCompare(b.song)).map(toItem);
   catalogPls.push(catalogPlaylist(SINGLES_ID, 'Official Live Video - 公開日順', singles,
     `yosugala official が1曲ずつ公開している公式ライブ映像（Official Live Video）を、公開日の古い順に並べています（${singles.length} 本・${c.updated} 時点）。フルライブ映像から切り出した曲は入っていません。`));
@@ -867,7 +867,7 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   });
   [...lives.entries()].sort((a, b) => b[0].localeCompare(a[0])).forEach(([k, songs]) => {
     const full = songs.filter((x) => x.kind === 'full');
-    const list = full.length ? full.sort((a, b) => a.vid.localeCompare(b.vid) || a.start - b.start) : songs.filter((x) => !x.hidden).sort(byLive);
+    const list = full.length ? full.sort((a, b) => a.vid.localeCompare(b.vid) || a.start - b.start) : songs.slice().sort(byLive);
     if (!list.length) return;
     const { date, live, venue } = list[0];
     catalogPls.push(catalogPlaylist(LIVE_ID + k, `${dotDate(date)}${quoteLive(live)}`, list.map(toItem),
@@ -924,6 +924,14 @@ let backStack = [];
 const items = () => pl().items;
 const curIndex = () => items().findIndex((it) => it.id === curId);
 
+// 映像の種類のバッジ: フルライブ映像から切り出した曲は「フルライブ映像より」、1曲ずつ公開された映像は「単独映像」
+// （catalog.json の kind で決める。開始を調整した単独映像も「単独映像」）
+function kindTag(it) {
+  const k = infoOf(it).kind, text = k === 'full' ? 'フルライブ映像より' : k === 'single' ? '単独映像' : '';
+  if (!text) return null;
+  const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = text;
+  return tag;
+}
 function showNow() {
   const list = items(), i = curIndex(), it = list[i];
   $('nowNum').textContent = it ? `${pad(i + 1)} / ${list.length}` : `${list.length} 曲`;
@@ -941,10 +949,7 @@ function showNow() {
   const x = it ? infoOf(it) : {};
   $('nowLive').textContent = it ? [x.date ? `公演日: ${dotDate(x.date)}` : '', quoteLive(x.live || it.live), x.venue ? `@ ${x.venue}` : '']
     .filter(Boolean).join(' ') : '';
-  if (it && infoOf(it).kind === 'full') {   // フルライブ映像から切り出した曲にはバッジ（開始を調整した単独映像には付けない）
-    const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'フルライブ映像より';
-    $('nowLive').appendChild(tag);
-  }
+  if (it) { const tag = kindTag(it); if (tag) $('nowLive').appendChild(tag); }   // 映像の種類のバッジ（フルライブ映像より／単独映像）
   $('barTitle').innerHTML = '';
   if (it) { const n = document.createElement('span'); n.className = 'bn'; n.textContent = pad(i + 1);
     $('barTitle').append(n, document.createTextNode(it.title)); }
@@ -1316,10 +1321,8 @@ function renderList() {
     const t = document.createElement('span'); t.className = 't'; t.textContent = it.title;
     const s = document.createElement('span'); s.className = 's';
     const liveText = liveLine(it);   // YYYY.MM.DD「ライブ名」 @ 会場名
-    // フルライブ映像から切り出した曲には「フルライブ映像より」バッジを付ける（映像の種類で決める。開始を調整した単独映像には付けない）
-    const partial = infoOf(it).kind === 'full';
     s.textContent = liveText;
-    if (partial) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'フルライブ映像より'; s.appendChild(tag); }
+    const tag = kindTag(it); if (tag) s.appendChild(tag);
     main.append(t, s);
     main.addEventListener('click', () => playIndex(i));
     const d = document.createElement('span'); d.className = 'd'; d.textContent = fmt(itemLen(it));

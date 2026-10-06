@@ -110,7 +110,12 @@
 
   /* ---- 曲の一覧（プレーヤーのプレイリスト欄と同じ見た目） ---- */
   aside.panel { margin-top: 0; padding: 12px; position: sticky; top: 12px; }
-  .listhead { display: flex; align-items: baseline; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-bottom: 8px; }
+  .listhead { display: flex; align-items: center; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-bottom: 8px; }
+  /* 並び順の切り替え（名前順・ID順） */
+  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 999px; overflow: hidden; }
+  .seg button { font: inherit; font-size: .76rem; color: var(--muted); background: none; border: 0; padding: 4px 12px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line-2); }
+  .seg button[aria-pressed="true"] { color: #0a0e24; font-weight: 700; background: linear-gradient(90deg, #6f86ff, #b48cff 55%, var(--dawn)); }
   input[type=search] { width: 100%; font: inherit; color: var(--text); background: rgba(5,6,15,.5); border: 1px solid var(--line-2); border-radius: 999px; padding: 7px 14px; }
   label.f { color: var(--muted); font-size: .8rem; }
   ol { list-style: none; margin: 8px 0 0; padding: 0; max-height: calc(100vh - 190px); overflow: auto; }
@@ -224,7 +229,10 @@
     </div>
   </section>
   <aside class="panel">
-    <div class="listhead"><span>全曲（公演日の順）</span><span id="listCount"></span></div>
+    <div class="listhead">
+      <span class="seg" role="group" aria-label="並び順"><button type="button" data-order="name">名前順</button><button type="button" data-order="date">公演日順</button><button type="button" data-order="id">ID順</button></span>
+      <span id="listCount"></span>
+    </div>
     <input type="search" id="q" placeholder="曲名・ライブ名で絞り込み">
     <div class="row"><label class="f"><input type="checkbox" id="onlyChanged"> 調整した曲だけ</label></div>
     <ol id="list"></ol>
@@ -264,8 +272,9 @@ const lenOf = (s, v) => { const e = v.end ?? vidLen(s); return e == null ? null 
 const endText = (e) => (e == null ? '動画の最後' : fmt(e));
 
 fetch('../catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
-  // 公演日の順、同じ映像の中は開始の順
-  songs = c.songs.slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || a.vid.localeCompare(b.vid) || a.start - b.start);
+  // catalog.json の並び（曲名順。同じ曲の中は公演日の古い順。プレーヤーの「すべてのライブ映像 - 曲名順」と同じ）を名前順として覚えておく
+  songs = c.songs.map((s, i) => ({ ...s, ord: i }));
+  sortSongs();
   renderList(); renderOut();
   // プレーヤーのギアから開いたとき（?song=曲ID）は、その曲を選んでおく（PC では一覧もその曲までスクロール）
   const first = songs.find((s) => s.id === +new URLSearchParams(location.search).get('song'));
@@ -276,6 +285,23 @@ fetch('../catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) =
   }
 });
 
+// 並び順: 名前順（初めは）・公演日順（同じ映像の中は開始の順）・ID順。選んだ順はこのブラウザに覚えておく
+const ORDER_KEY = 'yosugala-trim-order';
+const ORDERS = {
+  name: (a, b) => a.ord - b.ord,
+  date: (a, b) => (a.date || '9999').localeCompare(b.date || '9999') || a.vid.localeCompare(b.vid) || a.start - b.start,
+  id: (a, b) => a.id - b.id,
+};
+let order = 'name';
+try { const o = localStorage.getItem(ORDER_KEY); if (ORDERS[o]) order = o; } catch {}
+function sortSongs() {
+  songs.sort(ORDERS[order]);
+  document.querySelectorAll('[data-order]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.order === order));
+}
+document.querySelectorAll('[data-order]').forEach((b) => b.addEventListener('click', () => {
+  order = b.dataset.order; try { localStorage.setItem(ORDER_KEY, order); } catch {}
+  sortSongs(); renderList();
+}));
 function visible() {
   const q = $('q').value.trim().toLowerCase();
   return songs.filter((s) => (!$('onlyChanged').checked || changed(s)) && (!q || `${s.song} ${s.live} ${s.date}`.toLowerCase().includes(q)));
@@ -290,7 +316,7 @@ function renderList() {
     const v = valOf(s);
     li.innerHTML = '<span class="badge changed"></span><span class="badge"></span><div class="t"></div><div class="m"></div>';
     li.querySelector('.badge.changed').textContent = changed(s) ? '調整済み' : '';
-    li.querySelector('.badge:not(.changed)').textContent = s.hidden ? '非表示' : s.kind === 'single' ? '単独映像' : '';
+    li.querySelector('.badge:not(.changed)').textContent = s.kind === 'single' ? '単独映像' : '';
     li.querySelector('.t').textContent = `${s.song}（ID ${s.id}）`;
     li.querySelector('.m').textContent = `${dot(s.date)} ${s.live || ''} ・ ${fmt(v.start)}〜${endText(v.end)}`;
     li.addEventListener('click', () => { select(s); if (matchMedia('(max-width: 900px)').matches) scrollTo({ top: 0, behavior: 'smooth' }); });
@@ -304,7 +330,7 @@ function select(s) {
   cur = s;
   $('curTitle').textContent = `${s.song}（ID ${s.id}）`;
   $('curSub').textContent = `${dot(s.date)} ${s.live || ''}${s.venue ? ' @ ' + s.venue : ''}`;
-  for (const t of [s.kind === 'single' ? '単独映像' : 'フルライブ映像', s.hidden ? '非表示（単独映像あり）' : '']) {
+  for (const t of [s.kind === 'single' ? '単独映像' : 'フルライブ映像']) {
     if (!t) continue;
     const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = t; $('curSub').appendChild(tag);
   }
