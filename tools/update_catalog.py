@@ -4,11 +4,11 @@
 使い方（player フォルダで）:
     python3 tools/update_catalog.py
     python3 tools/update_catalog.py --cookies-from-browser chrome   # YouTube にボット確認で止められたとき
-    python3 tools/update_catalog.py --offline   # YouTube に接続せず、video_cache.json だけで作り直す（補正ファイルを直したとき）
+    python3 tools/update_catalog.py --offline   # YouTube に接続せず、youtube.json だけで作り直す（補正ファイルを直したとき）
 
 - 公式チャンネルの動画一覧から、ライブ映像（単独の Official Live Video とフルライブ）を拾う
 - フルライブはチャプターで曲ごとに分ける（MC・SE などは除く）
-- 動画ごとの情報は tools/video_cache.json に保存し、次回からは新しい動画だけを取得する
+- 動画ごとの情報は data/youtube.json に保存し、次回からは新しい動画だけを取得する
 - 曲名の表記ゆれ・除外・終了時刻の調整などは tools/catalog_overrides.json で直す
 - 最後に tools/make_song_pages.py で曲ごとの案内ページ（s/）も作り直す
 必要なもの: yt-dlp
@@ -23,13 +23,13 @@ CHANNEL = 'https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q'
 MV_PLAYLIST = 'https://www.youtube.com/playlist?list=PLmu11HkWPvmbgMpfY4vZ7KVy67l7YyXJk'
 MV_TITLE_RE = re.compile(r'^\s*yosugala\s*[-‐－–—]\s*[^【】\[\]「」『』()（）|｜]+$', re.I)
 # 動画ごとの情報（概要欄）を取れたときは、概要欄に「- MusicVideo」の行がある動画を MV にする（再生リスト・タイトルより優先）。
-# 新しい動画（ライブ映像でないもの）の概要欄を 1 回に MV_DESC_MAX 本まで確かめ、結果を video_cache.json の desc_mv に覚えておく
+# 新しい動画（ライブ映像でないもの）の概要欄を 1 回に MV_DESC_MAX 本まで確かめ、結果を youtube.json の desc_mv に覚えておく
 MV_DESC_RE = re.compile(r'^\s*[-‐－–—]\s*music\s*video\s*$', re.I | re.M)
 MV_DESC_MAX = 10
 CHANNEL_ID = 'UCP5_IRli-KbizrztKSmgh8Q'
-CACHE = os.path.join(HERE, 'video_cache.json')
+CACHE = os.path.join(ROOT, 'data', 'youtube.json')
 OVERRIDES = os.path.join(HERE, 'catalog_overrides.json')
-OUT = os.path.join(ROOT, 'catalog.json')
+OUT = os.path.join(ROOT, 'data', 'catalog.json')
 SONG_IDS = os.path.join(HERE, 'song_ids.json')
 OFFLINE = '--offline' in sys.argv[1:]
 EXTRA = [a for a in sys.argv[1:] if a != '--offline']   # yt-dlp にそのまま渡す追加オプション（--cookies-from-browser など）
@@ -145,7 +145,7 @@ def main():
 
     entries = []
     if OFFLINE:
-        print('--offline: video_cache.json の動画だけで作り直します')
+        print('--offline: youtube.json の動画だけで作り直します')
         entries = [{'id': vid, 'title': info['title']} for vid, info in cache.items()]
     else:
         print('公式チャンネルの動画一覧を取得中…')
@@ -160,7 +160,7 @@ def main():
     entries = list({e['id']: e for e in entries}.values())
     lives = [e for e in entries if LIVE_RE.search(e.get('title', '')) and e['id'] not in exclude_videos and not cache.get(e['id'], {}).get('mv')]
     print(f'ライブ映像: {len(lives)} 本（うち新しく情報を取得するもの: {sum(1 for e in lives if e["id"] not in cache)} 本）')
-    # Official Music Video: 再生リスト「MusicVideo」の動画（video_cache.json では mv: true の印を付けて覚えておく）
+    # Official Music Video: 再生リスト「MusicVideo」の動画（youtube.json では mv: true の印を付けて覚えておく）
     if OFFLINE:
         mvs = [{'id': vid, 'title': info['title']} for vid, info in cache.items() if info.get('mv')]
     else:

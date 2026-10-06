@@ -29,9 +29,9 @@ CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
 
 
 def main(vids):
-    with open(os.path.join(ROOT, 'catalog.json'), encoding='utf-8') as f:
+    with open(os.path.join(ROOT, 'data', 'catalog.json'), encoding='utf-8') as f:
         songs = json.load(f)['songs']
-    with open(os.path.join(HERE, 'video_cache.json'), encoding='utf-8') as f:
+    with open(os.path.join(ROOT, 'data', 'youtube.json'), encoding='utf-8') as f:
         cache = json.load(f)
     with open(os.path.join(HERE, 'catalog_overrides.json'), encoding='utf-8') as f:
         skips = set(json.load(f).get('talk_skips', []))

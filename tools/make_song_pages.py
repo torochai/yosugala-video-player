@@ -14,7 +14,7 @@ import html, json, os, sys, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-CATALOG = os.path.join(ROOT, 'catalog.json')
+CATALOG = os.path.join(ROOT, 'data', 'catalog.json')
 OUT_DIR = os.path.join(ROOT, 's')
 THUMB_CACHE = os.path.join(HERE, 'thumb_cache.json')
 SITE = 'https://torochai.github.io/yosugala-video-player/'

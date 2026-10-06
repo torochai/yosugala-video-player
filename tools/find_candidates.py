@@ -357,7 +357,7 @@ def build(vid, opts, params=None, known=None):
 
 def known_from_catalog():
     """カタログにすでにある曲（動画ID と元の開始秒）・MC と、talk_skips"""
-    songs = load(os.path.join(ROOT, 'catalog.json'), {}).get('songs', [])
+    songs = load(os.path.join(ROOT, 'data', 'catalog.json'), {}).get('songs', [])
     ov = load(os.path.join(HERE, 'catalog_overrides.json'), {})
     return {'songs': {(s['vid'], s.get('chapter_start', s['start'])) for s in songs if s.get('type') != 'mc'},
             'mcs': [(s['vid'], s['start'], s['end']) for s in songs if s.get('type') == 'mc'],

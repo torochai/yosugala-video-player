@@ -11,7 +11,7 @@
 正解: カタログの曲（kind = full。範囲は segments の補正後）と MC（type = mc）。talk_skips は「MC ではない」正解として数える。
 対応づけ: 候補と正解が、短いほうの長さの半分以上重なっていれば同じものとみなす（重なりの大きい順に 1 対 1）。
 出すもの: 見つけ漏れ（正解にあって候補にない）・余計な候補（候補にあって正解にない）の数と、開始・終了のずれ（秒）。
-動画の情報は tools/video_cache.json を使う（概要欄は入っていないので、--no-chapters のときは音声だけで曲を探す）。
+動画の情報は data/youtube.json を使う（概要欄は入っていないので、--no-chapters のときは音声だけで曲を探す）。
 """
 import argparse, os, statistics, sys
 
@@ -65,8 +65,8 @@ def main():
     opts, params = fc.opts_from(a), fc.parse_set(a.set)
     opts['no_chapters'] = a.no_chapters
     opts['transcribe'] = False   # 比べるのに文字起こしはいらない
-    songs = fc.load(os.path.join(ROOT, 'catalog.json'), {}).get('songs', [])
-    cache = fc.load(os.path.join(HERE, 'video_cache.json'), {})
+    songs = fc.load(os.path.join(ROOT, 'data', 'catalog.json'), {}).get('songs', [])
+    cache = fc.load(os.path.join(ROOT, 'data', 'youtube.json'), {})
     skips = set(fc.load(os.path.join(HERE, 'catalog_overrides.json'), {}).get('talk_skips', []))
     vids = a.vids or sorted({s['vid'] for s in songs if s['kind'] == 'full'}, key=lambda v: cache.get(v, {}).get('upload_date') or '')
     print(f'条件: {"音声あり" if a.audio else "音声なし"}・{"チャプターなし" if a.no_chapters else "チャプターあり"}'
@@ -76,7 +76,7 @@ def main():
     tot = {'song': [], 'mc': []}
     for vid in vids:
         if vid not in cache:
-            print(f'{vid}: video_cache.json にないので飛ばします'); continue
+            print(f'{vid}: youtube.json にないので飛ばします'); continue
         got = fc.build(vid, {**opts, 'info': {**cache[vid], 'id': vid}}, params)
         rows = {}
         for kind in ('song', 'mc'):

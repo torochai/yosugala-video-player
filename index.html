@@ -10,7 +10,7 @@
 <meta property="og:site_name" content="yosugala Live Video Player">
 <meta property="og:title" content="yosugala Live Video Player">
 <meta property="og:description" content="yosugala の公式ライブ映像から好きな曲を集めて、自分だけのセットリストで続けて再生できる非公式ファンメイドプレイヤー">
-<meta property="og:image" content="https://torochai.github.io/yosugala-video-player/ogp-v4.png">
+<meta property="og:image" content="https://torochai.github.io/yosugala-video-player/assets/ogp.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -19,12 +19,12 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="yosugala Live Video Player">
 <meta name="twitter:description" content="yosugala の公式ライブ映像から好きな曲を集めて、自分だけのセットリストで続けて再生できる非公式ファンメイドプレイヤー">
-<meta name="twitter:image" content="https://torochai.github.io/yosugala-video-player/ogp-v4.png">
+<meta name="twitter:image" content="https://torochai.github.io/yosugala-video-player/assets/ogp.png">
 <meta name="twitter:image:alt" content="yosugala Live Video Player — 非公式ファンメイドプレイヤー">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-v2-180.png">
-<link rel="icon" type="image/png" sizes="32x32" href="icon-v2-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-v2-192.png">
+<link rel="manifest" href="assets/manifest.json">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="yosugala">
@@ -54,7 +54,7 @@
   /* 星 */
   body::before, body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; }
   /* 星空の背景画像（サムネイルと同じ作り方）。iPhone でも固定されるよう擬似要素で敷く */
-  body::before { background: linear-gradient(rgba(5,6,15,.22), rgba(5,6,15,.22)), #05060f url(bg.jpg) center / cover no-repeat; }
+  body::before { background: linear-gradient(rgba(5,6,15,.22), rgba(5,6,15,.22)), #05060f url(assets/bg.jpg) center / cover no-repeat; }
   /* 星の上でも文字が読めるように、ほんのり影をつける */
   .hero, .now, footer { text-shadow: 0 0 10px rgba(5,6,15,.95), 0 0 2px rgba(5,6,15,.9); }
   h1 .sub { text-shadow: none; filter: drop-shadow(0 0 8px rgba(5,6,15,.9)); }
@@ -852,7 +852,7 @@ function catalogPlaylist(id, key, name, base, desc, tools = false, live = false,
 }
 const pl = () => catalogPls.find((p) => p.id === state.current)
   || state.playlists.find((p) => p.id === state.current) || state.playlists[0];
-fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
+fetch('data/catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   catalog = c;
   c.songs.forEach((x) => songById.set(x.id, x));
   applyTrim();
@@ -2016,7 +2016,7 @@ function syncViewportFit() {
 }
 syncViewportFit();
 landscapeMq.addEventListener('change', syncViewportFit);
-// 曲の内容はカタログから付けるので、描画はカタログを読み込んでから（fetch('catalog.json') の中で）
+// 曲の内容はカタログから付けるので、描画はカタログを読み込んでから（fetch('data/catalog.json') の中で）
 const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
 </script>
 </body>

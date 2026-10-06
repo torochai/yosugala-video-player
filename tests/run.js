@@ -70,6 +70,19 @@ const TESTS = {
     ok('トロ\'s セレクション（16曲、1曲目 indigo）', r.name === "トロ's セレクション" && r.n === 16 && r.first === 'indigo' && r.rows === 16, r);
     ok('行 ID は「toro:曲 ID」', r.row === 'toro:45' && r.sid === 45, r);
     ok('ブラウザには曲 ID だけ保存', JSON.stringify(r.stored) === '{"id":"toro:45","sid":45}', r.stored);
+    // assets/・data/ に置いたファイル: manifest・アイコン・背景・カード画像・カタログが読める。
+    // manifest は assets/ にあるので、アプリの範囲と開くページは "../"（サイトのトップ）にする
+    const files = await p.evaluate(async () => {
+      const head = (sel, attr) => document.querySelector(sel).getAttribute(attr);
+      const og = head('meta[property="og:image"]', 'content').replace(/^https:\/\/torochai\.github\.io\/yosugala-video-player\//, '');
+      const mf = new URL(head('link[rel="manifest"]', 'href'), location.href), m = await (await fetch(mf)).json();
+      const urls = [mf.href, og, 'assets/bg.jpg', 'data/catalog.json', head('link[rel="apple-touch-icon"]', 'href'),
+        ...[...document.querySelectorAll('link[rel="icon"]')].map((l) => l.getAttribute('href')), ...m.icons.map((i) => new URL(i.src, mf).href)];
+      const status = await Promise.all(urls.map(async (u) => [u, (await fetch(u)).status]));
+      const top = new URL('./', location.href).href;
+      return { status: status.filter(([, s]) => s !== 200), scope: new URL(m.scope, mf).href === top, start: new URL(m.start_url, mf).href === top, n: urls.length };
+    });
+    ok('manifest・アイコン・背景・カード画像・カタログが読める。manifest の範囲と開くページはサイトのトップ', files.n >= 9 && !files.status.length && files.scope && files.start, files);
     // すべてのライブ映像には、同じ公演・同じ曲のフルライブ映像のチャプターと単独映像の両方が出る。公演のプレイリストはフルライブ映像のチャプターで
     const both = await p.evaluate(() => {
       const all = catalogPls.find((q) => q.id === CATALOG_ID).all.filter((x) => infoOf(x).date === '2024-02-18' && x.title === 'ソラノナミダ').map((x) => infoOf(x).kind);
@@ -220,7 +233,7 @@ const TESTS = {
       await close(s);
     }
     // 再生位置のリンク（s/曲ID.html?t=動画の秒）: その曲を選び、PLAY でその位置から始める
-    const s57start = JSON.parse(fs.readFileSync(path.join(ROOT, 'catalog.json'), 'utf8')).songs.find((x) => x.id === 57).start;
+    const s57start = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'catalog.json'), 'utf8')).songs.find((x) => x.id === 57).start;
     const sp = await open(`s/57.html?lib=2024-11-01&t=${s57start + 83}`);
     const r1 = await sp.evaluate(() => ({ title: $('nowTitle').textContent, url: location.search + location.hash, msg: $('msg').textContent }));
     await sp.click('#start'); await wait(400);
@@ -451,7 +464,7 @@ const TESTS = {
       fs.writeFileSync(path.join(bin, 'yt-dlp'), `#!/usr/bin/env python3
 import json, sys
 url = sys.argv[-1]
-cache = json.load(open('tools/video_cache.json'))
+cache = json.load(open('data/youtube.json'))
 old = [{'id': v, 'title': i['title'], 'duration': i['duration']} for v, i in cache.items()]
 new = [{'id': 'NEWMVDESC01', 'title': '【MV】yosugala「新曲」', 'duration': 200}, {'id': 'NEWTITLE001', 'title': 'yosugala - タイトルだけ', 'duration': 180},
        {'id': 'NEWVLOG0001', 'title': '【Vlog】テスト', 'duration': 600}]
@@ -464,7 +477,7 @@ else:
                       'description': {'NEWMVDESC01': 'yosugala\\n- MusicVideo\\n', 'NEWTITLE001': 'ティーザー', 'NEWVLOG0001': 'vlog'}[v]}))
 `, { mode: 0o755 });
       const up = spawnSync('python3', ['tools/update_catalog.py'], { cwd: copy, encoding: 'utf8', env: { ...process.env, PATH: `${bin}:${process.env.PATH}` } });
-      const mv = up.status === 0 ? JSON.parse(fs.readFileSync(path.join(copy, 'catalog.json'), 'utf8')).songs.filter((s) => s.kind === 'mv' && s.vid.startsWith('NEW')) : [];
+      const mv = up.status === 0 ? JSON.parse(fs.readFileSync(path.join(copy, 'data', 'catalog.json'), 'utf8')).songs.filter((s) => s.kind === 'mv' && s.vid.startsWith('NEW')) : [];
       ok('update_catalog: 新しい動画は概要欄の「- MusicVideo」で MV を判定（タイトルだけ MV の形の動画・Vlog は入れない。曲名は「」の中）',
         mv.length === 1 && mv[0].vid === 'NEWMVDESC01' && mv[0].song === '新曲' && mv[0].published === '2026-10-01', up.status === 0 ? mv : up.stdout.slice(-300) + up.stderr);
     } finally {
@@ -475,7 +488,7 @@ else:
   async editor() {
     const p = await open('editor.html');
     await p.waitForFunction(() => $('list').children.length > 0);
-    const all = JSON.parse(fs.readFileSync(path.join(ROOT, 'catalog.json'), 'utf8')).songs;
+    const all = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'catalog.json'), 'utf8')).songs;
     ok('プレーヤーのタイトル（プレーヤーへのリンク）が出る', await p.evaluate(() => document.querySelector('.brand a').getAttribute('href') === './'
       && document.querySelector('.brand').textContent.includes('yosugala')));
     ok('一覧は初めは名前順（catalog.json の曲名順と同じ）', await p.evaluate((ids) => [...$('list').children].map((li) => li.song.id).join() === ids.join()
