@@ -185,7 +185,7 @@
   .now { display: flex; align-items: flex-end; gap: 14px; margin-top: 18px; flex-wrap: wrap; }
   .now .label { flex: 1 1 240px; min-width: 0; }
   .now .num { font-family: var(--serif); font-style: italic; color: var(--moon); font-size: 1rem; letter-spacing: .1em; }
-  /* 「02 / 16」の行の右端に X の共有ボタン「曲」「再生位置」「プレイリスト」（X らしい黒地に白） */
+  /* 「02 / 16」の行の右端に X の共有ボタン「動画」「再生位置」「プレイリスト」（X らしい黒地に白） */
   .now .numrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .btn.songshare { display: inline-flex; align-items: center; gap: 6px; background: #000; color: #fff; border-color: rgba(255,255,255,.28); }
   .btn.songshare:hover { background: #16181c; border-color: rgba(255,255,255,.55); box-shadow: 0 0 14px rgba(255,255,255,.15); }
@@ -464,11 +464,11 @@
         <div class="label">
           <div class="numrow">
             <div class="num" id="nowNum"></div>
-            <!-- X で共有: 「曲」は再生中の曲（曲名・公演・この曲を開くリンク）、「再生位置」は再生中の位置から開くリンク、「プレイリスト」は開いているプレイリスト -->
+            <!-- X で共有: 「動画」は再生中の曲・MC（曲名・公演・それを開くリンク）、「再生位置」は再生中の位置から開くリンク、「プレイリスト」は開いているプレイリスト -->
             <span class="xbtns">
-              <button class="btn small songshare" type="button" id="songShare" hidden aria-label="この曲を X で共有する" title="この曲を X で共有する">
+              <button class="btn small songshare" type="button" id="songShare" hidden aria-label="この動画を X で共有する" title="この動画を X で共有する">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>
-                曲
+                動画
               </button>
               <button class="btn small songshare" type="button" id="posShare" hidden aria-label="いまの再生位置を X で共有する" title="いまの再生位置を X で共有する（開いた人はその位置から再生できます）">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>

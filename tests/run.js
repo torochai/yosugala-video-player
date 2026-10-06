@@ -185,7 +185,7 @@ const TESTS = {
     await switchPl(p, '__live__:2024-11-01|tour2024 aki「春に廻れなかった場所編」Final'); await p.evaluate(() => playIndex(1)); await wait(300);
     const t = await xText(p, '#songShare');
     ok('X: 曲を共有（曲名・公演の間は -）', /^🎥 sailing!! ／ yosugala - 2024\.11\.01「tour2024 aki『春に廻れなかった場所編』Final」@ EX THEATER ROPPONGI #yosugala http:\/\/localhost:\d+\/s\/57\.html\?lib=2024-11-01$/.test(t), t);
-    ok('X の共有ボタンは「曲」「再生位置」「プレイリスト」', await p.evaluate(() => ['songShare', 'posShare', 'plXShare'].map((id) => $(id).textContent.trim()).join(',')) === '曲,再生位置,プレイリスト');
+    ok('X の共有ボタンは「動画」「再生位置」「プレイリスト」', await p.evaluate(() => ['songShare', 'posShare', 'plXShare'].map((id) => $(id).textContent.trim()).join(',')) === '動画,再生位置,プレイリスト');
     const s57 = await p.evaluate(() => items()[1].start);
     await p.evaluate((x) => { window.__t = x + 83; }, s57);
     const tp = await xText(p, '#posShare');
