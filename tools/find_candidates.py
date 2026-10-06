@@ -13,7 +13,7 @@
   --audio のときは、曲の頭の SE・終わりの歓声などを外した範囲を提案する（チャプターより短くするだけ。長くはしない）
 MC の候補:
   曲と曲の間の 30 秒以上の空き（開演前・SE だけのチャプターの時間帯は除く）。名前は「MC①（次の曲のまえ）」
-  --audio のときは、話し声が少ない空きは除き、範囲を話し声のところに縮め、文字起こし（text）を付ける
+  --audio のときは、話し声が少ない空きは除き、文字起こし（text）を付ける。範囲は曲と曲の間のまま（カタログの MC も曲と曲の間すべて）
 すでにカタログにある曲（同じ動画・同じ開始秒）・MC と重なる時間帯・talk_skips の時間帯は候補にしない。
 
 ファイルの形: { "candidates": [ { id, kind, type, title, vid, start, end, date, live, venue, source, text? }, … ] }
@@ -44,11 +44,11 @@ PARAMS = {
     'vad_threshold': 0.5,  # 話し声の判定（Silero VAD）のしきい値
     'mc_min_gap': 30.0,    # 曲と曲の間がこれより短ければ MC の候補にしない
     'mc_talk_ratio': 0.2,  # 空きの中で話し声がこの割合より少なければ MC の候補にしない（--audio のとき）
-    'mc_pad': 1.0,         # MC の範囲を話し声に縮めるときに前後に足す余白
     'trim_max': 900.0,     # 曲の範囲を縮める上限（前後それぞれ）。チャプターの終わりに 10 分を超える MC が入っていることもある
     'trim_keep': 60.0,     # 縮めたあとの曲がこれより短くなるなら縮めない（音楽の判定の失敗とみなす）
     'trim_pad': 1.0,       # 曲の範囲を音楽に縮めるときに前後に足す余白
     'trim_gap': 3.0,       # 曲の中のこれより短い「音楽でない」ところ（ブレイクなど）は曲の一部とみなす
+    'trim_run': 10.0,      # 曲の範囲は、これより長く続く音楽の区間の最初から最後まで（曲の中の話し声の誤判定・短い切れ目で曲が割れても縮めすぎないように）
     'song_min': 90.0,      # 音声だけで曲を探すとき、これより短い音楽の区間は曲にしない
     'song_merge': 6.0,     # 音声だけで曲を探すとき、これより短い切れ目はつなげる
 }
@@ -188,12 +188,14 @@ class Track:
         db = sorted(a['rms_db'])
         ref = db[int(len(db) * 0.9)] if db else 0
         loud = [v >= ref - params['music_db'] for v in a['rms_db']]
-        self.music = smooth([l and fl < params['music_flat'] for l, fl in zip(loud, a['flat'])], params['music_smooth'] / self.hop)
         sp = [False] * len(a['rms_db'])
         for s, e in a['speech']:
             for i in range(int(s / self.hop), min(len(sp), int(e / self.hop) + 1)):
                 sp[i] = True
-        self.talk = smooth([s and not m for s, m in zip(sp, self.music)], params['talk_smooth'] / self.hop)
+        # 話し声は音程があり（平坦さが小さい）、音量も曲より少し小さいだけなので、音量・平坦さだけでは音楽と区別できない。
+        # 話し声の判定（VAD）は歌声をほとんど拾わない（実測で曲の中の 1〜2%）ので、話し声のところは音楽から外す
+        self.talk = smooth(sp, params['talk_smooth'] / self.hop)
+        self.music = smooth([l and fl < params['music_flat'] and not t for l, fl, t in zip(loud, a['flat'], self.talk)], params['music_smooth'] / self.hop)
 
     def idx(self, t):
         return max(0, min(len(self.music), int(round(t / self.hop))))
@@ -226,7 +228,8 @@ def trim_song(track, start, end, params):
     runs = track.runs(track.music, start, end, merge=params['trim_gap'])
     if not runs:
         return start, end
-    best = max(runs, key=lambda r: r[1] - r[0])   # いちばん長く続く音楽の区間を曲とする
+    long_runs = [r for r in runs if r[1] - r[0] >= params['trim_run']] or [max(runs, key=lambda r: r[1] - r[0])]
+    best = [long_runs[0][0], long_runs[-1][1]]
     s = max(start, int(best[0] - params['trim_pad']))
     e = min(end, int(best[1] + params['trim_pad'] + 0.999))
     if s - start > params['trim_max']:
@@ -313,9 +316,6 @@ def build(vid, opts, params=None, known=None):
             if r < params['mc_talk_ratio'] or not r:
                 print(f'  {vid}: {x["start"]}〜{x["end"]} 秒は話し声が少ない（{r:.0%}）ので MC の候補にしません', file=sys.stderr)
                 continue
-            runs = track.runs(track.talk, x['start'], x['end'])
-            x['start'] = max(x['start'], int(runs[0][0] - params['mc_pad']))
-            x['end'] = min(x['end'], int(runs[-1][1] + params['mc_pad'] + 0.999))
             x['talk_ratio'] = round(r, 2)
             kept.append(x)
         talks = kept

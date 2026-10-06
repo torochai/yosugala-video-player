@@ -362,13 +362,22 @@ const TESTS = {
       const plain = run([vid]), audio = run(['--audio', '--no-text', vid]);
       const sum = (cs) => Array.isArray(cs) ? cs.map((c) => `${c.type}:${c.title}:${c.start}-${c.end}`).join(' ') : cs;
       ok('find_candidates: チャプターだけのときは、チャプターの範囲で曲の候補（MC・SE のチャプターは除く）', sum(plain) === 'song:曲A:10-200 song:曲B:200-400', sum(plain));
-      ok('find_candidates: --audio では曲を音楽の区間に縮め、話し声のある空きを MC の候補に（範囲は話し声に縮める）',
-        sum(audio) === 'song:曲A:23-147 mc:MC（曲Bのまえ）:171-228 song:曲B:228-382', sum(audio));
+      ok('find_candidates: --audio では曲を音楽の区間に縮め、話し声のある空きを MC の候補に（範囲は曲と曲の間）',
+        sum(audio) === 'song:曲A:23-147 mc:MC（曲Bのまえ）:147-228 song:曲B:228-382', sum(audio));
       ok('find_candidates: ライブ名・公演日・元のチャプターの範囲・出どころが付く', Array.isArray(audio) && audio[0].live === 'テスト公演' && audio[0].date === '2026-01-02'
         && audio[0].chapter_start === 10 && audio[0].chapter_end === 200 && audio[0].source === 'chapter' && audio[1].talk_ratio > 0.5, audio[0]);
       const quiet = py(['tools/find_candidates.py', '--work', work, '--audio', '--no-text', '--set', 'mc_talk_ratio=0.9', vid]);
       ok('find_candidates: 話し声が少ない空きは MC の候補にしない（しきい値は --set で変えられる）', quiet.status === 0 && !JSON.parse(quiet.stdout).candidates.some((c) => c.type === 'mc')
         && quiet.stderr.includes('話し声が少ない'), quiet.stderr);
+      // 動画 3: 話し声は音程があり大きさも曲に近い（音量・平坦さだけだと音楽に見える）。曲の中に短い話し声の誤判定がある
+      const vid3 = 'TESTVIDEO03';
+      fs.mkdirSync(path.join(work, vid3), { recursive: true });
+      fs.writeFileSync(path.join(work, vid3, 'info.json'), JSON.stringify({ id: vid3, title: '【FULL】テスト公演3 2026.03.04', duration: 300, description: '',
+        chapters: [{ title: '曲C', start: 0, end: 300 }] }));
+      const db3 = Array(600).fill(-40), flat3 = Array(600).fill(0.9);
+      for (const [s, e] of [[20, 180], [200, 290]]) for (let i = s * 2; i < e * 2; i++) { db3[i] = -12; flat3[i] = 0.05; }
+      fs.writeFileSync(path.join(work, vid3, 'analysis.json'), JSON.stringify({ hop: 0.5, vad_threshold: 0.5, rms_db: db3, flat: flat3, speech: [[100, 103], [200, 290]] }));
+      ok('find_candidates: 話し声（VAD）のところは音楽にしない・曲の中の短い話し声で曲を割らない', sum(run(['--audio', '--no-text', vid3])) === 'song:曲C:19-181 mc:MC（曲Cのあと）:181-300', sum(run(['--audio', '--no-text', vid3])));
       // 動画 2: チャプターなし・概要欄にタイムスタンプ
       const vid2 = 'TESTVIDEO02';
       fs.mkdirSync(path.join(work, vid2), { recursive: true });
