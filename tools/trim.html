@@ -112,9 +112,10 @@
   aside.panel { margin-top: 0; padding: 12px; position: sticky; top: 12px; }
   .listhead { display: flex; align-items: center; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-bottom: 8px; }
   /* 並び順の切り替え（名前順・ID順） */
-  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 999px; overflow: hidden; }
-  .seg button { font: inherit; font-size: .76rem; color: var(--muted); background: none; border: 0; padding: 4px 12px; cursor: pointer; }
-  .seg button + button { border-left: 1px solid var(--line-2); }
+  /* 枠の中で、選んでいるものだけを丸いボタンで示す（区切り線や四角い塗りは端がはみ出して見えるので使わない） */
+  .seg { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--line-2); border-radius: 999px; }
+  .seg button { font: inherit; font-size: .76rem; color: var(--muted); background: none; border: 0; border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+  .seg button:hover { color: var(--text); }
   .seg button[aria-pressed="true"] { color: #0a0e24; font-weight: 700; background: linear-gradient(90deg, #6f86ff, #b48cff 55%, var(--dawn)); }
   input[type=search] { width: 100%; font: inherit; color: var(--text); background: rgba(5,6,15,.5); border: 1px solid var(--line-2); border-radius: 999px; padding: 7px 14px; }
   label.f { color: var(--muted); font-size: .8rem; }
