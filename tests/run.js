@@ -184,9 +184,16 @@ const TESTS = {
     ok('X: プレイリストを共有（名前が 」 で終わるときは - の前にスペースなし）', /^📋 2025\.07\.25「tour2025 FINAL」- yosugalaライブ映像プレイリスト \(24曲\) #yosugala http:\/\/localhost:\d+\/#lib=2025-07-25$/.test(await xText(p, '#plXShare')), await xText(p, '#plXShare'));
     await switchPl(p, '__live__:2024-11-01|tour2024 aki「春に廻れなかった場所編」Final'); await p.evaluate(() => playIndex(1)); await wait(300);
     const t = await xText(p, '#songShare');
-    ok('X: 曲を共有', /^🎥 sailing!! ／ yosugala \| 2024\.11\.01「tour2024 aki『春に廻れなかった場所編』Final」@ EX THEATER ROPPONGI #yosugala http:\/\/localhost:\d+\/s\/57\.html\?lib=2024-11-01$/.test(t), t);
+    ok('X: 曲を共有（曲名・公演の間は -）', /^🎥 sailing!! ／ yosugala - 2024\.11\.01「tour2024 aki『春に廻れなかった場所編』Final」@ EX THEATER ROPPONGI #yosugala http:\/\/localhost:\d+\/s\/57\.html\?lib=2024-11-01$/.test(t), t);
+    ok('X の共有ボタンは「曲」「再生位置」「プレイリスト」', await p.evaluate(() => ['songShare', 'posShare', 'plXShare'].map((id) => $(id).textContent.trim()).join(',')) === '曲,再生位置,プレイリスト');
+    const s57 = await p.evaluate(() => items()[1].start);
+    await p.evaluate((x) => { window.__t = x + 83; }, s57);
+    const tp = await xText(p, '#posShare');
+    ok('X: 再生位置を共有（曲の頭からの時刻と、動画の秒 ?t= のリンク）', new RegExp(`^⏱ sailing!! \\(1:23〜\\) ／ yosugala - 2024\\.11\\.01「tour2024 aki『春に廻れなかった場所編』Final」@ EX THEATER ROPPONGI #yosugala http://localhost:\\d+/s/57\\.html\\?lib=2024-11-01&t=${s57 + 83}$`).test(tp), tp);
+    await p.evaluate(() => { window.__t = undefined; switchTo(MV_ID); });
+    ok('X: Music Video のプレイリストは「yosugala映像プレイリスト」', /^📋 Official Music Video - yosugala映像プレイリスト \(\d+曲\) #yosugala /.test(await xText(p, '#plXShare')), await xText(p, '#plXShare'));
     await p.evaluate(() => { state.playlists.push({ id: 'empty', name: '空', author: '', desc: '', items: [] }); switchTo('empty'); });
-    ok('空のプレイリストでは X ボタンを出さない', await p.evaluate(() => $('plXShare').hidden && $('songShare').hidden));
+    ok('空のプレイリストでは X ボタンを出さない', await p.evaluate(() => $('plXShare').hidden && $('songShare').hidden && $('posShare').hidden));
     await close(p);
 
     // 共有リンクで開く: 保存しなくても再生でき、「保存しない」は案内を閉じるだけ
@@ -212,6 +219,21 @@ const TESTS = {
       ok(`曲の案内ページ ${u}`, want(r) && r.url === '', r);
       await close(s);
     }
+    // 再生位置のリンク（s/曲ID.html?t=動画の秒）: その曲を選び、PLAY でその位置から始める
+    const s57start = JSON.parse(fs.readFileSync(path.join(ROOT, 'catalog.json'), 'utf8')).songs.find((x) => x.id === 57).start;
+    const sp = await open(`s/57.html?lib=2024-11-01&t=${s57start + 83}`);
+    const r1 = await sp.evaluate(() => ({ title: $('nowTitle').textContent, url: location.search + location.hash, msg: $('msg').textContent }));
+    await sp.click('#start'); await wait(400);
+    // 最初の PLAY はプレイヤーを作るときの開始秒（playerVars.start）、2 回目からは loadVideoById の開始秒
+    const startSec = (pg) => pg.evaluate(() => (window.__loads.at(-1) || {}).startSeconds ?? window.__cfg.playerVars.start);
+    const load = await startSec(sp);
+    ok('再生位置のリンクで開くと、その曲を選び、PLAY でその位置から再生（URL の ?t= は消す）', r1.title === 'sailing!!' && r1.url === '' && r1.msg.includes('1:23')
+      && load === s57start + 83, { r1, load });
+    await close(sp);
+    const sp2 = await open(`s/57.html?t=1`);
+    await sp2.click('#start'); await wait(400);
+    ok('再生位置が曲の範囲の外なら曲の頭から', (await startSec(sp2)) === s57start && await sp2.evaluate(() => $('nowTitle').textContent === 'sailing!!' && !$('msg').textContent.includes('共有された位置')));
+    await close(sp2);
     const page = fs.readFileSync(path.join(ROOT, 's/57.html'), 'utf8');
     ok('案内ページに X のカード用の情報', page.includes('og:image" content="https://i.ytimg.com/vi/EiobVwTprto/') && page.includes('♫ sailing!! ／ yosugala'));
   },

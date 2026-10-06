@@ -3,6 +3,7 @@
 
 プレーヤーの「この曲を共有」で X に貼るリンク用。X のカードにその曲の YouTube のサムネ・曲名・公演が出て、
 開くとすぐプレーヤーのその曲（../?song=曲ID）に移る。?lib=… が付いていれば、そのプレイリストで開く。
+「再生位置」の共有では ?t=動画の秒 が付き、プレーヤーはその位置から再生する。
 
 使い方（player フォルダで）:
     python3 tools/make_song_pages.py             # サムネの大きい画像があるかを YouTube に確かめる（結果は tools/thumb_cache.json に保存）
@@ -79,10 +80,10 @@ def page(s, thumb):
 <meta name="robots" content="noindex">
 <noscript><meta http-equiv="refresh" content="0; url=../?song={song_key}"></noscript>
 <script>
-  // ?lib=… が付いていればそのプレイリストで、なければ公演のプレイリストでこの曲を開く。
+  // ?lib=… が付いていればそのプレイリストで、なければ公演のプレイリストでこの曲を開く。?t=秒 は再生位置の共有（その位置から再生）。
   // # ではなく ? で渡す（X アプリの中のブラウザは、移るときに # 以降を落とすことがあるため）
-  var lib = new URLSearchParams(location.search).get('lib');
-  location.replace('../?' + (lib ? 'lib=' + encodeURIComponent(lib) + '&' : '') + 'song={song_key}');
+  var q = new URLSearchParams(location.search), lib = q.get('lib'), t = q.get('t');
+  location.replace('../?' + (lib ? 'lib=' + encodeURIComponent(lib) + '&' : '') + 'song={song_key}' + (/^\\d+$/.test(t || '') ? '&t=' + t : ''));
 </script>
 <style>body {{ margin: 0; background: #05060f; color: #e9ecf8; font-family: sans-serif; display: grid; place-items: center; min-height: 100vh; }} a {{ color: #b9cbff; }}</style>
 </head>
