@@ -413,7 +413,7 @@
     <h1><a class="home" href="./" title="トップに戻る">yosugala<span class="sub">Live Video Player</span></a></h1>
     <div class="herotools">
       <a class="trimon" id="trimOn" href="tools/trim.html" hidden title="再生範囲調整ツールで調整した値で再生しています（このブラウザだけ）">調整<span class="tl">値で再生</span>中</a>
-      <a class="gear" href="tools/trim.html" title="再生範囲調整ツール" aria-label="再生範囲調整ツール">
+      <a class="gear" id="trimGear" href="tools/trim.html" title="再生範囲調整ツール" aria-label="再生範囲調整ツール">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </a>
     </div>
@@ -949,6 +949,8 @@ function showNow() {
   $('barTitle').innerHTML = '';
   if (it) { const n = document.createElement('span'); n.className = 'bn'; n.textContent = pad(i + 1);
     $('barTitle').append(n, document.createTextNode(it.title)); }
+  // 再生範囲調整ツールは、今の曲を選んだ状態で開く
+  $('trimGear').href = $('trimOn').href = 'tools/trim.html' + (it ? `?song=${it.sid}` : '');
   document.title = it && started ? `${it.title} - yosugala Live Video Player` : 'yosugala Live Video Player';
   // 再生前の画面の背景: 選んでいる曲（なければ1曲目）の YouTube サムネイル（動画 ID の形を確かめてから URL に入れる）
   const th = [it || list[0]].find((x) => x && /^[\w-]{11}$/.test(x.vid));

@@ -182,6 +182,13 @@ fetch('../catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) =
   // 公演日の順、同じ映像の中は開始の順
   songs = c.songs.slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || a.vid.localeCompare(b.vid) || a.start - b.start);
   renderList(); renderOut();
+  // プレーヤーのギアから開いたとき（?song=曲ID）は、その曲を選んでおく（PC では一覧もその曲までスクロール）
+  const first = songs.find((s) => s.id === +new URLSearchParams(location.search).get('song'));
+  if (first) {
+    select(first);
+    const ol = $('list'), li = ol.querySelector('li.sel');
+    if (li && ol.scrollHeight > ol.clientHeight) ol.scrollTop += li.getBoundingClientRect().top - ol.getBoundingClientRect().top - ol.clientHeight / 3;
+  }
 });
 
 function visible() {

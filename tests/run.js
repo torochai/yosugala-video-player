@@ -329,7 +329,7 @@ const TESTS = {
     const r1 = await range();
     ok('プレーヤーに調整ツールの値が反映され、「調整値で再生中」が出る', r1.s === song.start + 3 && r1.e === song.end - 4 && r1.len === song.len - 7 && r1.is === r1.s && r1.ie === r1.e && r1.on, r1);
     ok('タイトル行の右端に調整ツールへのギア（文字なし）', await pp.evaluate(() => { const g = document.querySelector('.herotools .gear'), h = document.querySelector('.hero').getBoundingClientRect();
-      return g.getAttribute('href') === 'tools/trim.html' && !g.textContent.trim() && Math.abs(g.getBoundingClientRect().right - h.right) < 2
+      return g.getAttribute('href').startsWith('tools/trim.html') && !g.textContent.trim() && Math.abs(g.getBoundingClientRect().right - h.right) < 2
         && $('trimOn').getBoundingClientRect().right <= g.getBoundingClientRect().left; }));
     const tt = await pp.ctx.newPage(); await tt.goto(BASE + 'tools/trim.html'); await tt.waitForFunction(() => $('list').children.length > 0);
     await tt.evaluate((id) => select(songs.find((s) => s.id === id)), song.id); await wait(200); await tt.click('[data-nudge="end"][data-d="5"]'); await wait(300);
@@ -338,7 +338,13 @@ const TESTS = {
     await tt.click('#reset'); await wait(300);
     const r3 = await range();
     ok('調整を取り消すと元の範囲に戻り、「調整値で再生中」も消える', r3.s === song.start && r3.e === song.end && r3.len === song.len && !r3.on, r3);
-    await tt.close(); await close(pp);
+    await tt.close();
+    const sid = await pp.evaluate(() => { playIndex(5); return items()[5].sid; }); await wait(200);
+    await pp.click('#trimGear'); await pp.waitForFunction(() => typeof cur !== 'undefined' && cur);
+    ok('ギアから開くと、再生中の曲が選ばれている（一覧もその曲が見える位置に）', await pp.evaluate((sid) => { const li = document.querySelector('#list li.sel'), ol = $('list');
+      const r = li.getBoundingClientRect(), o = ol.getBoundingClientRect();
+      return cur.id === sid && li.song.id === sid && r.top >= o.top && r.bottom <= o.bottom; }, sid));
+    await close(pp);
     // スマホ: 横にはみ出さず、動画は上に固定
     const m = await open('tools/trim.html', { width: 390, height: 844, mobile: true });
     await m.waitForFunction(() => $('list').children.length > 0);
