@@ -1,6 +1,6 @@
 {
  "updated": "2026-10-06",
- "count": 158,
+ "count": 169,
  "lives": {
   "QUATTRO tour2023": {
    "date": "2023-10-21",
@@ -918,6 +918,19 @@
    "id": 124
   },
   {
+   "song": "No Border",
+   "vid": "T5Bc-3UM4tQ",
+   "start": 0,
+   "end": null,
+   "len": 230,
+   "live": "",
+   "published": "2026-03-18",
+   "kind": "mv",
+   "date": "",
+   "venue": "",
+   "id": 167
+  },
+  {
    "song": "prologue",
    "vid": "Vto5Hc_O7tA",
    "start": 85,
@@ -1121,6 +1134,19 @@
    "venue": "Zepp DiverCity (TOKYO)",
    "no": 28,
    "id": 129
+  },
+  {
+   "song": "YOSUGAL伝説",
+   "vid": "7kH8wRm04Tk",
+   "start": 0,
+   "end": null,
+   "len": 300,
+   "live": "",
+   "published": "2024-08-02",
+   "kind": "mv",
+   "date": "",
+   "venue": "",
+   "id": 161
   },
   {
    "song": "YOSUGAL伝説",
@@ -1456,6 +1482,19 @@
    "venue": "EX THEATER ROPPONGI",
    "no": 2,
    "id": 53
+  },
+  {
+   "song": "アステリズム",
+   "vid": "SfTNNylgDLc",
+   "start": 0,
+   "end": null,
+   "len": 273,
+   "live": "",
+   "published": "2024-12-28",
+   "kind": "mv",
+   "date": "",
+   "venue": "",
+   "id": 162
   },
   {
    "song": "アステリズム",
@@ -1799,6 +1838,19 @@
   },
   {
    "song": "コノユビトマレ",
+   "vid": "a7YLXanvqzM",
+   "start": 0,
+   "end": null,
+   "len": 198,
+   "live": "",
+   "published": "2025-02-04",
+   "kind": "mv",
+   "date": "",
+   "venue": "",
+   "id": 163
+  },
+  {
+   "song": "コノユビトマレ",
    "vid": "9C9p08K1oAA",
    "start": 2244,
    "end": 2439,
@@ -1946,6 +1998,19 @@
    "id": 93
   },
   {
+   "song": "ハルカカナタ",
+   "vid": "ft8-gn79Z9A",
+   "start": 0,
+   "end": null,
+   "len": 243,
+   "live": "",
+   "published": "2025-12-05",
+   "kind": "mv",
+   "date": "",
+   "venue": "",
+   "id": 165
+  },
+  {
    "song": "バカばかC",
    "vid": "0Yq8D6Xib4k",
    "start": 0,
@@ -1989,6 +2054,19 @@
    "id": 32
   },
   {
+   "song": "バニバニラ",
+   "vid": "oSJ_-e7olb8",
+   "start": 0,
+   "end": null,
+   "len": 182,
+   "live": "",
+   "published": "2026-05-06",
+   "kind": "mv",
+   "date": "",
+   "venue": "",
+   "id": 168
+  },
+  {
    "song": "バンド紹介（aspirationのまえ）",
    "vid": "Tv7KrUG9C0Q",
    "start": 778,
@@ -2003,6 +2081,19 @@
    "id": 151
   },
   {
+   "song": "マスカレイドナイト",
+   "vid": "jA99aTT6S58",
+   "start": 0,
+   "end": null,
+   "len": 280,
+   "live": "",
+   "published": "2026-01-13",
+   "kind": "mv",
+   "date": "",
+   "venue": "",
+   "id": 166
+  },
+  {
    "song": "ムチャクチャ",
    "vid": "-ePNHmc5mvY",
    "start": 0,
@@ -2015,6 +2106,19 @@
    "venue": "Spotify O-EAST",
    "no": 2,
    "id": 49
+  },
+  {
+   "song": "ラムネ",
+   "vid": "zslrth1hYyk",
+   "start": 0,
+   "end": null,
+   "len": 211,
+   "live": "",
+   "published": "2026-09-11",
+   "kind": "mv",
+   "date": "",
+   "venue": "",
+   "id": 169
   },
   {
    "song": "会心の一撃",
@@ -2088,6 +2192,19 @@
   },
   {
    "song": "何億分の1を",
+   "vid": "6J_coLTfIi8",
+   "start": 0,
+   "end": null,
+   "len": 250,
+   "live": "",
+   "published": "2025-06-27",
+   "kind": "mv",
+   "date": "",
+   "venue": "",
+   "id": 164
+  },
+  {
+   "song": "何億分の1を",
    "vid": "Tv7KrUG9C0Q",
    "start": 105,
    "end": 352,
@@ -2099,6 +2216,19 @@
    "venue": "Zepp DiverCity (TOKYO)",
    "no": 1,
    "id": 106
+  },
+  {
+   "song": "僕に願いを",
+   "vid": "8qDhe2AEjLo",
+   "start": 0,
+   "end": null,
+   "len": 230,
+   "live": "",
+   "published": "2023-08-21",
+   "kind": "mv",
+   "date": "",
+   "venue": "",
+   "id": 160
   },
   {
    "song": "僕に願いを",
@@ -2288,6 +2418,19 @@
    "venue": "Zepp DiverCity (TOKYO)",
    "no": 19,
    "id": 121
+  },
+  {
+   "song": "夜明けの唄",
+   "vid": "MNeNy5JtJbs",
+   "start": 0,
+   "end": null,
+   "len": 219,
+   "live": "",
+   "published": "2022-12-05",
+   "kind": "mv",
+   "date": "",
+   "venue": "",
+   "id": 159
   },
   {
    "song": "夜明けの唄",

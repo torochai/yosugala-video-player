@@ -74,7 +74,7 @@ const TESTS = {
     const both = await p.evaluate(() => {
       const all = catalogPls.find((q) => q.id === CATALOG_ID).all.filter((x) => infoOf(x).date === '2024-02-18' && x.title === 'ソラノナミダ').map((x) => infoOf(x).kind);
       const live = catalogPls.find((q) => q.id === '__live__:2024-02-18|progress the night -LIQUIDROOM-').all.filter((x) => x.title === 'ソラノナミダ').map((x) => infoOf(x).kind);
-      return { all, live, total: catalogPls.find((q) => q.id === CATALOG_ID).all.length, catalog: catalog.songs.filter((x) => x.type !== 'mc').length };
+      return { all, live, total: catalogPls.find((q) => q.id === CATALOG_ID).all.length, catalog: catalog.songs.filter((x) => x.type !== 'mc' && x.kind !== 'mv').length };
     });
     ok('すべてのライブ映像にはフルライブ映像のチャプターと単独映像の両方、公演のプレイリストはフルライブ映像のチャプター',
       both.all.sort().join() === 'full,single' && both.live.join() === 'full' && both.total === both.catalog, both);
@@ -91,6 +91,32 @@ const TESTS = {
       const m = items()[i]; $('playLive').click();
       const it = items()[curIndex()]; return { pl: pl().id, title: it.title, after: it.start >= m.end - 5 && it.vid === m.vid, show: !$('playOther').hidden };
     });
+    const mv = await p.evaluate(() => {
+      const ids = catalog.songs.filter((x) => x.kind === 'mv').map((x) => x.id), q = catalogPls.find((x) => x.id === MV_ID);
+      const inSongs = catalogPls.filter((x) => x.id !== MV_ID).some((x) => x.all.some((i) => ids.includes(i.sid)));
+      const pub = q.all.map((i) => infoOf(i).published);
+      switchTo(MV_ID); playIndex(0);
+      return { name: q.name, n: q.all.length, all: ids.length, inSongs, sorted: pub.every((d, i) => !i || pub[i - 1] <= d),
+        live: $('nowLive').textContent, acts: $('playLive').hidden && $('playOther').hidden };
+    });
+    ok('「Official Music Video」に MV だけが公開日順に入り、曲の一覧には入らない（再生中は公開日と「Music Video」、「この公演の続き」「別公演の同じ曲」は出さない）', mv.name === 'Official Music Video' && mv.n === mv.all && mv.n > 0
+      && !mv.inSongs && mv.sorted && /^公開日: \d{4}\.\d\d\.\d\dMusic Video$/.test(mv.live) && mv.acts, mv);
+    // 「MCあり」: 公演日順・公演のプレイリストに MC を公演の流れのとおりに入れる（チェックは曲数の行の右端。このブラウザに覚えておく）
+    const mco = await p.evaluate(() => {
+      const L = catalogPls.find((x) => x.id.startsWith('__live__:2024-11-01'));
+      switchTo(L.id); const before = items().length, shown = !$('mcOptWrap').hidden;
+      $('mcOpt').click();
+      const list = items(), i = list.findIndex((x) => infoOf(x).type === 'mc');
+      const prev = list[i - 1], mc = list[i], nxt = list[i + 1];
+      const r = { shown, before, after: list.length, inOrder: prev.vid === mc.vid && prev.start <= mc.start && nxt.start >= mc.end - 5,
+        meta: $('plMeta').textContent, saved: JSON.parse(localStorage.getItem('yosugala-live-selection-v1')).withMc };
+      switchTo(CATALOG_ID); r.hiddenOnTitle = $('mcOptWrap').hidden && items().every((x) => infoOf(x).type !== 'mc');
+      switchTo(CATALOG_DATE_ID); r.dateHasMc = items().some((x) => infoOf(x).type === 'mc');
+      $('mcOpt').click(); r.dateOff = items().every((x) => infoOf(x).type !== 'mc');
+      return r;
+    });
+    ok('「MCあり」で公演のプレイリスト・公演日順に MC が流れのとおりに入る（曲名順には入らない。外すと元に戻る）', mco.shown && mco.after > mco.before && mco.inOrder
+      && mco.saved === true && mco.meta.startsWith(`${mco.after} `) && mco.hiddenOnTitle && mco.dateHasMc && mco.dateOff, mco);
     ok('MC から「この公演の続き」で、その MC のあとの曲へ', cont.pl.startsWith('__live__:2024-11-01') && cont.after, cont);
     ok('カタログのプレイリストができる', r.lib > 5, r.lib);
     ok('URL で曲を追加する画面はない', await p.evaluate(() => !document.getElementById('addSong') && !document.getElementById('songDlg')));

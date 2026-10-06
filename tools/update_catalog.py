@@ -13,11 +13,16 @@
 - 最後に tools/make_song_pages.py で曲ごとの案内ページ（s/）も作り直す
 必要なもの: yt-dlp
 """
-import json, os, re, subprocess, sys, time, datetime
+import json, os, re, subprocess, sys, time, datetime, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 CHANNEL = 'https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q'
+# Official Music Video: 公式チャンネルの再生リスト「MusicVideo」の動画と、タイトルがちょうど「yosugala - 曲名」の動画
+# （再生リストに入っていない新しい MV もあるため。メイキング・ティーザーなどはタイトルに【】「」などが付くので入らない）
+MV_PLAYLIST = 'https://www.youtube.com/playlist?list=PLmu11HkWPvmbgMpfY4vZ7KVy67l7YyXJk'
+MV_TITLE_RE = re.compile(r'^\s*yosugala\s*[-‐－–—]\s*[^【】\[\]「」『』()（）|｜]+$', re.I)
+CHANNEL_ID = 'UCP5_IRli-KbizrztKSmgh8Q'
 CACHE = os.path.join(HERE, 'video_cache.json')
 OVERRIDES = os.path.join(HERE, 'catalog_overrides.json')
 OUT = os.path.join(ROOT, 'catalog.json')
@@ -149,8 +154,42 @@ def main():
                 sys.exit(f'動画一覧を取得できませんでした: {e}')
     # 「動画」と「ライブ」の両方の一覧に載っている動画は1本にまとめる（曲が二重に登録されないように）
     entries = list({e['id']: e for e in entries}.values())
-    lives = [e for e in entries if LIVE_RE.search(e.get('title', '')) and e['id'] not in exclude_videos]
+    lives = [e for e in entries if LIVE_RE.search(e.get('title', '')) and e['id'] not in exclude_videos and not cache.get(e['id'], {}).get('mv')]
     print(f'ライブ映像: {len(lives)} 本（うち新しく情報を取得するもの: {sum(1 for e in lives if e["id"] not in cache)} 本）')
+    # Official Music Video: 再生リスト「MusicVideo」の動画（video_cache.json では mv: true の印を付けて覚えておく）
+    if OFFLINE:
+        mvs = [{'id': vid, 'title': info['title']} for vid, info in cache.items() if info.get('mv')]
+    else:
+        try:
+            mvs = [e for e in (ytdlp_json(['--flat-playlist', MV_PLAYLIST]).get('entries') or []) if e]
+        except RuntimeError as e:
+            print(f'Music Video の一覧を取得できませんでした（前回の分を使います）: {e}')
+            mvs = [{'id': vid, 'title': info['title']} for vid, info in cache.items() if info.get('mv')]
+        mvs += [e for e in entries if MV_TITLE_RE.match(e.get('title') or '')]
+        mvs = list({e['id']: e for e in mvs}.values())
+    mvs = [e for e in mvs if e['id'] not in exclude_videos]
+    print(f'Music Video: {len(mvs)} 本（うち新しく情報を取得するもの: {sum(1 for e in mvs if e["id"] not in cache)} 本）')
+
+    # Music Video はチャプターがいらないので、1本ずつ取得せず、再生リストのタイトル・長さと RSS の公開日で覚えておく
+    # （1本ずつの取得は YouTube のボット確認で止められやすいため）
+    new_mv = [e for e in mvs if e['id'] not in cache]
+    if new_mv:
+        # 公開日: 再生リストとチャンネルの RSS（どちらも新しい 15 本まで）から、日本時間の日付で
+        pub = {}
+        for feed in (f'playlist_id={MV_PLAYLIST.split("list=")[1]}', f'channel_id={CHANNEL_ID}'):
+            try:
+                with urllib.request.urlopen(f'https://www.youtube.com/feeds/videos.xml?{feed}', timeout=30) as r:
+                    xml = r.read().decode('utf-8')
+                for v, d in re.findall(r'<yt:videoId>([^<]+)</yt:videoId>.*?<published>([^<]+)</published>', xml, re.S):
+                    t = datetime.datetime.fromisoformat(d.replace('Z', '+00:00')).astimezone(datetime.timezone(datetime.timedelta(hours=9)))
+                    pub[v] = t.strftime('%Y%m%d')
+            except Exception as err:
+                print(f'  Music Video の公開日を取得できませんでした: {err}')
+        for e in new_mv:
+            cache[e['id']] = {'title': e.get('title', ''), 'duration': e.get('duration'), 'upload_date': pub.get(e['id']), 'chapters': [], 'mv': True}
+            print(f'  取得（Music Video）: {cache[e["id"]]["title"][:60]}')
+    for e in mvs:
+        cache[e['id']]['mv'] = True
 
     for i, e in enumerate(lives):
         vid = e['id']
@@ -172,6 +211,8 @@ def main():
         with open(CACHE, 'w', encoding='utf-8') as f:
             json.dump(cache, f, ensure_ascii=False, indent=1)
         time.sleep(2)   # 連続アクセスを避ける
+    with open(CACHE, 'w', encoding='utf-8') as f:   # mv の印を付け足したときのため
+        json.dump(cache, f, ensure_ascii=False, indent=1)
 
     songs = []
     for e in lives:
@@ -199,6 +240,15 @@ def main():
                               'live': live, 'tdate': title_date(title), 'published': published, 'kind': 'full', 'type': 'mc'})
         else:
             print(f'  曲に分けられない動画をスキップ: {title[:60]}')
+    # Official Music Video は1曲として（kind = 'mv'）。曲名はタイトルの「yosugala - 曲名」から
+    for e in mvs:
+        info = cache.get(e['id'])
+        if not info:
+            continue
+        song = re.sub(r'^\s*yosugala\s*[-‐－–—]\s*', '', info['title'], flags=re.I)
+        song = re.sub(r'\s*[\[［(（【][^\]］)）】]*(mv|music video)[^\]］)）】]*[\]］)）】]\s*$', '', song, flags=re.I).strip()
+        songs.append({'song': song, 'vid': e['id'], 'start': 0, 'end': None, 'len': info['duration'],
+                      'live': '', 'tdate': '', 'published': iso(info.get('upload_date')), 'kind': 'mv'})
 
     out = []
     for s in songs:
@@ -290,7 +340,8 @@ def main():
                   f, ensure_ascii=False, indent=1)
     names = sorted({s['song'] for s in out if s.get('type') != 'mc'}, key=str.casefold)
     mc = [x for x in out if x.get('type') == 'mc']
-    print(f'catalog.json を更新しました: 全 {len(out)} 件（{len(names)} 曲' + (f'・MC {len(mc)} 件' if mc else '') + '）')
+    mv = [x for x in out if x['kind'] == 'mv']
+    print(f'catalog.json を更新しました: 全 {len(out)} 件（{len(names)} 曲' + (f'・MC {len(mc)} 件' if mc else '') + (f'・Music Video {len(mv)} 本' if mv else '') + '）')
     print('曲名一覧: ' + ' / '.join(names))
     # 曲ごとの案内ページ（X で曲を共有したときのリンク先）もカタログに合わせて作り直す
     sys.path.insert(0, HERE); sys.dont_write_bytecode = True

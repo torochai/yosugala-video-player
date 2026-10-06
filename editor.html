@@ -487,10 +487,10 @@ function renderList() {
     li.innerHTML = '<span class="badge changed"></span><span class="badge"></span><div class="t"></div><div class="m"></div>';
     li.querySelector('.badge.changed').textContent = dropped(s) ? '' : anyChanged(s) ? '調整済み' : '';
     const b = li.querySelector('.badge:not(.changed)');
-    b.textContent = dropped(s) ? '不要' : isCand(s) ? candLabel(s) : s.kind === 'single' ? '単独映像' : '';
+    b.textContent = dropped(s) ? '不要' : isCand(s) ? candLabel(s) : s.kind === 'single' ? '単独映像' : s.kind === 'mv' ? 'MV' : s.type === 'mc' ? 'MC' : '';
     b.classList.toggle('drop', dropped(s));
     li.querySelector('.t').textContent = idText(s);
-    li.querySelector('.m').textContent = `${dot(s.date)} ${s.live || ''} ・ ${fmt(v.start)}〜${endText(v.end)}`;
+    li.querySelector('.m').textContent = `${s.kind === 'mv' ? 'Music Video ' + dot(s.published) : dot(s.date) + ' ' + (s.live || '')} ・ ${fmt(v.start)}〜${endText(v.end)}`;
     li.addEventListener('click', () => { select(s); if (matchMedia('(max-width: 900px)').matches) scrollTo({ top: 0, behavior: 'smooth' }); });
     ol.appendChild(li);
   });
@@ -504,8 +504,8 @@ const idText = (s) => (isCand(s) ? nameOf(s) : `${nameOf(s)}（ID ${s.id}）`); 
 function select(s, how = 'play') {
   cur = s;
   $('curTitle').textContent = idText(s);
-  $('curSub').textContent = `${dot(s.date)} ${s.live || ''}${s.venue ? ' @ ' + s.venue : ''}`;
-  for (const t of [s.kind === 'single' ? '単独映像' : 'フルライブ映像', isCand(s) ? candLabel(s) : '', dropped(s) ? '不要' : '']) {
+  $('curSub').textContent = s.kind === 'mv' ? `${dot(s.published)} 公開` : `${dot(s.date)} ${s.live || ''}${s.venue ? ' @ ' + s.venue : ''}`;
+  for (const t of [s.kind === 'single' ? '単独映像' : s.kind === 'mv' ? 'Music Video' : 'フルライブ映像', s.type === 'mc' && !isCand(s) ? 'MC' : '', isCand(s) ? candLabel(s) : '', dropped(s) ? '不要' : '']) {
     if (!t) continue;
     const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = t; $('curSub').appendChild(tag);
   }

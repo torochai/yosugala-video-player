@@ -50,6 +50,8 @@ def page(s, thumb):
     where = dot(s.get('date')) + quote_live(s.get('live'))
     if s.get('venue'):
         where += f'@ {s["venue"]}'
+    if s.get('kind') == 'mv':
+        where = 'Official Music Video'
     title = f'♫ {song} ／ yosugala'
     desc = f'{where} ｜ yosugala Live Video Player' if where else 'yosugala Live Video Player'
     url = f'{SITE}s/{sid}.html'

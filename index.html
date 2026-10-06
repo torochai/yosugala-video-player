@@ -246,6 +246,10 @@
   .pinfo > div:first-child { min-width: 0; flex: 1 1 11em; }
   /* 曲数と作成者は1行に並べる（入りきらないときだけ折り返す） */
   .pinfo > div:first-child { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 14px; }
+  /* 「MCあり」は曲数の行の右端 */
+  .mcopt { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: .78rem; cursor: pointer; white-space: nowrap; }
+  .mcopt[hidden] { display: none; }
+  .mcopt input { accent-color: var(--moon); margin: 0; }
   /* 1行目: 曲数・作成者、2行目: ボタン列（右寄せ）。PC でもスマホでも同じ2行にする */
   .pactions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; width: 100%; }
   .pl-label { color: var(--muted); font-size: .72rem; letter-spacing: .08em; margin-bottom: -4px; }
@@ -528,6 +532,8 @@
         <div class="pinfo">
           <div>
             <div class="meta" id="plMeta"></div>
+            <!-- 公演日順・公演のプレイリストで、フルライブ映像の MC も入れて流す（このブラウザに覚えておく） -->
+            <label class="mcopt" id="mcOptWrap" hidden><input type="checkbox" id="mcOpt"> MCあり</label>
             <div class="author" id="plAuthor" hidden></div>
           </div>
           <div class="pactions">
@@ -775,6 +781,7 @@ function save() {
 const CATALOG_ID = '__catalog__';             // すべてのライブ映像 - 曲名順（以前からの ID のまま）
 const CATALOG_DATE_ID = '__catalog_date__';   // すべてのライブ映像 - 公演日順
 const SINGLES_ID = '__catalog_singles__';     // Official Live Video - 公開日順（単独で公開された映像だけ・古い順）
+const MV_ID = '__catalog_mv__';               // Official Music Video（catalog.json の kind = "mv"）
 const MC_ID = '__catalog_mc__';               // ライブMC集（メンバーが話している区間。catalog.json の type = "mc"）
 const LIVE_ID = '__live__:';                  // 公演ごと: LIVE_ID + 公演日 + '|' + 公演名
 let catalog = null, catalogAll = [], catalogPls = [], catQuery = '', lastTarget = null;
@@ -812,7 +819,7 @@ function applyTrim() {
   // 作ってあるプレイリスト・ライブ映像の一覧の曲にも反映する
   const sync = (it) => { const x = songById.get(it.sid); if (x) Object.assign(it, { start: x.start, end: x.end, len: x.len ?? null, title: x.song }); };
   state.playlists.forEach((p) => p.items.forEach(sync));
-  catalogPls.forEach((p) => p.all.forEach(sync));
+  catalogPls.forEach((p) => p.lists.forEach((l) => l.forEach(sync)));
 }
 window.addEventListener('storage', (e) => { if (catalog && (e.key === TRIM_KEY || e.key === TITLE_KEY || e.key === null)) { applyTrim(); renderAll(); } });
 window.addEventListener('pageshow', (e) => { if (catalog && e.persisted) { applyTrim(); renderAll(); } });   // 調整ツールから戻るボタンで戻ったとき
@@ -825,11 +832,14 @@ const CAT_HELP = '曲の右の「＋」、または「選択」でチェック�
 // tools = true のもの（すべてのライブ映像の2つ）だけ、曲名・ライブ名で絞り込める。
 // それ以外（Official Live Video・公演ごと）はトロ's セレクションと同じ、ふつうの読み取り専用プレイリスト
 // （「＋」と「選択」はどのプレイリストでも使える）
-function catalogPlaylist(id, name, all, desc, tools = false, live = false) {
+// withMc: 「MCあり」のときの並び（MC を入れたもの）。あるプレイリストだけ「MCあり」のチェックを出す
+function catalogPlaylist(id, name, base, desc, tools = false, live = false, withMc = null) {
   return {
-    id, name, all, desc, readonly: true, catalog: tools, live, author: '',
+    id, name, desc, readonly: true, catalog: tools, live, author: '',
+    hasMc: !!withMc, lists: withMc ? [base, withMc] : [base],
+    get all() { return withMc && state.withMc ? withMc : base; },
     get items() {
-      const q = normq(catQuery).trim();
+      const all = this.all, q = normq(catQuery).trim();
       if (!tools || !q) return all;
       return all.filter((it) => { const x = infoOf(it); return normq(`${it.title} ${SONG_READINGS[it.title] || ''} ${x.live || it.live} ${x.date || ''} ${x.venue || ''}`).includes(q); });
     },
@@ -846,27 +856,43 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   save(); showSharedBanner();
   // 同じ公演・同じ曲にフルライブ映像のチャプターと単独映像があるときは、どちらも一覧に出す。
   // MC（type = "mc"）は曲の一覧・公演のプレイリストには入れず、「MC - 公演日順」にだけ入れる
-  const isMc = (x) => x.type === 'mc';
-  const visible = c.songs.filter((x) => !isMc(x));
+  // Official Music Video（kind = "mv"）も、曲の一覧には入れず「Official Music Video」にだけ入れる
+  const isMc = (x) => x.type === 'mc', isMv = (x) => x.kind === 'mv';
+  const visible = c.songs.filter((x) => !isMc(x) && !isMv(x));
   const toItem = (x) => songRow(x.id, `c:${x.id}`);
   catalogAll = visible.map(toItem);   // catalog.json の並び = 曲名順（同じ曲の中は公演日の古い順）
   // 公演日順: 公演日の古い順、同じ公演の中はセットリスト順（公演日が分からないものは最後に公開日順）
   const byLive = (a, b) => (a.date || '9999').localeCompare(b.date || '9999') || (a.no ?? 999) - (b.no ?? 999) || a.published.localeCompare(b.published);
-  const byDate = [...visible].sort(byLive).map(toItem);
+  const byDate = [...visible].sort(byLive);
+  // 「MCあり」: MC を、同じ映像の中で MC より前に始まる最後の曲のすぐあとに入れる（公演の流れのとおりに聞ける）
+  const mcSongs = c.songs.filter(isMc).sort((a, b) => a.vid.localeCompare(b.vid) || a.start - b.start);
+  const withMcOf = (list) => {
+    const out = list.slice();
+    mcSongs.forEach((m) => {
+      let at = -1;
+      out.forEach((x, i) => { if (x.vid === m.vid && x.start <= m.start) at = i; });
+      if (at >= 0) out.splice(at + 1, 0, m);
+    });
+    return out.length > list.length ? out.map(toItem) : null;
+  };
   const about = `yosugala official の公式ライブ映像を、曲ごとに分けた一覧です（${catalogAll.length} 件・${c.updated} 時点）。新しい公式ライブ映像が出たら追加していきます。`;
   catalogPls = [
     catalogPlaylist(CATALOG_ID, 'すべてのライブ映像 - 曲名順', catalogAll, `${about}\n曲名の順に並べています。${CAT_HELP}`, true),
-    catalogPlaylist(CATALOG_DATE_ID, 'すべてのライブ映像 - 公演日順', byDate, `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。${CAT_HELP}`, true),
+    catalogPlaylist(CATALOG_DATE_ID, 'すべてのライブ映像 - 公演日順', byDate.map(toItem), `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。「MCあり」にすると、フルライブ映像の MC も公演の流れのとおりに入ります。${CAT_HELP}`, true, false, withMcOf(byDate)),
   ];
   // Official Live Video: 1曲ずつ公開された映像（フルライブ映像から切り出したものは入れない）を公開日の古い順に
   const singles = visible.filter((x) => x.kind === 'single')
     .sort((a, b) => a.published.localeCompare(b.published) || a.song.localeCompare(b.song)).map(toItem);
   catalogPls.push(catalogPlaylist(SINGLES_ID, 'Official Live Video - 公開日順', singles,
     `yosugala official が1曲ずつ公開している公式ライブ映像（Official Live Video）を、公開日の古い順に並べています（${singles.length} 本・${c.updated} 時点）。フルライブ映像から切り出した曲は入っていません。`));
+  // Official Music Video: 公開日の古い順
+  const mvs = c.songs.filter(isMv).sort((a, b) => a.published.localeCompare(b.published) || a.song.localeCompare(b.song)).map(toItem);
+  if (mvs.length) catalogPls.push(catalogPlaylist(MV_ID, 'Official Music Video', mvs,
+    `yosugala official の Music Video を、公開日の古い順に並べています（${mvs.length} 本・${c.updated} 時点）。`));
   // MC: 公演日の古い順、同じ映像の中は時間の順
-  const mcs = c.songs.filter(isMc).sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999') || a.vid.localeCompare(b.vid) || a.start - b.start).map(toItem);
-  if (mcs.length) catalogPls.push(catalogPlaylist(MC_ID, 'ライブMC集', mcs,
-    `フルライブ映像の中で、メンバーが話している区間（MC）を集めたものです（${mcs.length} 件・${c.updated} 時点）。公演日の古い順に並べています。名前の「（○○のまえ）」は、その MC のあとに歌った曲です。`));
+  const talks = c.songs.filter(isMc).sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999') || a.vid.localeCompare(b.vid) || a.start - b.start).map(toItem);
+  if (talks.length) catalogPls.push(catalogPlaylist(MC_ID, 'ライブMC集', talks,
+    `フルライブ映像の中で、メンバーが話している区間（MC）を集めたものです（${talks.length} 件・${c.updated} 時点）。公演日の古い順に並べています。名前の「（○○のまえ）」は、その MC のあとに歌った曲です。`));
   // 公演ごと（公演日が分かるものだけ）。新しい公演が上
   //   フルライブ映像がある公演は、フルライブ映像のチャプターだけをその順に（単独映像と重なるチャプターも使う）
   //   フルライブ映像がない公演は、単独映像をセットリスト順に
@@ -885,7 +911,7 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
       // 公演情報: ◻️ 公演名 / ◻️ 公演日 / ◻️ 会場 のあとにセットリスト（見出しと字下げはセットリストと同じ形。プレイリストの説明文は入れない）
       [['公演名', quoteLive(live)], ['公演日', dotDate(date)], ['会場', venue]].filter(([, v]) => v)
         .map(([k, v]) => `◻️ ${k}\n　${v}`).join('\n\n')
-      + setlistText((c.lives || {})[live], full.length ? null : new Set(list.map((x) => x.song))), false, true));
+      + setlistText((c.lives || {})[live], full.length ? null : new Set(list.map((x) => x.song))), false, true, withMcOf(list)));
   });
   renderAll(); openSharedLib(); applyResume();
 }).catch(() => { $('msg').textContent = 'ライブ映像の一覧を読み込めませんでした。ページを再読み込みしてください。'; });
@@ -935,10 +961,10 @@ let backStack = [];
 const items = () => pl().items;
 const curIndex = () => items().findIndex((it) => it.id === curId);
 
-// 映像の種類のバッジ: フルライブ映像から切り出した曲は「フルライブ映像より」、1曲ずつ公開された映像は「単独映像」
+// 映像の種類のバッジ: フルライブ映像から切り出した曲は「フルライブ映像より」、1曲ずつ公開された映像は「単独映像」、Music Video は「Music Video」
 // （catalog.json の kind で決める。開始を調整した単独映像も「単独映像」）
 function kindTag(it) {
-  const k = infoOf(it).kind, text = k === 'full' ? 'フルライブ映像より' : k === 'single' ? '単独映像' : '';
+  const k = infoOf(it).kind, text = k === 'full' ? 'フルライブ映像より' : k === 'single' ? '単独映像' : k === 'mv' ? 'Music Video' : '';
   if (!text) return null;
   const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = text;
   return tag;
@@ -950,16 +976,17 @@ function showNow() {
   $('songShare').hidden = !it; $('plXShare').hidden = !list.length;
   // 「この公演の続きを再生」「別公演の同じ曲を再生」（公演のプレイリストがない・ほかの公演にない曲では出さない）
   const lp = it && livePlOf(it);
-  $('playLive').hidden = !lp || lp === pl();
-  $('playOther').hidden = !it || !otherVersions(it).length;
+  const mv = it && infoOf(it).kind === 'mv';   // Music Video からはどちらも出さない（MV は Official Music Video だけ）
+  $('playLive').hidden = mv || !lp || lp === pl();
+  $('playOther').hidden = !it || mv || !otherVersions(it).length;
   $('playBack').hidden = !backStack.length;
   $('nowActs').hidden = $('playLive').hidden && $('playOther').hidden && $('playBack').hidden;
   // ライブ名と公演日・会場名（分かるものだけ）
   // 「公演日: YYYY.MM.DD 「ライブ名」 @ 会場名」（間は半角スペース。分からないものは省く）
   // ライブ名は「」で囲む（中にある「」は『』にする）
   const x = it ? infoOf(it) : {};
-  $('nowLive').textContent = it ? [x.date ? `公演日: ${dotDate(x.date)}` : '', quoteLive(x.live || it.live), x.venue ? `@ ${x.venue}` : '']
-    .filter(Boolean).join(' ') : '';
+  $('nowLive').textContent = !it ? '' : x.kind === 'mv' ? (x.published ? `公開日: ${dotDate(x.published)}` : '')
+    : [x.date ? `公演日: ${dotDate(x.date)}` : '', quoteLive(x.live || it.live), x.venue ? `@ ${x.venue}` : ''].filter(Boolean).join(' ');
   if (it) { const tag = kindTag(it); if (tag) $('nowLive').appendChild(tag); }   // 映像の種類のバッジ（フルライブ映像より／単独映像）
   $('barTitle').innerHTML = '';
   if (it) { const n = document.createElement('span'); n.className = 'bn'; n.textContent = pad(i + 1);
@@ -1292,6 +1319,7 @@ const quoteLive = (live) => live ? `「${live.replace(/「/g, '『').replace(/�
 // 曲の行のライブ表示「YYYY.MM.DD「ライブ名」 @ 会場名」（カタログにある曲は、カタログの公演日・ライブ名・会場名を使う）
 function liveLine(it) {
   const x = infoOf(it);
+  if (x.kind === 'mv') return x.published ? `${dotDate(x.published)} 公開` : '';   // Music Video は公開日
   return [(x.date ? dotDate(x.date) : '') + quoteLive(x.live || it.live), x.venue ? `@ ${x.venue}` : ''].filter(Boolean).join(' ');
 }
 // PC では曲リストを20曲分の高さまでにして、それ以上は枠の中でスクロールする
@@ -1327,6 +1355,7 @@ function renderList() {
   const unknown = list.some((it) => itemLen(it) == null);
   const cat = !!pl().catalog;
   $('plMeta').textContent = `${list.length} ${cat ? '件' : '曲'}` + (list.length ? ` ・ 約 ${fmt(total)}${unknown ? ' 以上' : ''}` : '');
+  $('mcOptWrap').hidden = !pl().hasMc; $('mcOpt').checked = !!state.withMc;
   if (!list.length) {
     const li = document.createElement('li'); li.className = 'empty';
     li.textContent = cat ? '見つかりませんでした。' : editing ? '「＋ ライブ映像から選ぶ」から曲を追加してください。' : '曲がありません。「編集」から曲を追加できます。';
@@ -1606,6 +1635,7 @@ $('playBack').addEventListener('click', () => {
   renderAll(); playIndex(i);
 });
 const NEW_ID = '__new__';
+$('mcOpt').addEventListener('change', () => { state.withMc = $('mcOpt').checked; save(); renderAll(); });
 $('plSelect').addEventListener('change', (e) => {
   if (e.target.value !== NEW_ID) { backStack = []; return switchTo(e.target.value); }
   // 「＋ 新規作成」: 名前を聞いて空のプレイリストを作り、そのまま編集モードにする（キャンセルなら元の選択に戻す）
@@ -1683,7 +1713,7 @@ function songLink(it) {
 // 「🎥 曲名 ／ yosugala | 公演日「公演名」@ 会場名 #yosugala リンク」（分からないものは省く）
 function songShareText(it) {
   const x = infoOf(it), live = quoteLive(x.live || it.live);
-  const where = [(x.date ? dotDate(x.date) : '') + live, x.venue ? `@ ${x.venue}` : ''].filter(Boolean).join('');
+  const where = x.kind === 'mv' ? 'Official Music Video' : [(x.date ? dotDate(x.date) : '') + live, x.venue ? `@ ${x.venue}` : ''].filter(Boolean).join('');
   return `🎥 ${it.title} ／ yosugala${where ? ' | ' + where : ''} #yosugala ${songLink(it)}`;
 }
 // 「📋 プレイリスト名 - yosugalaライブ映像プレイリスト (N曲) by 作成者 #yosugala リンク」
