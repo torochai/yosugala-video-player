@@ -189,7 +189,7 @@ const TESTS = {
     const s57 = await p.evaluate(() => items()[1].start);
     await p.evaluate((x) => { window.__t = x + 83; }, s57);
     const tp = await xText(p, '#posShare');
-    ok('X: 再生位置を共有（曲の頭からの時刻と、動画の秒 ?t= のリンク）', new RegExp(`^⏱ sailing!! \\(1:23〜\\) ／ yosugala - 2024\\.11\\.01「tour2024 aki『春に廻れなかった場所編』Final」@ EX THEATER ROPPONGI #yosugala http://localhost:\\d+/s/57\\.html\\?lib=2024-11-01&t=${s57 + 83}$`).test(tp), tp);
+    ok('X: 再生位置を共有（曲の頭からの時刻と、動画の秒 ?t= のリンク）', new RegExp(`^🎥 sailing!! \\(1:23〜\\) ／ yosugala - 2024\\.11\\.01「tour2024 aki『春に廻れなかった場所編』Final」@ EX THEATER ROPPONGI #yosugala http://localhost:\\d+/s/57\\.html\\?lib=2024-11-01&t=${s57 + 83}$`).test(tp), tp);
     await p.evaluate(() => { window.__t = undefined; switchTo(MV_ID); });
     ok('X: Music Video のプレイリストは「yosugala映像プレイリスト」', /^📋 Official Music Video - yosugala映像プレイリスト \(\d+曲\) #yosugala /.test(await xText(p, '#plXShare')), await xText(p, '#plXShare'));
     await p.evaluate(() => { state.playlists.push({ id: 'empty', name: '空', author: '', desc: '', items: [] }); switchTo('empty'); });

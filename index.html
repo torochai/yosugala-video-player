@@ -1719,9 +1719,9 @@ function songWhere(it) {
 function songShareText(it) {
   return `🎥 ${it.title} ／ yosugala${songWhere(it)} #yosugala ${songLink(it)}`;
 }
-// 再生位置: 「⏱ 曲名 (1:23〜) ／ yosugala - 公演日「公演名」@ 会場名 #yosugala リンク」（時刻は曲の頭から）
+// 再生位置: 「🎥 曲名 (1:23〜) ／ yosugala - 公演日「公演名」@ 会場名 #yosugala リンク」（時刻は曲の頭から）
 function posShareText(it, t) {
-  return `⏱ ${it.title} (${fmt(t - it.start)}〜) ／ yosugala${songWhere(it)} #yosugala ${songLink(it, t)}`;
+  return `🎥 ${it.title} (${fmt(t - it.start)}〜) ／ yosugala${songWhere(it)} #yosugala ${songLink(it, t)}`;
 }
 // 共有する再生位置（動画の秒）: 再生中ならいまの位置、まだなら「続きから」の位置、なければ曲の頭
 function sharePos(it) {
