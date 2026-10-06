@@ -347,6 +347,17 @@ const TESTS = {
     ok('登録済みの曲では種類（曲 / MC）の切り替えは出さない', await p.evaluate(() => getComputedStyle($('typeSeg')).display === 'none' && $('dropToggle').hidden));
     ok('元のタイトルに戻すと titles から消える', await p.evaluate(() => !JSON.parse($('out').value).titles));
     ok('一覧に「調整済み」', await p.evaluate(() => $('list').querySelector('li.sel .badge.changed').textContent === '調整済み'));
+    // シークバーの目盛りは、調整しても変わらない（範囲の外に出たときだけ広げる）
+    const plain = all.find((s) => s.kind === 'full' && !('chapter_start' in s) && !('chapter_end' in s));
+    await p.evaluate((id) => select(songs.find((s) => s.id === id)), plain.id); await wait(200);
+    const w0 = await p.evaluate(() => [+$('seek').min, +$('seek').max]);
+    await p.evaluate(() => { window.__t = cur.end - 30; }); await p.click('#setEnd');
+    await p.evaluate(() => { window.__t = cur.start + 10; }); await p.click('#setStart');
+    const w1 = await p.evaluate(() => [+$('seek').min, +$('seek').max]);
+    await p.evaluate(() => { window.__t = cur.end + 40; }); await p.click('#setEnd');
+    const w2 = await p.evaluate(() => [+$('seek').min, +$('seek').max, cur.end + 40]);
+    ok('シークバーの目盛りは、調整しても変わらず、範囲の外に出たときだけ広がる', w1.join() === w0.join() && w2[0] === w0[0] && w2[1] === w2[2] + 15, { w0, w1, w2 });
+    await p.click('#reset');
     // 単独映像も調整できる（元は 0 秒〜動画の最後）
     const single = all.find((s) => s.kind === 'single' && !('chapter_start' in s));
     await p.evaluate((id) => select(songs.find((s) => s.id === id)), single.id); await wait(200);

@@ -533,13 +533,20 @@ function renderVals() {
   $('dropToggle').classList.toggle('on', dropped(cur));
   renderMarks();
 }
-// シークバーは曲のまわり（元のチャプター・今の設定・調整後のどれもが入る範囲の前後 15 秒）だけにする
+// シークバーは曲のまわり（元のチャプター・今の設定・調整後のどれもが入る範囲の前後 15 秒）だけを拡大して出す
+// 目盛りは曲を選んだときに決め、その曲を調整しているあいだは変えない（帯だけが伸び縮みして、ずらした分が見える）。
+// 調整した値が範囲の外に出たときだけ、そこから 15 秒先まで広げる
 let win = null;
 function renderMarks() {
   if (!cur) return;
   const o = origOf(cur), c = curOf(cur), v = valOf(cur), ends = [o, c, v].map(endOf).filter((x) => x != null);
-  const lo = Math.max(0, Math.min(o.start, c.start, v.start) - 15), hi = Math.max(...ends, v.start + 1) + 15;
-  win = { lo, hi };
+  const lo0 = Math.max(0, Math.min(o.start, c.start, v.start) - 15), hi0 = Math.max(...ends, v.start + 1) + 15;
+  if (!win || win.key !== keyOf(cur)) win = { key: keyOf(cur), lo: lo0, hi: hi0 };
+  else {
+    if (lo0 + 15 < win.lo) win.lo = lo0;
+    if (hi0 - 15 > win.hi) win.hi = hi0;
+  }
+  const { lo, hi } = win;
   $('seek').min = lo; $('seek').max = hi;
   const pct = (t) => `${((t - lo) / (hi - lo)) * 100}%`, tr = $('track');
   tr.innerHTML = '<div class="band"></div><div class="tick orig"></div><div class="tick orig"></div><div class="tick cur"></div><div class="tick cur"></div>';
