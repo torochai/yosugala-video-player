@@ -12,7 +12,7 @@
   3. 音声の「音楽」の区間（名前は「（曲名なし）」）。--audio のときだけ
   --audio のときは、曲の頭の SE・終わりの歓声などを外した範囲を提案する（チャプターより短くするだけ。長くはしない）
 MC の候補:
-  曲と曲の間の 30 秒以上の空き（開演前・SE だけのチャプターの時間帯は除く）。名前は「MC①（次の曲のまえ）」
+  曲と曲の間の 30 秒以上の空き（開演前・SE だけのチャプターの時間帯は除く）。名前は「MC① (次の曲のまえ)」
   --audio のときは、話し声が少ない空きは除き、文字起こし（text）を付ける。範囲は曲と曲の間のまま（カタログの MC も曲と曲の間すべて）
 すでにカタログにある曲（同じ動画・同じ開始秒）・MC と重なる時間帯・talk_skips の時間帯は候補にしない。
 
@@ -324,7 +324,7 @@ def build(vid, opts, params=None, known=None):
     for x in talks:
         if x['name'] == 'MC' and n_mc > 1:
             x['name'] = 'MC' + CIRCLED[min(k, len(CIRCLED) - 1)]; k += 1
-        x['title'] = f'{x["name"]}（{x["before"]}のまえ）' if x['before'] else f'{x["name"]}（{x["after"]}のあと）'
+        x['title'] = f'{x["name"]} ({x["before"]}のまえ)' if x['before'] else f'{x["name"]} ({x["after"]}のあと)'
     if track and opts.get('transcribe') and talks:
         texts = transcribe(vid, opts['work'], opts['extra'], [(x['start'], x['end']) for x in talks], opts['model'], opts.get('audio_file'))
         for x in talks:

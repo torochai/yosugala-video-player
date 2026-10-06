@@ -50,7 +50,7 @@ git add catalog.json tools/video_cache.json tools/song_ids.json tools/thumb_cach
 - 補正ファイルだけを直したときは `python3 tools/update_catalog.py --offline` で、YouTube に接続せずに `video_cache.json` から作り直せます
 - 公演日はタイトルの日付から取ります。タイトルに日付がない公演は `catalog_overrides.json` の `live_dates`（ライブ名 → 公演日）に書いてください。同じ曲の中は公演日の古い順に並びます（公開日 `published` もデータに入っていますが、画面には出しません）
 - 同じ公演・同じ曲にフルライブ映像のチャプターと単独映像があるときは、どちらもプレイヤーに表示します（チャプターには、重なっている単独映像の動画 ID を `duplicate_of` に書きます）
-- MC（メンバーが話している区間）は `catalog_overrides.json` の `talks`（`vid`・`start`・`end`・`title`）に書きます。カタログでは `type: "mc"` になり、プレイヤーの「ライブMC集」にだけ入ります（曲の一覧・公演のプレイリストには入りません）。名前は「MC①（次の曲のまえ）」の形です
+- MC（メンバーが話している区間）は `catalog_overrides.json` の `talks`（`vid`・`start`・`end`・`title`）に書きます。カタログでは `type: "mc"` になり、プレイヤーの「ライブMC集」にだけ入ります（曲の一覧・公演のプレイリストには入りません）。名前は「MC① (次の曲のまえ)」の形です
 - 新しい MC の候補は `python3 tools/make_candidates.py > candidates.json` で作り、ライブラリ編集ツールの「候補を読み込む」で要不要・名前・範囲を確かめて書き出します。書き出しの `add` を `talks` に入れると、曲 ID が付きます
 - Official Music Video は、公式チャンネルの再生リスト「MusicVideo」の動画と、タイトルがちょうど「yosugala - 曲名」の動画（再生リストに入っていない新しい MV のため）を `kind: "mv"` で入れます。公開日は YouTube の RSS から取ります。プレイヤーでは「Official Music Video」にだけ入ります
   - 新しい動画（ライブ映像以外）は、1 回に 10 本まで動画ごとの情報を取り、概要欄に「- MusicVideo」の行があれば MV、なければ MV にしません（再生リスト・タイトルより優先。結果は `video_cache.json` の `desc_mv` に残ります）。YouTube に止められて取れなかった動画は、再生リスト・タイトルで判定します。タイトルが「yosugala - 曲名」の形でない MV は、「」の中を曲名にします

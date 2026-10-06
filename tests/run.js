@@ -407,7 +407,7 @@ const TESTS = {
       const sum = (cs) => Array.isArray(cs) ? cs.map((c) => `${c.type}:${c.title}:${c.start}-${c.end}`).join(' ') : cs;
       ok('find_candidates: チャプターだけのときは、チャプターの範囲で曲の候補（MC・SE のチャプターは除く）', sum(plain) === 'song:曲A:10-200 song:曲B:200-400', sum(plain));
       ok('find_candidates: --audio では曲を音楽の区間に縮め、話し声のある空きを MC の候補に（範囲は曲と曲の間）',
-        sum(audio) === 'song:曲A:23-147 mc:MC（曲Bのまえ）:147-228 song:曲B:228-382', sum(audio));
+        sum(audio) === 'song:曲A:23-147 mc:MC (曲Bのまえ):147-228 song:曲B:228-382', sum(audio));
       ok('find_candidates: ライブ名・公演日・元のチャプターの範囲・出どころが付く', Array.isArray(audio) && audio[0].live === 'テスト公演' && audio[0].date === '2026-01-02'
         && audio[0].chapter_start === 10 && audio[0].chapter_end === 200 && audio[0].source === 'chapter' && audio[1].talk_ratio > 0.5, audio[0]);
       const quiet = py(['tools/find_candidates.py', '--work', work, '--audio', '--no-text', '--set', 'mc_talk_ratio=0.9', vid]);
@@ -421,7 +421,7 @@ const TESTS = {
       const db3 = Array(600).fill(-40), flat3 = Array(600).fill(0.9);
       for (const [s, e] of [[20, 180], [200, 290]]) for (let i = s * 2; i < e * 2; i++) { db3[i] = -12; flat3[i] = 0.05; }
       fs.writeFileSync(path.join(work, vid3, 'analysis.json'), JSON.stringify({ hop: 0.5, vad_threshold: 0.5, rms_db: db3, flat: flat3, speech: [[100, 103], [200, 290]] }));
-      ok('find_candidates: 話し声（VAD）のところは音楽にしない・曲の中の短い話し声で曲を割らない', sum(run(['--audio', '--no-text', vid3])) === 'song:曲C:19-181 mc:MC（曲Cのあと）:181-300', sum(run(['--audio', '--no-text', vid3])));
+      ok('find_candidates: 話し声（VAD）のところは音楽にしない・曲の中の短い話し声で曲を割らない', sum(run(['--audio', '--no-text', vid3])) === 'song:曲C:19-181 mc:MC (曲Cのあと):181-300', sum(run(['--audio', '--no-text', vid3])));
       // 動画 2: チャプターなし・概要欄にタイムスタンプ
       const vid2 = 'TESTVIDEO02';
       fs.mkdirSync(path.join(work, vid2), { recursive: true });
@@ -429,7 +429,7 @@ const TESTS = {
         description: 'セットリスト\n00:00 SE\n1:00 一曲目\n05:10 二曲目\n10:00 MC\n12:30 三曲目\nhttps://example.com' }));
       const desc = run([vid2]);
       ok('find_candidates: チャプターがなければ概要欄のタイムスタンプから曲の候補（MC・SE の行は除く。MC の行は MC の候補に）',
-        sum(desc) === 'song:一曲目:60-310 song:二曲目:310-600 mc:MC（三曲目のまえ）:600-750 song:三曲目:750-1000', sum(desc));
+        sum(desc) === 'song:一曲目:60-310 song:二曲目:310-600 mc:MC (三曲目のまえ):600-750 song:三曲目:750-1000', sum(desc));
       // 候補ファイルはライブラリ編集ツールで読み込める（必須の項目がそろっている）
       const both = py(['tools/find_candidates.py', '--work', work, vid, vid2]);
       const e = await open('editor.html');

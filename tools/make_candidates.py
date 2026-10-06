@@ -4,7 +4,7 @@
 いまは MC の候補だけを作る（曲はフルライブ映像のチャプターからカタログに入っている）:
   フルライブ映像の中で、どの曲にも使われていない 30 秒以上の時間帯を MC の候補にする。
   - 開演前（1曲目より前）と、チャプター名が SE・opening だけの時間帯は入れない（曲が流れるだけのため）
-  - 名前は「MC①（次の曲のまえ）」（MC の中で次の曲を振ることが多いため）。次の曲がない（終演後）ときは「（前の曲のあと）」。
+  - 名前は「MC① (次の曲のまえ)」（MC の中で次の曲を振ることが多いため）。次の曲がない（終演後）ときは「MC (前の曲のあと)」。
     同じ公演の MC には、公演の中の順に ①②③… を付ける
     チャプター名が「バンド紹介」「ending MC」など MC 以外の名前ならその名前を使う
   - すでにカタログに入っている MC（type = "mc"）と重なる時間帯は入れない
@@ -67,7 +67,7 @@ def main(vids):
             if f'{vid}@{x["start"]}' in skips or any(v == vid and a < x['end'] and x['start'] < b for v, a, b in have):
                 continue
             g = group[0]
-            out.append({'id': len(out) + 1, 'kind': 'full', 'type': 'mc', 'title': f'{x["name"]}（{x["before"]}のまえ）' if x['before'] else f'{x["name"]}（{x["after"]}のあと）', 'vid': vid,
+            out.append({'id': len(out) + 1, 'kind': 'full', 'type': 'mc', 'title': f'{x["name"]} ({x["before"]}のまえ)' if x['before'] else f'{x["name"]} ({x["after"]}のあと)', 'vid': vid,
                         'start': x['start'], 'end': x['end'], 'date': g['date'], 'live': g['live'], 'venue': g['venue']})
     json.dump({'candidates': out}, sys.stdout, ensure_ascii=False, indent=1)
     sys.stdout.write('\n')

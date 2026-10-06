@@ -897,7 +897,7 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   // MC: 公演日の古い順、同じ映像の中は時間の順
   const talks = c.songs.filter(isMc).sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999') || a.vid.localeCompare(b.vid) || a.start - b.start).map(toItem);
   if (talks.length) catalogPls.push(catalogPlaylist(MC_ID, 'mc', 'ライブMC集', talks,
-    `フルライブ映像の中で、メンバーが話している区間（MC）を集めたものです（${talks.length} 件・${c.updated} 時点）。公演日の古い順に並べています。名前の「（○○のまえ）」は、その MC のあとに歌った曲です。`));
+    `フルライブ映像の中で、メンバーが話している区間（MC）を集めたものです（${talks.length} 件・${c.updated} 時点）。公演日の古い順に並べています。名前の「(○○のまえ)」は、その MC のあとに歌った曲です。`));
   // 公演ごと（公演日が分かるものだけ）。新しい公演が上
   //   フルライブ映像がある公演は、フルライブ映像のチャプターだけをその順に（単独映像と重なるチャプターも使う）
   //   フルライブ映像がない公演は、単独映像をセットリスト順に
