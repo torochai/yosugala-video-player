@@ -350,6 +350,10 @@ const TESTS = {
     ok('ギアから開くと、再生中の曲が選ばれている（一覧もその曲が見える位置に）', await pp.evaluate((sid) => { const li = document.querySelector('#list li.sel'), ol = $('list');
       const r = li.getBoundingClientRect(), o = ol.getBoundingClientRect();
       return cur.id === sid && li.song.id === sid && r.top >= o.top && r.bottom <= o.bottom; }, sid));
+    ok('タイトル行の右端に「戻る」', await pp.evaluate(() => { const b = $('back').getBoundingClientRect(), h = document.querySelector('h1').getBoundingClientRect();
+      return $('back').textContent.trim() === '戻る' && Math.abs(b.right - h.right) < 2 && b.top >= h.top && b.bottom <= h.bottom; }));
+    await pp.click('#back'); await pp.waitForFunction(() => typeof catalog !== 'undefined' && catalog);
+    ok('「戻る」でプレーヤーに戻る', await pp.evaluate(() => !location.pathname.includes('/tools/') && !!$('trimGear')));
     await close(pp);
     // カタログが調整値に追いついたら（同じ値になったら）、その曲は調整なしとして扱い、マークも出さない
     const caught = all.find((s) => s.kind === 'single' && 'chapter_start' in s);

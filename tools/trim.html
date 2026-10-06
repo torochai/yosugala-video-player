@@ -36,7 +36,11 @@
   .brand .sub { display: block; font-style: italic; font-size: .5em; letter-spacing: .12em; text-shadow: none; filter: drop-shadow(0 0 8px rgba(5,6,15,.9));
     background: linear-gradient(90deg, #b9cbff, #f3b7c3 60%, #ffd8a8); -webkit-background-clip: text; background-clip: text; color: transparent; }
   main { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 20px; padding: 16px; max-width: 1500px; margin: 0 auto; align-items: start; }
-  h1 { font-size: 1.4rem; letter-spacing: .04em; margin: 0 0 8px; text-shadow: 0 0 10px rgba(5,6,15,.95); }
+  h1 { font-size: 1.2rem; letter-spacing: .04em; margin: 0 0 8px; text-shadow: 0 0 10px rgba(5,6,15,.95); display: flex; align-items: center; gap: 10px; }
+  /* タイトル行の右端: プレーヤーに戻る（プレーヤーの曲名の下の「戻る」と同じ形） */
+  .btn.backbtn { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; min-height: 0; padding: 5px 10px; border-radius: 8px; font-size: .78rem; font-weight: 400;
+    letter-spacing: 0; text-shadow: none; text-decoration: none; }
+  .backbtn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .note { font-size: .8rem; margin: 0 0 12px; padding: 8px 10px; border-radius: 10px; background: var(--glass); border: 1px solid rgba(255, 207, 138, .4); }
 
   /* ---- 動画と操作バー（プレーヤーと同じ見た目） ---- */
@@ -44,15 +48,16 @@
   .screen { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; }
   .screen > div, .screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
   .bar { display: flex; align-items: center; gap: 4px; padding: 8px 10px; background: linear-gradient(180deg, #0b1030, #070a1c); border-top: 1px solid var(--line); }
-  .bicon { background: none; border: 0; color: var(--text); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; flex: none; padding: 0; touch-action: manipulation; }
+  /* 操作バーのボタンは押しやすいよう大きめに */
+  .bicon { background: none; border: 0; color: var(--text); width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; flex: none; padding: 0; touch-action: manipulation; }
   .bicon:hover { background: var(--glass-2); color: #fff; box-shadow: 0 0 12px rgba(185,203,255,.25); }
   .bicon:disabled, .bicon:disabled:hover { opacity: .3; cursor: default; background: none; box-shadow: none; }
-  .bicon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .bicon svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .bicon svg .fill { fill: currentColor; stroke: none; }
   .bicon svg text { fill: currentColor; stroke: none; font: 700 8px "Zen Kaku Gothic New", sans-serif; }
-  .bicon[data-seek] { font: 700 .82rem "Zen Kaku Gothic New", sans-serif; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
-  .bicon.main { width: 40px; height: 40px; border: 1px solid var(--line-2); }
-  .bicon.main svg { width: 18px; height: 18px; }
+  .bicon[data-seek] { font: 700 1rem "Zen Kaku Gothic New", sans-serif; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+  .bicon.main { width: 54px; height: 54px; border: 1px solid var(--line-2); }
+  .bicon.main svg { width: 22px; height: 22px; }
   .time { font-variant-numeric: tabular-nums; font-size: .78rem; color: var(--muted); white-space: nowrap; flex: none; padding: 0 2px; min-width: 4.2em; text-align: right; }
   /* シークバー: 曲のまわりだけ。調整後の範囲を色の帯で、元のチャプター・今の設定を縦線で重ねる */
   .seekwrap { position: relative; flex: 1; min-width: 80px; margin: 0 8px; height: 30px; }
@@ -133,7 +138,7 @@
     .bar { flex-wrap: wrap; justify-content: space-between; gap: 0 2px; padding: 4px 8px 6px; }
     .seekwrap { order: -1; flex: 1 1 calc(100% - 5em); margin: 0 4px 0 2px; }
     .time { order: -1; }
-    .bicon { width: 40px; height: 40px; }
+    .bicon { width: 44px; height: 44px; }
     .cards { grid-template-columns: 1fr; }
     .panel { padding: 10px; }
     .card { padding: 10px; }
@@ -142,6 +147,8 @@
     ol { max-height: none; }
   }
   @media (max-width: 360px) {
+    .bicon { width: 38px; height: 38px; }
+    .bicon.main { width: 48px; height: 48px; }
     .btns { gap: 4px; }
     .btns .btn { font-size: .74rem; padding: 4px 3px; }
   }
@@ -154,7 +161,9 @@
 </header>
 <main>
   <section>
-    <h1>再生範囲調整ツール</h1>
+    <h1>再生範囲調整ツール
+      <a class="btn backbtn" id="back" href="../" title="プレーヤーに戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>戻る</a>
+    </h1>
     <p class="note">調整した値は、このブラウザのプレーヤーにすぐ反映されます（このブラウザだけです。ほかの端末やほかの人のプレーヤーには反映されません）。
       正式に変更したいときは、「書き出す」でできたファイルを添えて、プレーヤーの開発者に連絡してください。</p>
     <div class="stage">
@@ -414,6 +423,12 @@ $('copy').addEventListener('click', async () => {
 $('clearAll').addEventListener('click', () => {
   if (!confirm('すべての曲の調整をリセットしますか？ このブラウザのプレーヤーも元の再生範囲に戻ります（書き出していない調整は元に戻せません）。')) return;
   adj = {}; saveAdj(); renderVals(); renderList(); renderOut(); $('msg').textContent = '';
+});
+// 戻る: プレーヤーから開いたときはブラウザの「戻る」で元の画面（再生中の曲・位置）へ。それ以外はプレーヤーのトップへ
+$('back').addEventListener('click', (e) => {
+  let fromPlayer = false;
+  try { const r = new URL(document.referrer); fromPlayer = r.origin === location.origin && !r.pathname.includes('/tools/'); } catch {}
+  if (fromPlayer && history.length > 1) { e.preventDefault(); history.back(); }
 });
 const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
 </script>
