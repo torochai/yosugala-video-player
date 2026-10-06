@@ -49,6 +49,7 @@ git add data/ s/ && git commit -m "Update catalog" && git push
 ```
 
 - `data/catalog.json` にまだ 1 曲も入っていない動画だけを足します。すでにある曲・MC には触らないので、手で直した内容は消えません
+  - ある動画の曲を `items` から全部消すと、次に実行したときにその動画が足し直されます。取り込みたくない動画は `import.exclude_videos`、取り込みたくないチャプターは `import.exclude_entries` に書いてください
 - 単独の「Official Live Video」は1曲として、フルライブ映像はチャプターで曲ごとに分けて足します（MC・SE などは除外）。曲名は `import.aliases` でそろえ、公演名は `import.video_lives` → `import.live_rules` → 動画タイトル の順で決めます。新しい公演は `lives` に足します（公演日はタイトルの日付から。会場名は手で書きます）
 - 曲 ID は `next_id` から順に付けます。プレイリスト・共有リンク・書き出しの JSON・曲の案内ページ（`s/曲ID.html`）は、この ID で曲を指します。一度付けた ID は変えず、使い回しません
 - 一度取得した動画の情報は `data/youtube.json` に保存され、次回からは新しい動画だけを取得します
