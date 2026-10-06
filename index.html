@@ -735,7 +735,7 @@ const BUILTIN_ID = 'builtin-toro';
 // プレイリストの曲は { id: 行の ID, sid: 曲 ID } で持ち、カタログを読み込んだら動画・開始・終了・曲名などを付ける（songRow）。
 // 組み込みの行の ID は「toro:曲 ID」で固定する（開くたびに変わると、続きから再生する曲を覚えられない）
 function defaultPlaylist() {
-  return { id: BUILTIN_ID, builtin: true, readonly: true, name: DEFAULT_NAME, author: DEFAULT_AUTHOR, desc: DEFAULT_DESC,
+  return { id: BUILTIN_ID, key: 'toro', builtin: true, readonly: true, name: DEFAULT_NAME, author: DEFAULT_AUTHOR, desc: DEFAULT_DESC,
            items: DEFAULT_SONGS.map((sid) => ({ id: `toro:${sid}`, sid })) };
 }
 function load() {
@@ -837,9 +837,10 @@ const CAT_HELP = '曲の右の「＋」、または「選択」でチェック�
 // それ以外（Official Live Video・公演ごと）はトロ's セレクションと同じ、ふつうの読み取り専用プレイリスト
 // （「＋」と「選択」はどのプレイリストでも使える）
 // withMc: 「MCあり」のときの並び（MC を入れたもの）。あるプレイリストだけ「MCあり」のチェックを出す
-function catalogPlaylist(id, name, base, desc, tools = false, live = false, withMc = null) {
+// key: 共有リンク（#lib= / ?lib=）での呼び名（libKey）。ライブラリのプレイリストはどれも必ず持つ
+function catalogPlaylist(id, key, name, base, desc, tools = false, live = false, withMc = null) {
   return {
-    id, name, desc, readonly: true, catalog: tools, live, author: '',
+    id, key, name, desc, readonly: true, catalog: tools, live, author: '',
     hasMc: !!withMc, lists: withMc ? [base, withMc] : [base],
     get all() { return withMc && state.withMc ? withMc : base; },
     get items() {
@@ -881,21 +882,21 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   };
   const about = `yosugala official の公式ライブ映像を、曲ごとに分けた一覧です（${catalogAll.length} 件・${c.updated} 時点）。新しい公式ライブ映像が出たら追加していきます。`;
   catalogPls = [
-    catalogPlaylist(CATALOG_ID, 'すべてのライブ映像 - 曲名順', catalogAll, `${about}\n曲名の順に並べています。${CAT_HELP}`, true),
-    catalogPlaylist(CATALOG_DATE_ID, 'すべてのライブ映像 - 公演日順', byDate.map(toItem), `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。「MCあり」にすると、フルライブ映像の MC も公演の流れのとおりに入ります。${CAT_HELP}`, true, false, withMcOf(byDate)),
+    catalogPlaylist(CATALOG_ID, 'songs', 'すべてのライブ映像 - 曲名順', catalogAll, `${about}\n曲名の順に並べています。${CAT_HELP}`, true),
+    catalogPlaylist(CATALOG_DATE_ID, 'dates', 'すべてのライブ映像 - 公演日順', byDate.map(toItem), `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。「MCあり」にすると、フルライブ映像の MC も公演の流れのとおりに入ります。${CAT_HELP}`, true, false, withMcOf(byDate)),
   ];
   // Official Live Video: 1曲ずつ公開された映像（フルライブ映像から切り出したものは入れない）を公開日の古い順に
   const singles = visible.filter((x) => x.kind === 'single')
     .sort((a, b) => a.published.localeCompare(b.published) || a.song.localeCompare(b.song)).map(toItem);
-  catalogPls.push(catalogPlaylist(SINGLES_ID, 'Official Live Video - 公開日順', singles,
+  catalogPls.push(catalogPlaylist(SINGLES_ID, 'singles', 'Official Live Video - 公開日順', singles,
     `yosugala official が1曲ずつ公開している公式ライブ映像（Official Live Video）を、公開日の古い順に並べています（${singles.length} 本・${c.updated} 時点）。フルライブ映像から切り出した曲は入っていません。`));
   // Official Music Video: 公開日の古い順
   const mvs = c.songs.filter(isMv).sort((a, b) => a.published.localeCompare(b.published) || a.song.localeCompare(b.song)).map(toItem);
-  if (mvs.length) catalogPls.push(catalogPlaylist(MV_ID, 'Official Music Video', mvs,
+  if (mvs.length) catalogPls.push(catalogPlaylist(MV_ID, 'mv', 'Official Music Video', mvs,
     `yosugala official の Music Video を、公開日の古い順に並べています（${mvs.length} 本・${c.updated} 時点）。`));
   // MC: 公演日の古い順、同じ映像の中は時間の順
   const talks = c.songs.filter(isMc).sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999') || a.vid.localeCompare(b.vid) || a.start - b.start).map(toItem);
-  if (talks.length) catalogPls.push(catalogPlaylist(MC_ID, 'ライブMC集', talks,
+  if (talks.length) catalogPls.push(catalogPlaylist(MC_ID, 'mc', 'ライブMC集', talks,
     `フルライブ映像の中で、メンバーが話している区間（MC）を集めたものです（${talks.length} 件・${c.updated} 時点）。公演日の古い順に並べています。名前の「（○○のまえ）」は、その MC のあとに歌った曲です。`));
   // 公演ごと（公演日が分かるものだけ）。新しい公演が上
   //   フルライブ映像がある公演は、フルライブ映像のチャプターだけをその順に（単独映像と重なるチャプターも使う）
@@ -906,12 +907,14 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
     if (!lives.has(k)) lives.set(k, []);
     lives.get(k).push(x);
   });
+  // 公演の呼び名は公演日。同じ日に公演が2つあるときだけ「公演日|公演名」
+  const perDate = (d) => [...lives.keys()].filter((k) => k.startsWith(d + '|')).length;
   [...lives.entries()].sort((a, b) => b[0].localeCompare(a[0])).forEach(([k, songs]) => {
     const full = songs.filter((x) => x.kind === 'full');
     const list = full.length ? full.sort((a, b) => a.vid.localeCompare(b.vid) || a.start - b.start) : songs.slice().sort(byLive);
     if (!list.length) return;
     const { date, live, venue } = list[0];
-    catalogPls.push(catalogPlaylist(LIVE_ID + k, `${dotDate(date)}${quoteLive(live)}`, list.map(toItem),
+    catalogPls.push(catalogPlaylist(LIVE_ID + k, perDate(date) > 1 ? k : date, `${dotDate(date)}${quoteLive(live)}`, list.map(toItem),
       // 公演情報: ◻️ 公演名 / ◻️ 公演日 / ◻️ 会場 のあとにセットリスト（見出しと字下げはセットリストと同じ形。プレイリストの説明文は入れない）
       [['公演名', quoteLive(live)], ['公演日', dotDate(date)], ['会場', venue]].filter(([, v]) => v)
         .map(([k, v]) => `◻️ ${k}\n　${v}`).join('\n\n')
@@ -1687,26 +1690,14 @@ function plLink(p) {
 $('plShare').addEventListener('click', () => copyLink(plLink(pl()), isLib(pl())
   ? `「${pl().name}」の共有リンクをコピーしました。開いた人は、このプレイリストをそのまま再生できます。`
   : '共有リンクをコピーしました。開いた人は、このプレイリストを再生したり、保存したりできます。'));
-// ライブラリのプレイリストは曲を埋め込まず「#lib=名前」の短いリンクにする（開くといつも最新の内容）
-//   toro = トロ's セレクション / songs = すべてのライブ映像 - 曲名順 / dates = すべてのライブ映像 - 公演日順
-//   singles = Official Live Video - 公開日順 / YYYY-MM-DD = その日の公演
-function libKey(p) {
-  if (p.id === BUILTIN_ID) return 'toro';
-  if (p.id === CATALOG_ID) return 'songs';
-  if (p.id === CATALOG_DATE_ID) return 'dates';
-  if (p.id === SINGLES_ID) return 'singles';
-  if (p.id === MV_ID) return 'mv';
-  if (p.id === MC_ID) return 'mc';
-  const k = p.id.slice(LIVE_ID.length), date = k.split('|')[0];
-  // 同じ日に公演が2つあるときだけ、公演名まで入れる
-  return catalogPls.filter((x) => x.id.startsWith(LIVE_ID + date + '|')).length > 1 ? encodeURIComponent(k) : date;
-}
+// ライブラリのプレイリストは曲を埋め込まず「#lib=呼び名」の短いリンクにする（開くといつも最新の内容）。
+// 呼び名はプレイリストのデータの key（defaultPlaylist・catalogPlaylist で付ける）
+function libKey(p) { return encodeURIComponent(p.key); }
 function libId(key) {
   try { key = decodeURIComponent(key); } catch { return null; }   // 壊れたリンク（%の後が不正など）でも止まらない
-  // _mv__ / _mc__ は、mv / mc の鍵がなかったころに出回ったリンク（ID の頭を切っただけの形）
-  const fixed = { toro: BUILTIN_ID, songs: CATALOG_ID, dates: CATALOG_DATE_ID, singles: SINGLES_ID, mv: MV_ID, mc: MC_ID, _mv__: MV_ID, _mc__: MC_ID }[key];
-  if (fixed) return fixed;
-  const p = catalogPls.find((x) => x.id === LIVE_ID + key) || catalogPls.find((x) => x.id.startsWith(LIVE_ID + key + '|'));
+  const libs = [state.playlists.find((p) => p.id === BUILTIN_ID), ...catalogPls].filter(Boolean);
+  // 公演日だけのリンクは、あとで同じ日に公演が増えても、その日の公演（最初のもの）を開く
+  const p = libs.find((x) => x.key === key) || catalogPls.find((x) => x.live && x.key.startsWith(key + '|'));
   return p ? p.id : null;
 }
 // ---------- 再生中の曲を X で共有 ----------

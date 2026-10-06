@@ -234,7 +234,7 @@ const TESTS = {
     await sp2.click('#start'); await wait(400);
     ok('再生位置が曲の範囲の外なら曲の頭から', (await startSec(sp2)) === s57start && await sp2.evaluate(() => $('nowTitle').textContent === 'sailing!!' && !$('msg').textContent.includes('共有された位置')));
     await close(sp2);
-    // ライブMC集・Official Music Video は ?lib=mc / mv（以前は ID の頭を切った _mc__ / _mv__ になって開けなかった）
+    // ライブMC集・Official Music Video は ?lib=mc / mv
     const m = await open('#lib=mc');
     ok('ライブMC集・Music Video の共有リンクは #lib=mc / #lib=mv で開ける', await m.evaluate(() => pl().id === MC_ID) && (await copied(m, '#plShare')).endsWith('#lib=mc'));
     await m.evaluate(() => { const i = items().findIndex((x) => x.sid === 134); playIndex(i); window.__t = items()[i].start + 30; }); await wait(300);
@@ -246,12 +246,16 @@ const TESTS = {
     const mv = await open('#lib=mv');
     ok('#lib=mv で Official Music Video が開く', await mv.evaluate(() => pl().id === MV_ID));
     await close(mv);
-    for (const u of ['s/134.html?lib=_mc__&t=3263', 's/134.html?lib=nosuchlive&t=3263']) {
-      const o = await open(u);
-      const r = await o.evaluate(() => ({ pl: pl().id, sid: (items()[curIndex()] || {}).sid, msg: $('msg').textContent }));
-      ok(`以前の形・見つからないプレイリストのリンクでも曲を開く（${u}）`, r.pl === '__catalog_mc__' && r.sid === 134 && r.msg.includes('共有された位置'), r);
-      await close(o);
-    }
+    const o = await open('s/134.html?lib=nosuchlive&t=3263');
+    const r = await o.evaluate(() => ({ pl: pl().id, sid: (items()[curIndex()] || {}).sid, msg: $('msg').textContent }));
+    ok('曲のリンクでプレイリストが見つからないときは、その曲が入っているプレイリストで開く', r.pl === '__catalog_mc__' && r.sid === 134 && r.msg.includes('共有された位置'), r);
+    await close(o);
+    // 呼び名（key）はプレイリストのデータが持つ。ライブラリのプレイリストはどれも持ち、重ならない
+    const kp = await open('');
+    const keys = await kp.evaluate(() => [state.playlists.find((p) => p.id === BUILTIN_ID), ...catalogPls].map((p) => ({ id: p.id, key: p.key, back: p.key && libId(libKey(p)) === p.id })));
+    ok('ライブラリのプレイリストはどれも共有リンクの呼び名（key）を持ち、重ならない（その呼び名で同じプレイリストが開く）',
+      keys.length > 6 && keys.every((k) => k.key && k.back) && new Set(keys.map((k) => k.key)).size === keys.length, keys.filter((k) => !k.key || !k.back));
+    await close(kp);
     const page = fs.readFileSync(path.join(ROOT, 's/57.html'), 'utf8');
     ok('案内ページに X のカード用の情報', page.includes('og:image" content="https://i.ytimg.com/vi/EiobVwTprto/') && page.includes('♫ sailing!! ／ yosugala'));
   },
