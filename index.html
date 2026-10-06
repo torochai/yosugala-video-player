@@ -99,6 +99,16 @@
   @media (max-width: 340px) {
     .xs-long { display: none; }   /* それでも入らない小さな画面では「共有」だけにする */
   }
+  /* タイトル行の右端: 再生範囲調整ツールへのギア。調整ツールの値で再生しているときは、その左に「調整値で再生中」 */
+  .herotools { position: absolute; right: 0; bottom: 0; display: flex; align-items: center; gap: 8px; z-index: 2; }
+  .herotools .gear { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--muted);
+    background: var(--glass); border: 1px solid var(--line-2); transition: color .2s, border-color .2s; }
+  .herotools .gear:hover { color: var(--text); border-color: var(--moon); }
+  .herotools .gear svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .herotools .trimon { font-size: .7rem; color: var(--warn); border: 1px solid rgba(255,207,138,.45); border-radius: 999px; padding: 2px 9px;
+    background: rgba(5,6,15,.6); text-decoration: none; white-space: nowrap; }
+  .herotools .trimon[hidden] { display: none; }
+  @media (max-width: 360px) { .herotools .trimon .tl { display: none; } }   /* 狭い画面ではタイトルと重ならないよう「調整中」に */
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 24px; align-items: start; }
   /* PC・iPad 横向き: プレイリスト欄をページの一番上（タイトルの右）から始める。タイトル・共有の案内・動画は左の列。
      曲リストに使える高さを増やして、動画を見ながらリストの中だけをスクロールできるようにする */
@@ -401,6 +411,12 @@
   <header class="hero">
     <p class="eyebrow">UNOFFICIAL FAN-MADE PLAYER</p>
     <h1><a class="home" href="./" title="トップに戻る">yosugala<span class="sub">Live Video Player</span></a></h1>
+    <div class="herotools">
+      <a class="trimon" id="trimOn" href="tools/trim.html" hidden title="再生範囲調整ツールで調整した値で再生しています（このブラウザだけ）">調整<span class="tl">値で再生</span>中</a>
+      <a class="gear" href="tools/trim.html" title="再生範囲調整ツール" aria-label="再生範囲調整ツール">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
+    </div>
     <a class="btn xshare" id="xShare" href="https://x.com/intent/tweet?text=yosugala%20Live%20Video%20Player%20-%20%E5%A5%BD%E3%81%8D%E3%81%AA%E3%83%A9%E3%82%A4%E3%83%96%E6%98%A0%E5%83%8F%E3%82%92%E9%9B%86%E3%82%81%E3%81%A6%E3%80%81%E8%87%AA%E5%88%86%E3%81%A0%E3%81%91%E3%81%AE%E3%82%BB%E3%83%83%E3%83%88%E3%83%AA%E3%82%B9%E3%83%88%E3%82%92%E5%86%8D%E7%94%9F%20%23yosugala&url=https%3A%2F%2Ftorochai.github.io%2Fyosugala-video-player%2F%3Fref%3Dx" target="_blank" rel="noopener" aria-label="このプレーヤーを X で共有する">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3z"/></svg>
       <span><span class="xs-long">プレーヤーを</span>共有</span>
@@ -770,6 +786,32 @@ function songRow(sid, id = uid()) {
 }
 // プレイリストの曲にカタログの内容を付ける（カタログにない曲 ID は外す）
 function hydrate(p) { p.items = p.items.map((it) => songRow(it.sid, it.id)).filter(Boolean); }
+// 再生範囲調整ツール（tools/trim.html）で調整した開始・終了を、このブラウザのプレーヤーにだけ反映する。
+// 値は調整ツールが保存する { "動画ID@元のチャプターの開始秒": { start, end } }。調整ツールを別のタブで開いていれば、調整するたびにすぐ反映する
+const TRIM_KEY = 'yosugala-trim-v1';
+const baseRange = new Map();   // 曲 ID → catalog.json の開始・終了・長さ（調整する前）
+let trimCount = 0;
+function applyTrim() {
+  let adj = {};
+  try { adj = JSON.parse(localStorage.getItem(TRIM_KEY)) || {}; } catch {}
+  trimCount = 0;
+  songById.forEach((x, sid) => {
+    if (!baseRange.has(sid)) baseRange.set(sid, { start: x.start, end: x.end, len: x.len });
+    const b = baseRange.get(sid), a = adj[`${x.vid}@${x.chapter_start ?? b.start}`];
+    if (a && Number.isFinite(a.start) && (a.start !== b.start || a.end !== b.end)) {
+      const vidEnd = b.end == null && b.len != null ? b.start + b.len : null;   // 終わりが「動画の最後」の単独映像
+      const e = a.end ?? vidEnd;
+      Object.assign(x, { start: a.start, end: a.end ?? null, len: e == null ? b.len : e - a.start }); trimCount++;
+    } else Object.assign(x, b);
+  });
+  // 作ってあるプレイリスト・ライブ映像の一覧の曲にも反映する
+  const sync = (it) => { const x = songById.get(it.sid); if (x) Object.assign(it, { start: x.start, end: x.end, len: x.len ?? null }); };
+  state.playlists.forEach((p) => p.items.forEach(sync));
+  catalogPls.forEach((p) => p.all.forEach(sync));
+  $('trimOn').hidden = !trimCount;
+}
+window.addEventListener('storage', (e) => { if (catalog && (e.key === TRIM_KEY || e.key === null)) { applyTrim(); renderAll(); } });
+window.addEventListener('pageshow', (e) => { if (catalog && e.persisted) { applyTrim(); renderAll(); } });   // 調整ツールから戻るボタンで戻ったとき
 const catSelected = new Set();
 const normq = (x) => String(x || '').normalize('NFKC').toLowerCase();
 // 記号の入った曲名を、読みや似た記号でも絞り込めるようにする（曲名 → 検索に足す言葉）
@@ -794,6 +836,7 @@ const pl = () => catalogPls.find((p) => p.id === state.current)
 fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   catalog = c;
   c.songs.forEach((x) => songById.set(x.id, x));
+  applyTrim();
   // 保存してあるプレイリスト・共有リンクのプレイリストに、カタログの内容を付ける
   state.playlists.forEach(hydrate);
   save(); showSharedBanner();

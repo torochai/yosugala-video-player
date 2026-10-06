@@ -203,6 +203,8 @@ def main():
             fix = {k: v for k, v in seg_fix[key].items() if not k.startswith('_')}
             if 'start' in fix and fix['start'] != s['start']:
                 s['chapter_start'] = s['start']   # 元の開始秒（確認用ページ tools/trim.html が補正キーを作るのに使う）
+            if 'end' in fix and fix['end'] != s['end']:
+                s['chapter_end'] = s['end']   # 元の終了秒（確認用ページ tools/trim.html に元のチャプターの位置として出す）
             if s.get('end') is None and 'start' in fix and s.get('len') is not None:
                 s['len'] -= fix['start'] - s['start']   # 終わりが動画の最後の曲（単独映像）は、頭を削ったぶん短くなる
             s.update(fix)

@@ -4,196 +4,268 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>曲の範囲の確認 - yosugala Live Video Player</title>
+<title>再生範囲調整ツール - yosugala Live Video Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  /* 曲の開始・終了（フルライブ映像のチャプター）を確かめて直すためのページ。プレイヤーからはリンクしていない */
-  :root { --bg: #05060f; --panel: #0e1330; --line: rgba(170, 190, 255, .2); --text: #e9ecf8; --muted: #8e96b8; --moon: #b9cbff; --warn: #ffcf8a; --ok: #8fe3b0; }
+  /* 曲の開始・終了を確かめて直すためのページ。プレイヤーからはリンクしていない */
+  :root { --bg: #05060f; --panel: rgba(14, 19, 48, .82); --line: rgba(170, 190, 255, .2); --text: #e9ecf8; --muted: #8e96b8; --moon: #b9cbff; --warn: #ffcf8a; }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; font-size: 14px; line-height: 1.5; }
-  main { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; padding: 16px; max-width: 1500px; margin: 0 auto; }
-  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
-  h1 { font-size: 1.1rem; margin: 0 0 8px; }
-  .hint { color: var(--muted); font-size: .85rem; margin: 0 0 12px; }
+  html { background: var(--bg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: "Zen Kaku Gothic New", -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; font-size: 14px; line-height: 1.5; }
+  /* プレーヤーと同じ星空の背景（画像＋またたく星） */
+  body::before, body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  body::before { background: linear-gradient(rgba(5,6,15,.22), rgba(5,6,15,.22)), #05060f url(../bg.jpg) center / cover no-repeat; }
+  body::after { background-image:
+      radial-gradient(1px 1px at 20% 40%, #fff, transparent), radial-gradient(1px 1px at 70% 30%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 50% 65%, #cfd9ff, transparent), radial-gradient(1px 1px at 90% 70%, #fff, transparent);
+    background-size: 260px 260px; opacity: .35; animation: twinkle 6s ease-in-out infinite alternate; }
+  @keyframes twinkle { from { opacity: .05; } to { opacity: .35; } }
+  @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
+  /* プレーヤーのタイトル（プレーヤーへのリンク） */
+  header.hero { position: relative; z-index: 1; max-width: 1500px; margin: 0 auto; padding: calc(20px + env(safe-area-inset-top)) 16px 0;
+    text-shadow: 0 0 10px rgba(5,6,15,.95), 0 0 2px rgba(5,6,15,.9); }
+  .eyebrow { margin: 0 0 4px; font-size: .68rem; letter-spacing: .32em; color: var(--muted); }
+  .brand { margin: 0; font-family: "Cormorant Garamond", "Hiragino Mincho ProN", serif; font-weight: 400; font-size: clamp(1.9rem, 5vw, 2.8rem); line-height: 1.05; letter-spacing: .02em; }
+  .brand a { color: inherit; text-decoration: none; }
+  .brand .sub { display: block; font-style: italic; font-size: .5em; letter-spacing: .12em; text-shadow: none; filter: drop-shadow(0 0 8px rgba(5,6,15,.9));
+    background: linear-gradient(90deg, #b9cbff, #f3b7c3 60%, #ffd8a8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  main { position: relative; z-index: 1; }
+  h1, .hint { text-shadow: 0 0 10px rgba(5,6,15,.95), 0 0 2px rgba(5,6,15,.9); }
+  li { background: rgba(10, 14, 36, .7); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; max-width: 1500px; margin: 0 auto; }
+  h1 { font-size: 1.1rem; margin: 0 0 6px; }
+  .note { font-size: .82rem; margin: 0 0 8px; padding: 8px 10px; border-radius: 8px; color: var(--text);
+    background: rgba(14, 19, 48, .82); border: 1px solid rgba(255, 207, 138, .4); }
+  .hint { color: #c3c9e4; font-size: .82rem; margin: 0 0 10px; }
   .screen { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; }
   .screen > div, .screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
   .box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-top: 12px; }
   .cur { font-size: 1.05rem; font-weight: 700; }
-  .sub { color: var(--muted); font-size: .85rem; }
-  .now { font-variant-numeric: tabular-nums; font-size: 1.6rem; font-weight: 700; color: var(--moon); }
+  .sub { color: var(--muted); font-size: .82rem; }
+  .now { font-variant-numeric: tabular-nums; font-size: 1.4rem; font-weight: 700; color: var(--moon); }
   .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
-  .row .label { width: 5.5em; color: var(--muted); }
-  button { font: inherit; color: var(--text); background: #1b2350; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+  button { font: inherit; color: var(--text); background: #1b2350; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; touch-action: manipulation; }
   button:hover { border-color: var(--moon); }
+  button:disabled { opacity: .4; cursor: default; }
   button.primary { background: #3a4aa8; }
-  button.okbtn { background: #1f5a3c; }
-  .val { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 5.5em; display: inline-block; }
+  /* 元のチャプター・今の設定・調整後の表 */
+  table.pos { width: 100%; border-collapse: collapse; margin-top: 10px; font-variant-numeric: tabular-nums; }
+  table.pos th, table.pos td { padding: 4px 6px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.pos th { color: var(--muted); font-weight: 400; font-size: .8rem; }
+  table.pos td.adj { font-weight: 700; font-size: 1.05rem; }
   .changed { color: var(--warn); }
-  ol { list-style: none; margin: 0; padding: 0; max-height: calc(100vh - 140px); overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
-  @media (max-width: 900px) { ol { max-height: 60vh; } }
+  .edit { margin-top: 10px; }
+  .edit .row .label { width: 3em; color: var(--muted); }
+  /* 調整後の開始・終了を動かすボタン（スマホでは次の行に） */
+  .nudges { display: inline-flex; gap: 6px; }
+  ol { list-style: none; margin: 8px 0 0; padding: 0; max-height: calc(100vh - 90px); overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
   li { padding: 8px 10px; border-bottom: 1px solid var(--line); cursor: pointer; }
-  li:hover { background: #121a40; }
+  li:hover { background: rgba(18, 26, 64, .9); }
   li.sel { background: #1b2350; }
   li .t { font-weight: 700; }
   li .m { color: var(--muted); font-size: .8rem; }
-  .why { color: var(--warn); font-size: .8rem; }
-  .st { float: right; font-size: .8rem; }
-  .st.ok { color: var(--ok); } .st.changed { color: var(--warn); }
-  textarea { width: 100%; min-height: 120px; background: #0a0e24; color: var(--text); border: 1px solid var(--line); border-radius: 8px; font: .8rem ui-monospace, Menlo, monospace; }
+  .badge { float: right; font-size: .75rem; margin-left: 6px; color: var(--muted); }
+  .badge.changed { color: var(--warn); }
+  input[type=search] { width: 100%; font: inherit; color: var(--text); background: #0a0e24; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
   label.f { color: var(--muted); font-size: .85rem; }
+  textarea { width: 100%; min-height: 100px; margin-top: 8px; background: #0a0e24; color: var(--text); border: 1px solid var(--line); border-radius: 8px; font: .78rem ui-monospace, Menlo, monospace; }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; padding: 0 0 16px; gap: 0; }
+    main > section, main > aside { padding: 0 12px; }
+    header.hero { padding: calc(14px + env(safe-area-inset-top)) 12px 0; }
+    .eyebrow { letter-spacing: .12em; }
+    h1, .hint { padding-top: 10px; }
+    /* スマホでは動画を上に固定して、下の操作・一覧をスクロールしても見えるように */
+    .screen { position: sticky; top: 0; z-index: 2; border-radius: 0; margin: 0 -12px; width: calc(100% + 24px); }
+    button { padding: 8px 6px; min-height: 40px; font-size: 13px; }
+    .row { gap: 4px; }
+    .box { padding: 10px; }
+    .edit .row .label { width: 2.4em; }
+    .nudges { flex-basis: 100%; gap: 4px; padding-left: calc(2.4em + 4px); }
+    ol { max-height: none; }
+  }
 </style>
 </head>
 <body>
+<header class="hero">
+  <p class="eyebrow">UNOFFICIAL FAN-MADE PLAYER</p>
+  <p class="brand"><a href="../" title="プレーヤーへ">yosugala<span class="sub">Live Video Player</span></a></p>
+</header>
 <main>
   <section>
-    <h1>曲の範囲の確認（開始・終了）</h1>
-    <p class="hint">曲を選んで再生し、歌い始め・歌い終わりの位置で「ここを開始に」「ここを終わりに」を押します。直す必要がなければ「このままでOK」。結果はこのブラウザに保存され、最後に「結果をコピー」でまとめて渡せます。
+    <h1>再生範囲調整ツール</h1>
+    <p class="note">調整した値は、このブラウザのプレーヤーにすぐ反映されます（このブラウザだけです。ほかの端末やほかの人のプレーヤーには反映されません）。
+      正式に変更したいときは、「書き出す」でできたファイルを添えて、プレーヤーの開発者に連絡してください。</p>
+    <p class="hint">曲を選んで再生し、歌い始め・歌い終わりの位置で「ここを開始に」「ここを終わりに」を押すか、±1秒・±5秒で合わせます。
+      「書き出す」で調整した曲だけをまとめてファイルにできます。
       キー操作: Space 再生/停止、← → 1秒、Shift+← → 5秒。</p>
     <div class="screen"><div id="player"></div></div>
-    <div class="box" id="ctrl">
-      <div class="cur" id="curTitle">右（スマホでは下）の一覧から曲を選んでください</div>
+    <div class="box">
+      <div class="cur" id="curTitle">一覧から曲を選んでください</div>
       <div class="sub" id="curSub"></div>
-      <div class="row"><span class="label">再生位置</span><span class="now" id="now">-</span></div>
-      <div class="row"><span class="label">開始</span><span class="val" id="vStart">-</span>
-        <button id="setStart" class="primary">ここを開始に</button>
-        <button data-play="start">開始から再生</button>
-        <button data-play="origStart">元の開始の5秒前から</button>
-      </div>
-      <div class="row"><span class="label">終了</span><span class="val" id="vEnd">-</span>
-        <button id="setEnd" class="primary">ここを終わりに</button>
-        <button data-play="endCheck">終わりの直前5秒を再生</button>
-        <button data-play="curEnd">元の終わりの20秒前から</button>
-        <button data-play="refEnd">普段の長さで見た終わりの20秒前から</button>
-      </div>
-      <div class="row"><span class="label">移動</span>
+      <div class="row"><span class="sub">再生位置</span><span class="now" id="now">-</span></div>
+      <div class="row">
         <button data-seek="-5">−5秒</button><button data-seek="-1">−1秒</button>
         <button id="pp">再生 / 停止</button>
         <button data-seek="1">＋1秒</button><button data-seek="5">＋5秒</button>
       </div>
-      <div class="row"><span class="label">判定</span>
-        <button id="markOk" class="okbtn">このままでOK</button>
-        <button id="reset">この曲の変更を取り消す</button>
-        <button id="nextSong">次の曲へ</button>
+      <table class="pos">
+        <tr><th></th><th>元のチャプター</th><th>今の設定</th><th>調整後</th></tr>
+        <tr><th>開始</th><td id="oStart">-</td><td id="cStart">-</td><td class="adj" id="vStart">-</td></tr>
+        <tr><th>終了</th><td id="oEnd">-</td><td id="cEnd">-</td><td class="adj" id="vEnd">-</td></tr>
+        <tr><th>長さ</th><td id="oLen">-</td><td id="cLen">-</td><td class="adj" id="vLen">-</td></tr>
+      </table>
+      <div class="edit">
+        <div class="row"><span class="label">開始</span>
+          <button id="setStart" class="primary">ここを開始に</button>
+          <button data-play="start">開始から再生</button>
+          <span class="nudges"><button data-nudge="start" data-d="-5">−5秒</button><button data-nudge="start" data-d="-1">−1秒</button><button data-nudge="start" data-d="1">＋1秒</button><button data-nudge="start" data-d="5">＋5秒</button></span>
+        </div>
+        <div class="row"><span class="label">終了</span>
+          <button id="setEnd" class="primary">ここを終わりに</button>
+          <button data-play="end" title="終わりの5秒前から終わりまで再生">終わりを確認</button>
+          <span class="nudges"><button data-nudge="end" data-d="-5">−5秒</button><button data-nudge="end" data-d="-1">−1秒</button><button data-nudge="end" data-d="1">＋1秒</button><button data-nudge="end" data-d="5">＋5秒</button></span>
+        </div>
+        <div class="row"><span class="label">元の</span>
+          <button data-play="oStart">元の開始から再生</button>
+          <button data-play="oEnd" title="元の終わりの5秒前から元の終わりまで再生">元の終わりを確認</button>
+        </div>
+        <div class="row">
+          <button id="reset">この曲の調整を取り消す</button>
+          <button id="clearAll">すべての調整をリセット</button>
+          <button id="prevSong">前の曲へ</button><button id="nextSong">次の曲へ</button>
+        </div>
       </div>
     </div>
     <div class="box">
-      <div class="row" style="margin-top:0"><span id="progress"></span></div>
-      <div class="row"><button id="copy" class="primary">結果をコピー</button><span class="sub" id="copyMsg"></span></div>
+      <div id="count" class="sub"></div>
+      <div class="row">
+        <button id="download" class="primary">書き出す（ファイル）</button>
+        <button id="copy">コピー</button>
+        <span class="sub" id="msg"></span>
+      </div>
       <textarea id="out" readonly></textarea>
     </div>
   </section>
   <aside>
-    <div class="row" style="margin-top:0">
-      <label class="f"><input type="checkbox" id="showSingles"> 単独で公開された映像も出す</label>
-      <label class="f"><input type="checkbox" id="hideDone"> 確認済みを隠す</label>
-    </div>
+    <div class="row"><input type="search" id="q" placeholder="曲名・ライブ名で絞り込み"></div>
+    <div class="row"><label class="f"><input type="checkbox" id="onlyChanged"> 調整した曲だけ</label></div>
     <ol id="list"></ol>
   </aside>
 </main>
 <script>
 const $ = (id) => document.getElementById(id);
-const KEY = 'yosugala-trim-v1';   // { "動画ID@元の開始秒": { start, end, ok } }
-let done = {};
-try { done = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
-const saveDone = () => { try { localStorage.setItem(KEY, JSON.stringify(done)); } catch {} };
+// 調整した値 { "動画ID@元のチャプターの開始秒": { start, end } }（キーは tools/catalog_overrides.json の segments と同じ）
+const KEY = 'yosugala-trim-v1';
+let adj = {};
+try { adj = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
+const saveAdj = () => { try { localStorage.setItem(KEY, JSON.stringify(adj)); } catch {} };
 const fmt = (sec) => { if (sec == null) return '-'; sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
   return (h ? `${h}:${String(m).padStart(2, '0')}` : `${m}`) + `:${String(s).padStart(2, '0')}`; };
-const median = (a) => { const b = [...a].sort((x, y) => x - y); return b.length ? b[Math.floor((b.length - 1) / 2)] : null; };
+const dot = (d) => (d ? d.replace(/-/g, '.') : '');
 
 let songs = [], cur = null, player = null, ready = false;
-// 補正キーは「動画ID@元のチャプターの開始秒」（tools/catalog_overrides.json の segments と同じ）
 const keyOf = (s) => `${s.vid}@${s.chapter_start ?? s.start}`;
-const valOf = (s) => ({ start: done[keyOf(s)]?.start ?? s.start, end: done[keyOf(s)]?.end ?? s.end });
-const changed = (s) => { const v = valOf(s); return v.start !== s.start || v.end !== s.end; };
+// 元のチャプター（単独映像は 0 秒〜動画の最後）・今の設定（catalog.json）・調整後（このページで直した値）
+const origOf = (s) => ({ start: s.chapter_start ?? s.start, end: 'chapter_end' in s ? s.chapter_end : s.end });
+const curOf = (s) => ({ start: s.start, end: s.end });
+const valOf = (s) => { const a = adj[keyOf(s)]; return a ? { start: a.start, end: a.end } : curOf(s); };
+const changed = (s) => { const a = adj[keyOf(s)]; return !!a && (a.start !== s.start || a.end !== s.end); };
+// 長さ（終わりが「動画の最後」の単独映像は、動画の長さから）
+const vidLen = (s) => (s.end == null ? s.start + s.len : null);
+const lenOf = (s, v) => { const e = v.end ?? vidLen(s); return e == null ? null : e - v.start; };
+const endText = (e) => (e == null ? '動画の最後' : fmt(e));
 
 fetch('../catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
-  // 曲の普段の長さ: 単独で公開された映像があればその長さ、なければ全演奏の長さの中央値
-  const lens = {};
-  c.songs.forEach((s) => { if (s.len) (lens[s.song] ||= []).push(s); });
-  const ref = {};
-  Object.entries(lens).forEach(([k, v]) => { const sg = v.filter((x) => x.kind === 'single').map((x) => x.len); ref[k] = median(sg.length ? sg : v.map((x) => x.len)); });
-  // フルライブ映像の1曲目・最後の曲
-  const byVid = {};
-  c.songs.filter((s) => s.kind === 'full').forEach((s) => (byVid[s.vid] ||= []).push(s));
-  const first = new Set(), last = new Set();
-  Object.values(byVid).forEach((v) => { v.sort((a, b) => a.start - b.start); first.add(v[0]); last.add(v[v.length - 1]); });
-  songs = c.songs.map((s) => {
-    const len = (s.end ?? (s.start + s.len)) - s.start, over = ref[s.song] ? len - ref[s.song] : 0, why = [];
-    if (over > 10) why.push(`普段より ${Math.round(over)} 秒長い`);
-    if (first.has(s)) why.push('フルライブの1曲目（SE が入っていそう）');
-    if (last.has(s)) why.push('動画の最後の曲（終演後の映像が入っていそう）');
-    const rank = over > 10 ? 3000 + over : first.has(s) || last.has(s) ? 2000 : s.kind === 'full' ? 1000 + over : over;
-    return { ...s, ref: ref[s.song], over, why, rank };
-  }).sort((a, b) => b.rank - a.rank);
+  // 公演日の順、同じ映像の中は開始の順
+  songs = c.songs.slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || a.vid.localeCompare(b.vid) || a.start - b.start);
   renderList(); renderOut();
 });
 
+function visible() {
+  const q = $('q').value.trim().toLowerCase();
+  return songs.filter((s) => (!$('onlyChanged').checked || changed(s)) && (!q || `${s.song} ${s.live} ${s.date}`.toLowerCase().includes(q)));
+}
 function renderList() {
   const ol = $('list'); ol.textContent = '';
-  songs.filter((s) => (s.kind === 'full' || $('showSingles').checked) && !($('hideDone').checked && done[keyOf(s)])).forEach((s) => {
+  visible().forEach((s) => {
     const li = document.createElement('li'); li.song = s; if (s === cur) li.className = 'sel';
-    const d = done[keyOf(s)], st = d ? (changed(s) ? '<span class="st changed">直した</span>' : '<span class="st ok">OK</span>') : '';
     const v = valOf(s);
-    li.innerHTML = `${st}<div class="t"></div><div class="m"></div><div class="why"></div>`;
+    li.innerHTML = '<span class="badge changed"></span><span class="badge"></span><div class="t"></div><div class="m"></div>';
+    li.querySelector('.badge.changed').textContent = changed(s) ? '調整済み' : '';
+    li.querySelector('.badge:not(.changed)').textContent = s.hidden ? '非表示' : s.kind === 'single' ? '単独映像' : '';
     li.querySelector('.t').textContent = `${s.song}（ID ${s.id}）`;
-    li.querySelector('.m').textContent = `${s.date ? s.date.replace(/-/g, '.') : ''} ${s.live || ''} ・ ${fmt(v.start)}〜${fmt(v.end)}（${fmt((v.end ?? s.start + s.len) - v.start)}）`;
-    li.querySelector('.why').textContent = s.why.join(' ／ ');
-    li.addEventListener('click', () => select(s));
+    li.querySelector('.m').textContent = `${dot(s.date)} ${s.live || ''} ・ ${fmt(v.start)}〜${endText(v.end)}`;
+    li.addEventListener('click', () => { select(s); if (matchMedia('(max-width: 900px)').matches) scrollTo({ top: 0, behavior: 'smooth' }); });
     ol.appendChild(li);
   });
-  const full = songs.filter((s) => s.kind === 'full'), n = full.filter((s) => done[keyOf(s)]).length;
-  $('progress').textContent = `確認済み ${n} / ${full.length} 曲（フルライブ）・直した曲 ${songs.filter((s) => done[keyOf(s)] && changed(s)).length} 曲`;
 }
-$('showSingles').addEventListener('change', renderList);
-$('hideDone').addEventListener('change', renderList);
+$('q').addEventListener('input', renderList);
+$('onlyChanged').addEventListener('change', renderList);
 
 function select(s) {
   cur = s;
   $('curTitle').textContent = `${s.song}（ID ${s.id}）`;
-  $('curSub').textContent = `${s.date ? s.date.replace(/-/g, '.') : ''} ${s.live || ''} ・ 元の範囲 ${fmt(s.start)}〜${fmt(s.end)} ・ 普段の長さ ${fmt(s.ref)}` + (s.why.length ? ` ・ ${s.why.join(' ／ ')}` : '');
+  $('curSub').textContent = `${dot(s.date)} ${s.live || ''}` + (s.kind === 'single' ? ' ・ 単独映像' : ' ・ フルライブ映像') + (s.hidden ? ' ・ プレイヤーでは非表示（単独映像あり）' : '');
   renderVals(); renderList();
-  playFrom(s.start);
+  playFrom(valOf(s).start);
 }
 function renderVals() {
   if (!cur) return;
-  const v = valOf(cur);
-  $('vStart').textContent = fmt(v.start); $('vStart').classList.toggle('changed', v.start !== cur.start);
-  $('vEnd').textContent = v.end == null ? '動画の最後' : fmt(v.end); $('vEnd').classList.toggle('changed', v.end !== cur.end);
+  const o = origOf(cur), c = curOf(cur), v = valOf(cur);
+  $('oStart').textContent = fmt(o.start); $('oEnd').textContent = endText(o.end); $('oLen').textContent = fmt(lenOf(cur, o));
+  $('cStart').textContent = fmt(c.start); $('cEnd').textContent = endText(c.end); $('cLen').textContent = fmt(lenOf(cur, c));
+  $('vStart').textContent = fmt(v.start); $('vEnd').textContent = endText(v.end); $('vLen').textContent = fmt(lenOf(cur, v));
+  $('vStart').classList.toggle('changed', v.start !== c.start); $('vEnd').classList.toggle('changed', v.end !== c.end);
+  $('vLen').classList.toggle('changed', v.start !== c.start || v.end !== c.end);
 }
 function setVal(field, t) {
-  if (!cur) return;
+  if (!cur) return false;
   const k = keyOf(cur), v = valOf(cur);
-  v[field] = Math.round(t);
-  if (v.end != null && v.end <= v.start) { alert('終わりは開始より後にしてください。'); return; }
-  done[k] = { start: v.start, end: v.end, ok: true }; saveDone(); renderVals(); renderList(); renderOut();
+  v[field] = Math.max(0, Math.round(t));
+  if ((v.end ?? vidLen(cur)) != null && (v.end ?? vidLen(cur)) <= v.start) { alert('終わりは開始より後にしてください。'); return false; }
+  if (v.start === cur.start && v.end === cur.end) delete adj[k];   // 今の設定に戻ったら調整なし
+  else adj[k] = { start: v.start, end: v.end };
+  saveAdj(); renderVals(); renderList(); renderOut();
+  return true;
 }
 
 // ---------- YouTube プレイヤー ----------
 window.onYouTubeIframeAPIReady = () => {
-  player = new YT.Player('player', { playerVars: { playsinline: 1, rel: 0 }, events: { onReady: () => { ready = true; if (pending != null) playFrom(pending); }, onStateChange: () => {} } });
+  player = new YT.Player('player', { playerVars: { playsinline: 1, rel: 0 }, events: { onReady: () => { ready = true; if (pending != null) playFrom(pending); } } });
 };
-let pending = null;
-function playFrom(t, stopAt) {
+let pending = null, stopAt = null;
+function playFrom(t, stop) {
   if (!cur) return;
   if (!ready) { pending = t; return; }
   pending = null;
   const vd = player.getVideoData && player.getVideoData();
   if (!vd || vd.video_id !== cur.vid) player.loadVideoById({ videoId: cur.vid, startSeconds: Math.max(0, t) });
   else { player.seekTo(Math.max(0, t), true); player.playVideo(); }
-  stopTimer = stopAt ?? null;
+  stopAt = stop ?? null;
 }
-let stopTimer = null;
 setInterval(() => {
   if (!ready || !player.getCurrentTime) return;
   const t = player.getCurrentTime();
-  $('now').textContent = fmt(t) + `（${Math.round(t)} 秒）`;
-  if (stopTimer != null && t >= stopTimer) { player.pauseVideo(); stopTimer = null; }
+  $('now').textContent = `${fmt(t)}（${Math.round(t)} 秒）`;
+  if (stopAt != null && t >= stopAt) { player.pauseVideo(); stopAt = null; }
 }, 200);
+const endOf = (v) => v.end ?? vidLen(cur);
 document.querySelectorAll('[data-play]').forEach((b) => b.addEventListener('click', () => {
   if (!cur) return;
-  const v = valOf(cur), endOf = cur.end ?? (cur.start + cur.len);
-  ({ start: () => playFrom(v.start), origStart: () => playFrom(cur.start - 5),
-     endCheck: () => playFrom((v.end ?? endOf) - 5, v.end ?? endOf),
-     curEnd: () => playFrom(endOf - 20), refEnd: () => playFrom(v.start + (cur.ref || 0) - 20) })[b.dataset.play]();
+  const v = valOf(cur), o = origOf(cur);
+  ({ start: () => playFrom(v.start), end: () => playFrom(endOf(v) - 5, endOf(v)),
+     oStart: () => playFrom(o.start), oEnd: () => playFrom(endOf(o) - 5, endOf(o)) })[b.dataset.play]();
+}));
+// 調整後の開始・終了を1秒ずつ動かし、動かした位置を再生して確かめる
+document.querySelectorAll('[data-nudge]').forEach((b) => b.addEventListener('click', () => {
+  if (!cur) return;
+  const f = b.dataset.nudge, v = valOf(cur), base = f === 'end' ? endOf(v) : v.start;
+  if (base == null || !setVal(f, base + +b.dataset.d)) return;
+  const n = valOf(cur);
+  f === 'start' ? playFrom(n.start) : playFrom(n.end - 3, n.end);
 }));
 document.querySelectorAll('[data-seek]').forEach((b) => b.addEventListener('click', () => seekBy(+b.dataset.seek)));
 const seekBy = (d) => { if (ready && player.getCurrentTime) player.seekTo(Math.max(0, player.getCurrentTime() + d), true); };
@@ -201,36 +273,43 @@ const togglePlay = () => { if (!ready) return; player.getPlayerState() === YT.Pl
 $('pp').addEventListener('click', togglePlay);
 $('setStart').addEventListener('click', () => ready && setVal('start', player.getCurrentTime()));
 $('setEnd').addEventListener('click', () => ready && setVal('end', player.getCurrentTime()));
-$('markOk').addEventListener('click', () => { if (!cur) return; const v = valOf(cur); done[keyOf(cur)] = { ...v, ok: true }; saveDone(); renderList(); renderOut(); });
-$('reset').addEventListener('click', () => { if (!cur) return; delete done[keyOf(cur)]; saveDone(); renderVals(); renderList(); renderOut(); });
-$('nextSong').addEventListener('click', () => {
-  const vis = [...$('list').children].map((li) => li.song);
-  const i = vis.indexOf(cur); if (vis[i + 1]) select(vis[i + 1]);
-});
+$('reset').addEventListener('click', () => { if (!cur) return; delete adj[keyOf(cur)]; saveAdj(); renderVals(); renderList(); renderOut(); });
+const step = (d) => { const vis = visible(), i = vis.indexOf(cur), s = vis[i + d]; if (s) select(s); };
+$('prevSong').addEventListener('click', () => step(-1));
+$('nextSong').addEventListener('click', () => step(1));
 document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'TEXTAREA') return;
+  if (['TEXTAREA', 'INPUT'].includes(e.target.tagName)) return;
   if (e.key === ' ') { e.preventDefault(); togglePlay(); }
   if (e.key === 'ArrowLeft') { e.preventDefault(); seekBy(e.shiftKey ? -5 : -1); }
   if (e.key === 'ArrowRight') { e.preventDefault(); seekBy(e.shiftKey ? 5 : 1); }
 });
 
-// ---------- 結果 ----------
-// tools/catalog_overrides.json の segments にそのまま入れられる形（直した曲だけ）。確認済みの数も付ける
+// ---------- 書き出し ----------
+// 調整した曲だけを、tools/catalog_overrides.json の segments にそのまま入れられる形で（開始・終了の両方を書く）
 function renderOut() {
   const seg = {};
-  songs.filter((s) => done[keyOf(s)] && changed(s)).forEach((s) => {
-    const v = valOf(s), o = {};
-    if (v.start !== s.start) o.start = v.start;
-    if (v.end !== s.end) o.end = v.end;
-    o._memo = `${s.song}（${s.live}）`;
-    seg[keyOf(s)] = o;
-  });
-  const okOnly = songs.filter((s) => done[keyOf(s)] && !changed(s)).map((s) => s.id);
-  $('out').value = JSON.stringify({ segments: seg, checked_ok: okOnly }, null, 1);
+  songs.filter(changed).forEach((s) => { const v = valOf(s); seg[keyOf(s)] = { start: v.start, end: v.end, _memo: `${s.song}（${dot(s.date)} ${s.live}）` }; });
+  const n = Object.keys(seg).length;
+  $('count').textContent = `調整した曲: ${n} 曲`;
+  $('download').disabled = $('copy').disabled = $('clearAll').disabled = !n;
+  $('out').value = n ? JSON.stringify({ segments: seg }, null, 1) : '';
 }
+$('download').addEventListener('click', () => {
+  const d = new Date(), p = (x) => String(x).padStart(2, '0');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([$('out').value + '\n'], { type: 'application/json' }));
+  a.download = `yosugala-segments-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  $('msg').textContent = 'ファイルに書き出しました。';
+});
 $('copy').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText($('out').value); $('copyMsg').textContent = 'コピーしました。チャットに貼ってください。'; }
-  catch { $('out').select(); $('copyMsg').textContent = '選択しました。コピーしてください。'; }
+  try { await navigator.clipboard.writeText($('out').value); $('msg').textContent = 'コピーしました。'; }
+  catch { $('out').select(); $('msg').textContent = '選択しました。コピーしてください。'; }
+});
+$('clearAll').addEventListener('click', () => {
+  if (!confirm('すべての曲の調整をリセットしますか？ このブラウザのプレーヤーも元の再生範囲に戻ります（書き出していない調整は元に戻せません）。')) return;
+  adj = {}; saveAdj(); renderVals(); renderList(); renderOut(); $('msg').textContent = '';
 });
 const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
 </script>
