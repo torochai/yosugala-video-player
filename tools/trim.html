@@ -86,6 +86,9 @@
   .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .card { background: rgba(5,6,15,.35); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
   .card .ch { display: flex; align-items: baseline; gap: 10px; }
+  /* 開始・終了の行の右端: その値だけを調整前に戻す（小さく） */
+  .btn.undo { margin-left: auto; align-self: center; display: inline-flex; align-items: center; gap: 3px; min-height: 0; padding: 3px 9px; border-radius: 8px; font-size: .72rem; }
+  .btn.undo svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .card .lab { color: var(--muted); font-size: .8rem; }
   .card .big { font-variant-numeric: tabular-nums; font-size: 1.3rem; font-weight: 700; letter-spacing: .02em; }
   .card .sm, .lenrow { color: var(--muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
@@ -104,6 +107,7 @@
   /* 枠線ぶんまでグラデーションを広げる（padding-box 基準だと端に反対側の色がはみ出す） */
   .btn.primary { background: linear-gradient(90deg, #6f86ff, #b48cff 55%, var(--dawn)) border-box; border-color: transparent; color: #0a0e24; font-weight: 700; }
   .btn.ghost { color: #c3c9e4; }
+  .btn.mini { min-height: 0; padding: 4px 11px; font-size: .74rem; }
   .btn.danger { color: var(--danger); }
   .sub { color: var(--muted); font-size: .8rem; }
   textarea { width: 100%; min-height: 90px; margin-top: 8px; background: rgba(5,6,15,.5); color: var(--text); border: 1px solid var(--line); border-radius: 10px; font: .76rem ui-monospace, Menlo, monospace; }
@@ -200,7 +204,8 @@
     <div class="panel">
       <div class="cards">
         <div class="card">
-          <div class="ch"><span class="lab">開始</span><span class="big" id="vStart">-</span></div>
+          <div class="ch"><span class="lab">開始</span><span class="big" id="vStart">-</span>
+            <button class="btn undo" type="button" data-undo="start" title="開始だけを調整前（今の設定）に戻す"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>戻す</button></div>
           <div class="sm"><span class="olabel">元のチャプター</span> <span id="oStart">-</span><span class="cpart"> ・ 今の設定 <span id="cStart">-</span></span></div>
           <div class="btns">
             <button class="btn primary" type="button" id="setStart" title="今の再生位置を開始にする">ここを開始に</button>
@@ -209,7 +214,8 @@
           </div>
         </div>
         <div class="card">
-          <div class="ch"><span class="lab">終了</span><span class="big" id="vEnd">-</span></div>
+          <div class="ch"><span class="lab">終了</span><span class="big" id="vEnd">-</span>
+            <button class="btn undo" type="button" data-undo="end" title="終了だけを調整前（今の設定）に戻す"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>戻す</button></div>
           <div class="sm"><span class="olabel">元のチャプター</span> <span id="oEnd">-</span><span class="cpart"> ・ 今の設定 <span id="cEnd">-</span></span></div>
           <div class="btns">
             <button class="btn primary" type="button" id="setEnd" title="今の再生位置を終了にする">ここを終了に</button>
@@ -222,14 +228,12 @@
       <!-- 候補だけ: 種類（曲 / MC）・名前・不要の印 -->
       <div id="candTools" hidden>
         <div class="candrow">
-          <span class="seg" role="group" aria-label="種類"><button type="button" data-kind="song">曲</button><button type="button" data-kind="mc">MC</button></span>
+          <span class="seg" role="group" aria-label="種類"><button type="button" data-type="song">曲</button><button type="button" data-type="mc">MC</button></span>
           <input type="text" id="candTitle" placeholder="曲名・MC の名前" aria-label="名前">
-        </div>
-        <div class="btns">
-          <button class="btn" type="button" id="dropToggle" title="要らない区間に「不要」の印を付ける（書き出しに入れない）">不要にする</button>
         </div>
       </div>
       <div class="btns">
+        <button class="btn" type="button" id="dropToggle" hidden title="要らない区間に「不要」の印を付ける（書き出しに入れない）">不要にする</button>
         <button class="btn" type="button" id="reset" title="この曲の調整を取り消して、今の設定に戻す">この曲をリセット</button>
         <button class="btn danger" type="button" id="clearAll" title="すべての曲の調整を取り消す">すべてリセット</button>
       </div>
@@ -257,8 +261,8 @@
     <!-- 候補: 新しい動画の曲・MC の候補のファイル（JSON）を読み込むと、一覧に「曲の候補」「MC 候補」として並ぶ。
          このブラウザの中だけで使い、カタログには入らない。要不要・種類・名前・時間を直して書き出すと、カタログに足すデータ（add）になる -->
     <div class="row">
-      <button class="btn" type="button" id="candLoad" title="曲・MC の候補のファイル（JSON）を読み込む">候補を読み込む</button>
-      <button class="btn" type="button" id="candClear" hidden title="読み込んだ候補と、その不要の印・調整を消す">候補を消す</button>
+      <button class="btn mini" type="button" id="candLoad" title="曲・MC の候補のファイル（JSON）を読み込む">候補を読み込む</button>
+      <button class="btn mini" type="button" id="candClear" hidden title="読み込んだ候補と、その不要の印・調整をクリアする">候補をクリア</button>
       <input type="file" id="candFile" accept=".json,application/json" hidden>
       <span class="sub" id="candMsg"></span>
     </div>
@@ -299,7 +303,8 @@ const lenOf = (s, v) => { const e = v.end ?? vidLen(s); return e == null ? null 
 const endText = (e) => (e == null ? '動画の最後' : fmt(e));
 
 // ---------- 候補（読み込んだファイル。このブラウザの中だけ） ----------
-// ファイルの形: { "candidates": [ { id: 仮 ID, kind: "song" | "mc", title, vid, start, end, date, live, venue }, … ] }
+// ファイルの形: { "candidates": [ { id: 仮 ID（数字）, kind: "full" | "single", type: "song" | "mc", title, vid, start, end, date, live, venue }, … ] }
+//   kind は映像の種類（フルライブ映像・単独映像。catalog.json と同じ）、type は中身の種類（曲・MC）
 //   新しい動画を手元で分析して作る、曲・MC の候補。end が null なら動画の最後まで
 // 一覧には曲と同じように並び（曲 ID はまだない）、範囲の調整・種類と名前の変更・「不要」の印ができる。書き出すと add に入る
 const CAND_KEY = 'yosugala-trim-cands-v1', DROP_KEY = 'yosugala-trim-drop-v1';
@@ -311,9 +316,9 @@ const isCand = (s) => !!(s && s.cand);
 const dropped = (s) => isCand(s) && drop.has(keyOf(s));
 function candSongs() {
   return cands.map((c, i) => ({ song: c.title, vid: c.vid, start: c.start, end: c.end, len: c.end == null ? null : c.end - c.start,
-    date: c.date, live: c.live, venue: c.venue, kind: c.kind, cand: c, id: null, ord: 100000 + i }));
+    date: c.date, live: c.live, venue: c.venue, kind: c.kind, type: c.type, cand: c, id: null, ord: 100000 + i }));
 }
-const candLabel = (s) => (s.kind === 'mc' ? 'MC 候補' : '曲の候補');
+const candLabel = (s) => (s.type === 'mc' ? 'MC 候補' : '曲の候補');
 function setSongs() {
   songs = catalogSongs.concat(candSongs());
   if (cur) cur = songs.find((s) => keyOf(s) === keyOf(cur)) || null;
@@ -327,15 +332,26 @@ $('candFile').addEventListener('change', async () => {
   if (!f) return;
   try {
     const o = JSON.parse(await f.text()), list = Array.isArray(o) ? o : o.candidates;
-    if (!Array.isArray(list) || !list.every((c) => /^[\w-]{11}$/.test(c.vid) && Number.isFinite(c.start) && (c.end == null || (Number.isFinite(c.end) && c.end > c.start))))
-      throw new Error('形式が正しくありません');
-    cands = list.map((c, i) => ({ id: String(c.id ?? i + 1), kind: c.kind === 'mc' ? 'mc' : 'song', title: String(c.title || (c.kind === 'mc' ? 'MC' : '（曲名なし）')),
-      vid: c.vid, start: c.start, end: c.end ?? null, date: String(c.date || ''), live: String(c.live || ''), venue: String(c.venue || '') }));
+    if (!Array.isArray(list)) throw new Error('"candidates" に候補を並べてください');
+    // 項目は必須（抜けていたり、知らない値だったりしたら読み込まない。何件目のどの項目かを出す）
+    list.forEach((c, i) => {
+      const bad = (what) => { throw new Error(`${i + 1} 件目の ${what}`); };
+      if (!Number.isInteger(c.id) || c.id < 1) bad('id（仮 ID。1 以上の数字）');
+      if (!['full', 'single'].includes(c.kind)) bad('kind（"full" か "single"）');
+      if (!['song', 'mc'].includes(c.type)) bad('type（"song" か "mc"）');
+      if (typeof c.title !== 'string' || !c.title.trim()) bad('title（曲名・MC の名前）');
+      if (!/^[\w-]{11}$/.test(c.vid)) bad('vid（YouTube の動画 ID）');
+      if (!Number.isFinite(c.start) || c.start < 0) bad('start（開始秒）');
+      if (!(c.end === null || (Number.isFinite(c.end) && c.end > c.start))) bad('end（終了秒。開始より後か、動画の最後までなら null）');
+    });
+    if (new Set(list.map((c) => c.id)).size !== list.length) throw new Error('id（仮 ID）が重なっています');
+    cands = list.map((c) => ({ id: String(c.id), kind: c.kind, type: c.type, title: c.title.trim(),
+      vid: c.vid, start: c.start, end: c.end, date: String(c.date || ''), live: String(c.live || ''), venue: String(c.venue || '') }));
     saveCands(); $('onlyCand').checked = true; setSongs(); renderList(); renderOut();
   } catch (e) { alert(`候補を読み込めませんでした（${e.message}）`); }
 });
 $('candClear').addEventListener('click', () => {
-  if (!confirm('読み込んだ候補と「不要」の印を消しますか？（候補の範囲の調整も書き出しから消えます）')) return;
+  if (!confirm('読み込んだ候補と「不要」の印をクリアしますか？（候補の範囲の調整も書き出しから消えます）')) return;
   cands.forEach((c) => delete adj[`${c.vid}@${c.start}`]); saveAdj();
   cands = []; drop.clear(); saveCands(); $('onlyCand').checked = false;
   if (isCand(cur)) cur = null;
@@ -343,18 +359,18 @@ $('candClear').addEventListener('click', () => {
 });
 $('onlyCand').addEventListener('change', renderList);
 // 候補の種類（曲 / MC）と名前を直す（分析で見分け間違えたとき・曲名が分からないとき）
-document.querySelectorAll('[data-kind]').forEach((b) => b.addEventListener('click', () => {
+document.querySelectorAll('[data-type]').forEach((b) => b.addEventListener('click', () => {
   if (!isCand(cur)) return;
-  cur.cand.kind = b.dataset.kind; saveCands(); setSongs(); select(cur, false);
+  cur.cand.type = b.dataset.type; saveCands(); setSongs(); select(cur, 'none');
 }));
 $('candTitle').addEventListener('change', () => {
   if (!isCand(cur)) return;
-  cur.cand.title = $('candTitle').value.trim() || cur.cand.title; saveCands(); setSongs(); select(cur, false);
+  cur.cand.title = $('candTitle').value.trim() || cur.cand.title; saveCands(); setSongs(); select(cur, 'none');
 });
 $('dropToggle').addEventListener('click', () => {
   if (!isCand(cur)) return;
   const k = keyOf(cur); drop.has(k) ? drop.delete(k) : drop.add(k);
-  saveCands(); setSongs(); select(cur, false); renderOut();
+  saveCands(); setSongs(); select(cur, 'none'); renderOut();
 });
 
 fetch('../catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
@@ -364,7 +380,7 @@ fetch('../catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) =
   renderList(); renderOut();
   // プレーヤーのギアから開いたとき（?song=曲ID）は、その曲を選んでおく（PC では一覧もその曲までスクロール）
   const first = songs.find((s) => s.id === +new URLSearchParams(location.search).get('song'));
-  if (first) { select(first); scrollToSel(false); }
+  if (first) { select(first, 'cue'); scrollToSel(false); }   // 開いたときは自動で再生しない
 });
 
 // 並び順: 名前順（初めは）・公演日順（同じ映像の中は開始の順）・ID順。選んだ順はこのブラウザに覚えておく
@@ -419,20 +435,22 @@ $('q').addEventListener('input', renderList);
 $('onlyChanged').addEventListener('change', renderList);
 
 const idText = (s) => (isCand(s) ? `${s.song}（仮 ${s.cand.id}）` : `${s.song}（ID ${s.id}）`);   // 候補は曲 ID がまだないので仮 ID
-// play = false: 選び直すだけで再生はしない（候補の種類・名前を直したとき）
-function select(s, play = true) {
+// how: 'play' = その曲の開始から再生（一覧で選んだとき）、'cue' = 開始の位置で止めて待つ（開いたとき）、
+//      'none' = 選び直すだけで再生位置はそのまま（候補の種類・名前を直したとき）
+function select(s, how = 'play') {
   cur = s;
   $('curTitle').textContent = idText(s);
   $('curSub').textContent = `${dot(s.date)} ${s.live || ''}${s.venue ? ' @ ' + s.venue : ''}`;
-  for (const t of isCand(s) ? [candLabel(s), dropped(s) ? '不要' : ''] : [s.kind === 'single' ? '単独映像' : 'フルライブ映像']) {
+  for (const t of [s.kind === 'single' ? '単独映像' : 'フルライブ映像', isCand(s) ? candLabel(s) : '', dropped(s) ? '不要' : '']) {
     if (!t) continue;
     const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = t; $('curSub').appendChild(tag);
   }
   renderVals(); renderList();
-  if (play) playFrom(valOf(s).start);
+  if (how === 'play') playFrom(valOf(s).start);
+  else if (how === 'cue') cueAt(valOf(s).start);
 }
 function renderVals() {
-  $('candTools').hidden = !isCand(cur);
+  $('candTools').hidden = $('dropToggle').hidden = !isCand(cur);
   // 候補は「元のチャプター」と「今の設定」が同じ（読み込んだ値）なので、「読み込んだ値」として1つだけ出す
   document.querySelectorAll('.olabel').forEach((e) => { e.textContent = isCand(cur) ? '読み込んだ値' : '元のチャプター'; });
   document.querySelectorAll('.cpart').forEach((e) => { e.hidden = isCand(cur); });
@@ -442,10 +460,11 @@ function renderVals() {
   $('cStart').textContent = fmt(c.start); $('cEnd').textContent = endText(c.end); $('cLen').textContent = fmt(lenOf(cur, c));
   $('vStart').textContent = fmt(v.start); $('vEnd').textContent = endText(v.end); $('vLen').textContent = fmt(lenOf(cur, v));
   $('vStart').classList.toggle('changed', v.start !== c.start); $('vEnd').classList.toggle('changed', v.end !== c.end);
+  document.querySelector('[data-undo="start"]').disabled = v.start === c.start; document.querySelector('[data-undo="end"]').disabled = v.end === c.end;
   $('vLen').classList.toggle('changed', v.start !== c.start || v.end !== c.end);
   $('dropToggle').textContent = dropped(cur) ? '不要の印を外す' : '不要にする';
   if (isCand(cur)) {
-    document.querySelectorAll('[data-kind]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.kind === cur.kind));
+    document.querySelectorAll('[data-type]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.type === cur.type));
     if (document.activeElement !== $('candTitle')) $('candTitle').value = cur.cand.title;
   }
   $('dropToggle').classList.toggle('on', dropped(cur));
@@ -465,6 +484,17 @@ function renderMarks() {
   const [o1, o2, c1, c2] = tr.querySelectorAll('.tick');
   o1.style.left = pct(o.start); o2.style.left = pct(endOf(o) ?? hi); c1.style.left = pct(c.start); c2.style.left = pct(endOf(c) ?? hi);
 }
+// 開始・終了のどちらかだけを、調整前（今の設定。候補なら読み込んだ値）に戻す
+function undoVal(field) {
+  if (!cur) return;
+  const k = keyOf(cur), v = valOf(cur);
+  v[field] = curOf(cur)[field];
+  const e = v.end ?? vidLen(cur);
+  if (e != null && e <= v.start) { alert('戻すと終わりが開始より前になります。もう一方を先に戻してください。'); return; }
+  if (v.start === cur.start && v.end === cur.end) delete adj[k]; else adj[k] = { start: v.start, end: v.end };
+  saveAdj(); renderVals(); renderList(); renderOut();
+}
+document.querySelectorAll('[data-undo]').forEach((b) => b.addEventListener('click', () => undoVal(b.dataset.undo)));
 function setVal(field, t) {
   if (!cur) return false;
   const k = keyOf(cur), v = valOf(cur);
@@ -478,17 +508,26 @@ function setVal(field, t) {
 
 // ---------- YouTube プレイヤー ----------
 window.onYouTubeIframeAPIReady = () => {
-  player = new YT.Player('player', { playerVars: { playsinline: 1, rel: 0 }, events: { onReady: () => { ready = true; if (pending != null) playFrom(pending); } } });
+  player = new YT.Player('player', { playerVars: { playsinline: 1, rel: 0 }, events: { onReady: () => { ready = true; if (pending != null) (pendingCue ? cueAt : playFrom)(pending); } } });
 };
-let pending = null, stopAt = null;
+let pending = null, pendingCue = false, stopAt = null;
 function playFrom(t, stop) {
   if (!cur) return;
-  if (!ready) { pending = t; return; }
+  if (!ready) { pending = t; pendingCue = false; return; }
   pending = null;
   const vd = player.getVideoData && player.getVideoData();
   if (!vd || vd.video_id !== cur.vid) player.loadVideoById({ videoId: cur.vid, startSeconds: Math.max(0, t) });
   else { player.seekTo(Math.max(0, t), true); player.playVideo(); }
   stopAt = stop ?? null;
+}
+// 再生はせず、その位置で止めて待つ（調整ツールを開いたとき。再生ボタンで始まる）
+function cueAt(t) {
+  if (!cur) return;
+  if (!ready) { pending = t; pendingCue = true; return; }
+  pending = null; stopAt = null;
+  const vd = player.getVideoData && player.getVideoData();
+  if (!vd || vd.video_id !== cur.vid) player.cueVideoById({ videoId: cur.vid, startSeconds: Math.max(0, t) });
+  else { player.pauseVideo(); player.seekTo(Math.max(0, t), true); }
 }
 let dragging = false;
 setInterval(() => {
@@ -535,7 +574,7 @@ function renderOut() {
   songs.filter((s) => !isCand(s) && changed(s)).forEach((s) => { const v = valOf(s); seg[keyOf(s)] = { start: v.start, end: v.end, _memo: `${s.song}（${dot(s.date)} ${s.live}）` }; });
   const n = Object.keys(seg).length;
   const keep = songs.filter((s) => isCand(s) && !dropped(s)).sort(ORDERS.date)
-    .map((s) => { const c = s.cand, v = valOf(s); return { id: c.id, kind: c.kind, title: c.title, vid: s.vid, start: v.start, end: v.end, date: c.date, live: c.live, venue: c.venue }; });
+    .map((s) => { const c = s.cand, v = valOf(s); return { id: c.id, kind: c.kind, type: c.type, title: c.title, vid: s.vid, start: v.start, end: v.end, date: c.date, live: c.live, venue: c.venue }; });
   const out = {};
   if (n) out.segments = seg;
   if (cands.length) out.add = keep;
