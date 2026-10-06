@@ -202,9 +202,9 @@ def main():
             # 開始・終了の補正（曲の前の SE や、曲のあとの MC・写真撮影を外す）。補正キーは元のチャプターの開始秒のまま
             fix = {k: v for k, v in seg_fix[key].items() if not k.startswith('_')}
             if 'start' in fix and fix['start'] != s['start']:
-                s['chapter_start'] = s['start']   # 元の開始秒（確認用ページ tools/trim.html が補正キーを作るのに使う）
+                s['chapter_start'] = s['start']   # 元の開始秒（ライブラリ編集ツール editor.html が補正キーを作るのに使う）
             if 'end' in fix and fix['end'] != s['end']:
-                s['chapter_end'] = s['end']   # 元の終了秒（確認用ページ tools/trim.html に元のチャプターの位置として出す）
+                s['chapter_end'] = s['end']   # 元の終了秒（ライブラリ編集ツール editor.html に元のチャプターの位置として出す）
             if s.get('end') is None and 'start' in fix and s.get('len') is not None:
                 s['len'] -= fix['start'] - s['start']   # 終わりが動画の最後の曲（単独映像）は、頭を削ったぶん短くなる
             s.update(fix)
@@ -267,6 +267,15 @@ def main():
             lives[x['live']] = {'date': x['date'], 'venue': x['venue'], **setlists.get(x['live'], {})}
 
     assign_ids(out)
+    # タイトルの書き換え（曲 ID → タイトル。ライブラリ編集ツールで直したもの）。
+    # 曲 ID は元のチャプター名で付けたあとなので、タイトルを変えても ID は変わらない
+    titles = ov.get('titles', {})
+    for x in out:
+        t = titles.get(str(x['id']))
+        if t:
+            x['song'] = t
+    if titles:
+        out.sort(key=lambda s: (s['song'].casefold(), s['date'] or s['published']))
 
     with open(OUT, 'w', encoding='utf-8') as f:
         json.dump({'updated': datetime.date.today().isoformat(), 'count': len(out), 'lives': lives, 'songs': out},

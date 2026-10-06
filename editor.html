@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>再生範囲調整ツール - yosugala Live Video Player</title>
+<title>ライブラリ編集ツール - yosugala Live Video Player</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  /* 曲の開始・終了（再生範囲）を確かめて直すページ。プレーヤーのタイトル行のギアから開く */
+  /* ライブラリ編集ツール: 曲・MC の開始・終了（再生範囲）とタイトルを直し、新しい曲・MC の候補を足すページ。プレーヤーのタイトル行のギアから開く */
   :root {
     --bg: #05060f; --glass: rgba(18, 24, 54, .72); --glass-2: rgba(30, 40, 84, .6);
     --line: rgba(170, 190, 255, .14); --line-2: rgba(170, 190, 255, .28);
@@ -20,7 +20,7 @@
   body { margin: 0; background: var(--bg); color: var(--text); font-family: "Zen Kaku Gothic New", -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; font-size: 14px; line-height: 1.5; }
   /* プレーヤーと同じ星空の背景（画像＋またたく星） */
   body::before, body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-  body::before { background: linear-gradient(rgba(5,6,15,.22), rgba(5,6,15,.22)), #05060f url(../bg.jpg) center / cover no-repeat; }
+  body::before { background: linear-gradient(rgba(5,6,15,.22), rgba(5,6,15,.22)), #05060f url(bg.jpg) center / cover no-repeat; }
   body::after { background-image:
       radial-gradient(1px 1px at 20% 40%, #fff, transparent), radial-gradient(1px 1px at 70% 30%, #fff, transparent),
       radial-gradient(1.5px 1.5px at 50% 65%, #cfd9ff, transparent), radial-gradient(1px 1px at 90% 70%, #fff, transparent);
@@ -41,7 +41,12 @@
   .btn.backbtn { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; min-height: 0; padding: 5px 10px; border-radius: 8px; font-size: .78rem; font-weight: 400;
     letter-spacing: 0; text-shadow: none; text-decoration: none; }
   .backbtn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .note { font-size: .8rem; margin: 0 0 12px; padding: 8px 10px; border-radius: 10px; background: var(--glass); border: 1px solid rgba(255, 207, 138, .4); }
+  footer { position: relative; z-index: 1; max-width: 1500px; margin: 24px auto 0; padding: 18px 16px calc(32px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line); color: var(--muted); font-size: .76rem; line-height: 1.8; text-shadow: 0 0 10px rgba(5,6,15,.95), 0 0 2px rgba(5,6,15,.9); }
+  footer ul { margin: 0; padding-left: 1.2em; }
+  footer li { padding: 0; border-radius: 0; cursor: auto; background: none; }   /* 一覧の li の見た目を付けない */
+  footer li:hover { background: none; }
+  footer li + li { margin-top: 4px; }
 
   /* ---- 動画と操作バー（プレーヤーと同じ見た目） ---- */
   .stage { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: #000; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
@@ -118,6 +123,7 @@
   /* 並び順の切り替え（名前順・ID順） */
   /* 枠の中で、選んでいるものだけを丸いボタンで示す（区切り線や四角い塗りは端がはみ出して見えるので使わない） */
   .seg { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--line-2); border-radius: 999px; }
+  .seg[hidden] { display: none; }
   .seg button { font: inherit; font-size: .76rem; color: var(--muted); background: none; border: 0; border-radius: 999px; padding: 4px 12px; cursor: pointer; }
   .seg button:hover { color: var(--text); }
   .seg button[aria-pressed="true"] { color: #0a0e24; font-weight: 700; background: linear-gradient(90deg, #6f86ff, #b48cff 55%, var(--dawn)); }
@@ -137,6 +143,7 @@
   .badge.changed { color: var(--warn); }
   .badge.drop { color: var(--danger); }
   .candrow { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .candrow input.changed { color: var(--warn); }
   .candrow input { flex: 1; min-width: 0; font: inherit; font-size: .9rem; color: var(--text); background: rgba(5,6,15,.5); border: 1px solid var(--line-2); border-radius: 999px; padding: 7px 14px; }
   li.dropped .t { text-decoration: line-through; color: var(--muted); }
   .btn.on { border-color: var(--danger); color: var(--danger); }
@@ -182,15 +189,13 @@
 <body>
 <header class="hero">
   <p class="eyebrow">UNOFFICIAL FAN-MADE PLAYER</p>
-  <p class="brand"><a href="../" title="プレーヤーへ">yosugala<span class="sub">Live Video Player</span></a></p>
+  <p class="brand"><a href="./" title="プレーヤーへ">yosugala<span class="sub">Live Video Player</span></a></p>
 </header>
 <main>
   <section>
-    <h1>再生範囲調整ツール
-      <a class="btn backbtn" id="back" href="../" title="プレーヤーに戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>戻る</a>
+    <h1>ライブラリ編集ツール
+      <a class="btn backbtn" id="back" href="./" title="プレーヤーに戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>戻る</a>
     </h1>
-    <p class="note">調整した値は、このブラウザのプレーヤーにすぐ反映されます（このブラウザだけです。ほかの端末やほかの人のプレーヤーには反映されません）。
-      正式に変更したいときは、「書き出す」でできたファイルを添えて、プレーヤーの開発者に連絡してください。</p>
     <div class="stage">
       <div class="screen"><div id="player"></div></div>
       <div class="bar">
@@ -235,10 +240,10 @@
         </div>
       </div>
       <div class="lenrow">長さ <b id="vLen">-</b>（<span class="olabel">元のチャプター</span> <span id="oLen">-</span><span class="cpart"> ・ 今の設定 <span id="cLen">-</span></span>）</div>
-      <!-- 候補だけ: 種類（曲 / MC）・名前・不要の印 -->
+      <!-- 名前（登録済みの曲・MC も、候補も直せる）。種類（曲 / MC）は候補だけ -->
       <div id="candTools" hidden>
         <div class="candrow">
-          <span class="seg" role="group" aria-label="種類"><button type="button" data-type="song">曲</button><button type="button" data-type="mc">MC</button></span>
+          <span class="seg" id="typeSeg" role="group" aria-label="種類"><button type="button" data-type="song">曲</button><button type="button" data-type="mc">MC</button></span>
           <input type="text" id="candTitle" placeholder="曲名・MC の名前" aria-label="名前">
         </div>
       </div>
@@ -279,6 +284,13 @@
     <ol id="list"></ol>
   </aside>
 </main>
+<!-- 注意書き（プレーヤーと同じく、ページの下端に箇条書き） -->
+<footer>
+  <ul>
+    <li>編集した結果は、このブラウザのプレーヤーにすぐ反映されます（このブラウザだけです。ほかの端末やほかの人のプレーヤーには反映されません）。</li>
+    <li>正式に変更したいときは、「書き出す」でできたファイルを添えて、プレーヤーの開発者に連絡してください。</li>
+  </ul>
+</footer>
 
 <!-- 確認・お知らせ（ブラウザ標準のダイアログの代わり） -->
 <dialog id="askDlg">
@@ -335,6 +347,14 @@ const origOf = (s) => ({ start: s.chapter_start ?? s.start, end: 'chapter_end' i
 const curOf = (s) => ({ start: s.start, end: s.end });
 const valOf = (s) => { const a = adj[keyOf(s)]; return a ? { start: a.start, end: a.end } : curOf(s); };
 const changed = (s) => { const a = adj[keyOf(s)]; return !!a && (a.start !== s.start || a.end !== s.end); };
+// 登録済みの曲・MC のタイトルの書き換え { 曲 ID: 新しいタイトル }。このブラウザのプレーヤーにもすぐ反映し、書き出すと titles に入る
+const TITLE_KEY = 'yosugala-trim-titles-v1';
+let titles = {};
+try { titles = JSON.parse(localStorage.getItem(TITLE_KEY)) || {}; } catch {}
+const saveTitles = () => { try { localStorage.setItem(TITLE_KEY, JSON.stringify(titles)); } catch {} };
+const titleChanged = (s) => s.id != null && titles[s.id] != null && titles[s.id] !== s.song;
+const nameOf = (s) => (s.cand ? s.cand.title : titleChanged(s) ? titles[s.id] : s.song);
+const anyChanged = (s) => changed(s) || titleChanged(s);   // 範囲かタイトルを調整した曲
 // 長さ（終わりが「動画の最後」の単独映像は、動画の長さから）
 const vidLen = (s) => (s.end == null ? s.start + s.len : null);
 const lenOf = (s, v) => { const e = v.end ?? vidLen(s); return e == null ? null : e - v.start; };
@@ -396,14 +416,20 @@ $('candClear').addEventListener('click', async () => {
   setSongs(); renderVals(); renderList(); renderOut();
 });
 $('onlyCand').addEventListener('change', renderList);
-// 候補の種類（曲 / MC）と名前を直す（分析で見分け間違えたとき・曲名が分からないとき）
+// 候補の種類（曲 / MC）を直す（分析で見分け間違えたとき）。名前は登録済みの曲・MC も直せる
 document.querySelectorAll('[data-type]').forEach((b) => b.addEventListener('click', () => {
   if (!isCand(cur)) return;
   cur.cand.type = b.dataset.type; saveCands(); setSongs(); select(cur, 'none');
 }));
 $('candTitle').addEventListener('change', () => {
-  if (!isCand(cur)) return;
-  cur.cand.title = $('candTitle').value.trim() || cur.cand.title; saveCands(); setSongs(); select(cur, 'none');
+  if (!cur) return;
+  const v = $('candTitle').value.trim();
+  if (isCand(cur)) { cur.cand.title = v || cur.cand.title; saveCands(); setSongs(); }
+  else {
+    if (!v || v === cur.song) delete titles[cur.id]; else titles[cur.id] = v;   // 元のタイトルに戻したら調整なし
+    saveTitles();
+  }
+  select(cur, 'none'); renderOut();
 });
 $('dropToggle').addEventListener('click', () => {
   if (!isCand(cur)) return;
@@ -411,7 +437,7 @@ $('dropToggle').addEventListener('click', () => {
   saveCands(); setSongs(); select(cur, 'none'); renderOut();
 });
 
-fetch('../catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
+fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   // catalog.json の並び（曲名順。同じ曲の中は公演日の古い順。プレーヤーの「すべてのライブ映像 - 曲名順」と同じ）を名前順として覚えておく
   catalogSongs = c.songs.map((s, i) => ({ ...s, ord: i }));
   setSongs();
@@ -448,7 +474,7 @@ function scrollToSel(page) {
 }
 function visible() {
   const q = $('q').value.trim().toLowerCase();
-  return songs.filter((s) => (!$('onlyChanged').checked || changed(s)) && (!$('onlyCand').checked || isCand(s)) && (!q || `${s.song} ${s.live} ${s.date}`.toLowerCase().includes(q)));
+  return songs.filter((s) => (!$('onlyChanged').checked || anyChanged(s)) && (!$('onlyCand').checked || isCand(s)) && (!q || `${nameOf(s)} ${s.song} ${s.live} ${s.date}`.toLowerCase().includes(q)));
 }
 function renderList() {
   const ol = $('list'), vis = visible(); ol.textContent = '';
@@ -459,7 +485,7 @@ function renderList() {
     const li = document.createElement('li'); li.song = s; li.className = (s === cur ? 'sel ' : '') + (dropped(s) ? 'dropped' : '');
     const v = valOf(s);
     li.innerHTML = '<span class="badge changed"></span><span class="badge"></span><div class="t"></div><div class="m"></div>';
-    li.querySelector('.badge.changed').textContent = dropped(s) ? '' : changed(s) ? '調整済み' : '';
+    li.querySelector('.badge.changed').textContent = dropped(s) ? '' : anyChanged(s) ? '調整済み' : '';
     const b = li.querySelector('.badge:not(.changed)');
     b.textContent = dropped(s) ? '不要' : isCand(s) ? candLabel(s) : s.kind === 'single' ? '単独映像' : '';
     b.classList.toggle('drop', dropped(s));
@@ -472,7 +498,7 @@ function renderList() {
 $('q').addEventListener('input', renderList);
 $('onlyChanged').addEventListener('change', renderList);
 
-const idText = (s) => (isCand(s) ? s.song : `${s.song}（ID ${s.id}）`);   // 候補は曲 ID がまだないので名前だけ（仮 ID はファイルの中だけで使う）
+const idText = (s) => (isCand(s) ? nameOf(s) : `${nameOf(s)}（ID ${s.id}）`);   // 候補は曲 ID がまだないので名前だけ（仮 ID はファイルの中だけで使う）
 // how: 'play' = その曲の開始から再生（一覧で選んだとき）、'cue' = 開始の位置で止めて待つ（開いたとき）、
 //      'none' = 選び直すだけで再生位置はそのまま（候補の種類・名前を直したとき）
 function select(s, how = 'play') {
@@ -488,7 +514,7 @@ function select(s, how = 'play') {
   else if (how === 'cue') cueAt(valOf(s).start);
 }
 function renderVals() {
-  $('candTools').hidden = $('dropToggle').hidden = !isCand(cur);
+  $('candTools').hidden = !cur; $('typeSeg').hidden = $('dropToggle').hidden = !isCand(cur);
   // 候補は「元のチャプター」と「今の設定」が同じ（読み込んだ値）なので、「読み込んだ値」として1つだけ出す
   document.querySelectorAll('.olabel').forEach((e) => { e.textContent = isCand(cur) ? '読み込んだ値' : '元のチャプター'; });
   document.querySelectorAll('.cpart').forEach((e) => { e.hidden = isCand(cur); });
@@ -501,10 +527,9 @@ function renderVals() {
   document.querySelector('[data-undo="start"]').disabled = v.start === c.start; document.querySelector('[data-undo="end"]').disabled = v.end === c.end;
   $('vLen').classList.toggle('changed', v.start !== c.start || v.end !== c.end);
   $('dropToggle').textContent = dropped(cur) ? '不要の印を外す' : '不要にする';
-  if (isCand(cur)) {
-    document.querySelectorAll('[data-type]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.type === cur.type));
-    if (document.activeElement !== $('candTitle')) $('candTitle').value = cur.cand.title;
-  }
+  if (isCand(cur)) document.querySelectorAll('[data-type]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.type === cur.type));
+  if (document.activeElement !== $('candTitle')) $('candTitle').value = nameOf(cur);
+  $('candTitle').classList.toggle('changed', titleChanged(cur));
   $('dropToggle').classList.toggle('on', dropped(cur));
   renderMarks();
 }
@@ -593,7 +618,12 @@ const togglePlay = () => { if (!ready) return; player.getPlayerState() === YT.Pl
 $('pp').addEventListener('click', togglePlay);
 $('setStart').addEventListener('click', () => ready && setVal('start', player.getCurrentTime()));
 $('setEnd').addEventListener('click', () => ready && setVal('end', player.getCurrentTime()));
-$('reset').addEventListener('click', () => { if (!cur) return; delete adj[keyOf(cur)]; saveAdj(); renderVals(); renderList(); renderOut(); });
+$('reset').addEventListener('click', () => {
+  if (!cur) return;
+  delete adj[keyOf(cur)]; saveAdj();
+  if (cur.id != null) { delete titles[cur.id]; saveTitles(); }
+  select(cur, 'none'); renderOut();
+});
 const step = (d) => { const vis = visible(), i = vis.indexOf(cur), s = vis[i + d]; if (s) select(s); };
 $('prevSong').addEventListener('click', () => step(-1));
 $('nextSong').addEventListener('click', () => step(1));
@@ -609,16 +639,20 @@ document.addEventListener('keydown', (e) => {
 // 候補は、不要の印のないものを add に（種類・名前・調整した範囲で）。不要の印を付けたものは書き出さない
 function renderOut() {
   const seg = {};
-  songs.filter((s) => !isCand(s) && changed(s)).forEach((s) => { const v = valOf(s); seg[keyOf(s)] = { start: v.start, end: v.end, _memo: `${s.song}（${dot(s.date)} ${s.live}）` }; });
-  const n = Object.keys(seg).length;
+  songs.filter((s) => !isCand(s) && changed(s)).forEach((s) => { const v = valOf(s); seg[keyOf(s)] = { start: v.start, end: v.end, _memo: `${nameOf(s)}（${dot(s.date)} ${s.live}）` }; });
+  // タイトルを書き換えた曲（catalog_overrides.json の titles: 曲 ID → タイトル）
+  const tit = {};
+  songs.filter((s) => !isCand(s) && titleChanged(s)).sort((a, b) => a.id - b.id).forEach((s) => { tit[s.id] = titles[s.id]; });
+  const n = songs.filter((s) => !isCand(s) && anyChanged(s)).length;
   const keep = songs.filter((s) => isCand(s) && !dropped(s)).sort(ORDERS.date)
     .map((s) => { const c = s.cand, v = valOf(s); return { id: c.id, kind: c.kind, type: c.type, title: c.title, vid: s.vid, start: v.start, end: v.end, date: c.date, live: c.live, venue: c.venue }; });
   const out = {};
-  if (n) out.segments = seg;
+  if (Object.keys(seg).length) out.segments = seg;
+  if (Object.keys(tit).length) out.titles = tit;
   if (cands.length) out.add = keep;
   $('count').textContent = `調整した曲: ${n} 曲` + (cands.length ? ` ・ 候補: 残す ${keep.length} 件／不要 ${cands.length - keep.length} 件` : '');
   $('download').disabled = $('copy').disabled = !(n || cands.length);
-  $('clearAll').disabled = !Object.keys(adj).length;
+  $('clearAll').disabled = !Object.keys(adj).length && !Object.keys(titles).length;
   $('out').value = n || cands.length ? JSON.stringify(out, null, 1) : '';
 }
 $('download').addEventListener('click', () => {
@@ -635,13 +669,13 @@ $('copy').addEventListener('click', async () => {
   catch { $('out').select(); $('msg').textContent = '選択しました。コピーしてください。'; }
 });
 $('clearAll').addEventListener('click', async () => {
-  if (!await ask({ title: 'すべてリセット', message: 'すべての曲の調整をリセットしますか？\nこのブラウザのプレーヤーも元の再生範囲に戻ります。書き出していない調整は元に戻せません。', ok: 'リセット', danger: true })) return;
-  adj = {}; saveAdj(); renderVals(); renderList(); renderOut(); $('msg').textContent = '';
+  if (!await ask({ title: 'すべてリセット', message: 'すべての曲の調整（範囲・タイトル）をリセットしますか？\nこのブラウザのプレーヤーも元に戻ります。書き出していない調整は元に戻せません。', ok: 'リセット', danger: true })) return;
+  adj = {}; saveAdj(); titles = {}; saveTitles(); renderVals(); renderList(); renderOut(); $('msg').textContent = '';
 });
 // 戻る: プレーヤーから開いたときはブラウザの「戻る」で元の画面（再生中の曲・位置）へ。それ以外はプレーヤーのトップへ
 $('back').addEventListener('click', (e) => {
   let fromPlayer = false;
-  try { const r = new URL(document.referrer); fromPlayer = r.origin === location.origin && !r.pathname.includes('/tools/'); } catch {}
+  try { const r = new URL(document.referrer); fromPlayer = r.origin === location.origin && !r.pathname.endsWith("/editor.html"); } catch {}
   if (fromPlayer && history.length > 1) { e.preventDefault(); history.back(); }
 });
 const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);

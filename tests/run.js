@@ -51,7 +51,7 @@ async function open(url = '', { width = 1280, height = 900, mobile = false, ua, 
   }, seed);
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errors.push(`${url}: ${e.message}`));
-  await p.goto(BASE + url); await p.waitForFunction(() => (typeof catalog !== 'undefined' && catalog) || document.title.includes('調整ツール'), null, { timeout: 15000 });
+  await p.goto(BASE + url); await p.waitForFunction(() => (typeof catalog !== 'undefined' && catalog) || document.title.includes('編集ツール'), null, { timeout: 15000 });
   await wait(300);
   p.ctx = ctx;
   return p;
@@ -301,12 +301,12 @@ const TESTS = {
     await close(t);
   },
 
-  // 再生範囲調整ツール（tools/trim.html）と、その値のプレーヤーへの反映
-  async trim() {
-    const p = await open('tools/trim.html');
+  // ライブラリ編集ツール（editor.html）と、その値のプレーヤーへの反映
+  async editor() {
+    const p = await open('editor.html');
     await p.waitForFunction(() => $('list').children.length > 0);
     const all = JSON.parse(fs.readFileSync(path.join(ROOT, 'catalog.json'), 'utf8')).songs;
-    ok('プレーヤーのタイトル（プレーヤーへのリンク）が出る', await p.evaluate(() => document.querySelector('.brand a').getAttribute('href') === '../'
+    ok('プレーヤーのタイトル（プレーヤーへのリンク）が出る', await p.evaluate(() => document.querySelector('.brand a').getAttribute('href') === './'
       && document.querySelector('.brand').textContent.includes('yosugala')));
     ok('一覧は初めは名前順（catalog.json の曲名順と同じ）', await p.evaluate((ids) => [...$('list').children].map((li) => li.song.id).join() === ids.join()
       && document.querySelector('[data-order="name"]').getAttribute('aria-pressed') === 'true', all.map((s) => s.id)));
@@ -338,6 +338,14 @@ const TESTS = {
     ok('「戻す」で終了だけが調整前に戻る（開始はそのまま）', await p.evaluate((f) => { const a = adj[keyOf(cur)]; return a.start === f.start + 2 && a.end === f.end
       && document.querySelector('[data-undo="end"]').disabled; }, fixed));
     await p.evaluate(() => { window.__t = cur.start + 199; }); await p.click('#setEnd');
+    // 登録済みの曲のタイトルを書き換える（書き出しの titles に曲 ID で入る。元のタイトルに戻すと調整なし）
+    await p.fill('#candTitle', `${fixed.song}（直したタイトル）`); await p.dispatchEvent('#candTitle', 'change');
+    const t1 = await p.evaluate(() => ({ titles: JSON.parse($('out').value).titles, head: $('curTitle').textContent, row: $('list').querySelector('li.sel .t').textContent }));
+    ok('登録済みの曲のタイトルを書き換えられ、書き出しの titles に曲 ID で入る', t1.titles && t1.titles[fixed.id] === `${fixed.song}（直したタイトル）`
+      && t1.head === `${fixed.song}（直したタイトル）（ID ${fixed.id}）` && t1.row === t1.head, t1);
+    await p.fill('#candTitle', fixed.song); await p.dispatchEvent('#candTitle', 'change');
+    ok('登録済みの曲では種類（曲 / MC）の切り替えは出さない', await p.evaluate(() => getComputedStyle($('typeSeg')).display === 'none' && $('dropToggle').hidden));
+    ok('元のタイトルに戻すと titles から消える', await p.evaluate(() => !JSON.parse($('out').value).titles));
     ok('一覧に「調整済み」', await p.evaluate(() => $('list').querySelector('li.sel .badge.changed').textContent === '調整済み'));
     // 単独映像も調整できる（元は 0 秒〜動画の最後）
     const single = all.find((s) => s.kind === 'single' && !('chapter_start' in s));
@@ -409,12 +417,15 @@ const TESTS = {
     const r1 = await range();
     ok('プレーヤーに調整ツールの値が反映され、調整した曲では「調整値で再生中」が出る', r1.s === song.start + 3 && r1.e === song.end - 4 && r1.len === song.len - 7 && r1.is === r1.s && r1.ie === r1.e && r1.on, r1);
     ok('タイトル行の右端に調整ツールへのギア（文字なし）', await pp.evaluate(() => { const g = document.querySelector('.herotools .gear'), h = document.querySelector('.hero').getBoundingClientRect();
-      return g.getAttribute('href').startsWith('tools/trim.html') && !g.textContent.trim() && Math.abs(g.getBoundingClientRect().right - h.right) < 2
+      return g.getAttribute('href').startsWith('editor.html') && !g.textContent.trim() && Math.abs(g.getBoundingClientRect().right - h.right) < 2
         && $('trimOn').getBoundingClientRect().right <= g.getBoundingClientRect().left; }));
-    const tt = await pp.ctx.newPage(); await tt.goto(BASE + 'tools/trim.html'); await tt.waitForFunction(() => $('list').children.length > 0);
+    const tt = await pp.ctx.newPage(); await tt.goto(BASE + 'editor.html'); await tt.waitForFunction(() => $('list').children.length > 0);
     await tt.evaluate((id) => select(songs.find((s) => s.id === id)), song.id); await wait(200); await tt.evaluate((e) => { window.__t = e; }, song.end + 1); await tt.click('#setEnd'); await wait(300);
+    await tt.fill('#candTitle', 'タイトルを直した曲'); await tt.dispatchEvent('#candTitle', 'change'); await wait(300);
+    ok('編集ツールで直したタイトルも、開いているプレーヤーにすぐ反映', await pp.evaluate((id) => songById.get(id).song === 'タイトルを直した曲'
+      && catalogPls[0].all.find((i) => i.sid === id).title === 'タイトルを直した曲' && $('nowTitle').textContent === 'タイトルを直した曲', song.id));
     const r2 = await range();
-    ok('調整ツールで直すと、開いているプレーヤーにすぐ反映', r2.e === song.end + 1 && r2.ie === r2.e, r2);
+    ok('編集ツールで直すと、開いているプレーヤーにすぐ反映', r2.e === song.end + 1 && r2.ie === r2.e, r2);
     await tt.click('#reset'); await wait(300);
     const r3 = await range();
     ok('調整を取り消すと元の範囲に戻り、「調整値で再生中」も消える', r3.s === song.start && r3.e === song.end && r3.len === song.len && !r3.on, r3);
@@ -446,7 +457,7 @@ const TESTS = {
       bs.now === '単独映像' && bs.row === '単独映像' && bf.now === 'フルライブ映像より' && bf.row === 'フルライブ映像より', badge);
     await close(pb);
     // スマホ: 横にはみ出さず、動画は上に固定
-    const m = await open('tools/trim.html', { width: 390, height: 844, mobile: true });
+    const m = await open('editor.html', { width: 390, height: 844, mobile: true });
     await m.waitForFunction(() => $('list').children.length > 0);
     await m.click('#list li'); await wait(300); await m.evaluate(() => scrollTo(0, 600)); await wait(200);
     ok('スマホ: 横スクロールが出ず、動画は画面の上に残る', await m.evaluate(() => document.documentElement.scrollWidth <= innerWidth
