@@ -224,7 +224,8 @@ const KEY = 'yosugala-trim-v1';
 let adj = {};
 try { adj = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
 const saveAdj = () => { try { localStorage.setItem(KEY, JSON.stringify(adj)); } catch {} };
-const fmt = (sec) => { if (sec == null) return '-'; sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
+// 秒の端数は YouTube のプレーヤーと同じく切り捨てて表示する
+const fmt = (sec) => { if (sec == null) return '-'; sec = Math.max(0, Math.floor(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
   return (h ? `${h}:${String(m).padStart(2, '0')}` : `${m}`) + `:${String(s).padStart(2, '0')}`; };
 const dot = (d) => (d ? d.replace(/-/g, '.') : '');
 // 操作バーのアイコン（プレーヤーと同じ形。±秒は文字で −5 −1 ＋1 ＋5）
@@ -324,7 +325,7 @@ function renderMarks() {
 function setVal(field, t) {
   if (!cur) return false;
   const k = keyOf(cur), v = valOf(cur);
-  v[field] = Math.max(0, Math.round(t));
+  v[field] = Math.max(0, Math.floor(t));   // 表示と同じく切り捨て（YouTube のプレーヤーの表示とそろえる）
   if ((v.end ?? vidLen(cur)) != null && (v.end ?? vidLen(cur)) <= v.start) { alert('終わりは開始より後にしてください。'); return false; }
   if (v.start === cur.start && v.end === cur.end) delete adj[k];   // 今の設定に戻ったら調整なし
   else adj[k] = { start: v.start, end: v.end };
@@ -350,7 +351,7 @@ let dragging = false;
 setInterval(() => {
   if (!ready || !player.getCurrentTime) return;
   const t = player.getCurrentTime();
-  $('now').textContent = fmt(t); $('now').title = `${Math.round(t)} 秒`;
+  $('now').textContent = fmt(t); $('now').title = `${Math.floor(t)} 秒`;
   if (!dragging) $('seek').value = t;
   const playing = player.getPlayerState() === YT.PlayerState.PLAYING;
   if ($('pp').dataset.playing !== String(playing)) { $('pp').dataset.playing = playing; $('pp').innerHTML = playing ? ICON.pause : ICON.play; }

@@ -307,12 +307,14 @@ const TESTS = {
     const single = all.find((s) => s.kind === 'single' && !('chapter_start' in s));
     await p.evaluate((id) => select(songs.find((s) => s.id === id)), single.id); await wait(200);
     ok('単独映像の元の位置は 0:00〜動画の最後', await p.evaluate(() => $('oStart').textContent === '0:00' && $('oEnd').textContent === '動画の最後'));
-    await p.evaluate(() => { window.__t = 1; }); await p.click('#setStart');
+    await p.evaluate(() => { window.__t = 1.8; }); await wait(300);
+    ok('秒の端数は切り捨てて表示する（YouTube のプレーヤーと同じ）', await p.evaluate(() => $('now').textContent === '0:01'));
+    await p.click('#setStart');
     ok('操作バーの前の曲・次の曲で、一覧の前後の曲へ', await p.evaluate(() => { const vis = visible(), i = vis.indexOf(cur);
       $('nextSong').click(); const moved = cur === vis[i + 1]; $('prevSong').click(); return moved && cur === vis[i]; }));
     const dl = p.waitForEvent('download'); await p.click('#download');
     const file = await dl, body = JSON.parse(fs.readFileSync(await file.path(), 'utf8'));
-    ok('ファイルに書き出せる（調整した2曲）', /^yosugala-segments-\d{8}-\d{4}\.json$/.test(file.suggestedFilename()) && Object.keys(body.segments).length === 2
+    ok('ファイルに書き出せる（調整した2曲。「ここを開始に」は表示と同じ切り捨ての秒）', /^yosugala-segments-\d{8}-\d{4}\.json$/.test(file.suggestedFilename()) && Object.keys(body.segments).length === 2
       && body.segments[`${single.vid}@0`].start === 1 && body.segments[`${single.vid}@0`].end === null, body);
     await p.click('#reset');
     ok('この曲の調整を取り消すと書き出しから消える', Object.keys(JSON.parse(await p.inputValue('#out')).segments).length === 1);
