@@ -141,6 +141,16 @@
   li.dropped .t { text-decoration: line-through; color: var(--muted); }
   .btn.on { border-color: var(--danger); color: var(--danger); }
 
+  /* 確認・お知らせのダイアログ（ブラウザ標準のダイアログの代わり。プレーヤーと同じ見た目） */
+  dialog { border: 1px solid var(--line-2); border-radius: 18px; background: rgba(14,18,44,.96); color: var(--text);
+    padding: 0; width: min(540px, calc(100vw - 32px)); box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+  dialog::backdrop { background: rgba(3,4,12,.7); backdrop-filter: blur(4px); }
+  dialog form { padding: 22px; display: grid; gap: 12px; }
+  dialog h2 { font-family: "Cormorant Garamond", "Hiragino Mincho ProN", serif; font-weight: 500; font-size: 1.5rem; margin: 0; letter-spacing: .04em; }
+  dialog .msg { font-size: .85rem; color: #c3c9e4; margin: 0; white-space: pre-line; }
+  dialog .actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  dialog .btn { min-height: 36px; padding: 0 16px; }
+  .btn.primary.danger { background: var(--danger); color: #1a0508; }
   @media (max-width: 900px) {
     main { grid-template-columns: 1fr; padding: 0 0 16px; gap: 0; }
     main > section, main > aside { margin-left: 12px; margin-right: 12px; }
@@ -269,8 +279,36 @@
     <ol id="list"></ol>
   </aside>
 </main>
+
+<!-- 確認・お知らせ（ブラウザ標準のダイアログの代わり） -->
+<dialog id="askDlg">
+  <form id="askForm">
+    <h2 id="askTitle"></h2>
+    <p class="msg" id="askMsg"></p>
+    <div class="actions">
+      <button class="btn" type="button" id="askCancel">キャンセル</button>
+      <button class="btn primary" type="submit" id="askOk">OK</button>
+    </div>
+  </form>
+</dialog>
 <script>
 const $ = (id) => document.getElementById(id);
+// ---------- 確認・お知らせのダイアログ ----------
+// 確認は OK で true、キャンセル・Esc で null。notice: true ならお知らせだけ（OK だけ）
+let askDone = null;
+function ask({ title, message = '', ok = 'OK', danger = false, notice = false }) {
+  return new Promise((resolve) => {
+    askDone = resolve;
+    $('askTitle').textContent = title; $('askMsg').textContent = message; $('askMsg').hidden = !message;
+    $('askOk').textContent = ok; $('askOk').classList.toggle('danger', danger); $('askCancel').hidden = notice;
+    $('askDlg').showModal();
+  });
+}
+function askFinish(result) { const f = askDone; askDone = null; if ($('askDlg').open) $('askDlg').close(); if (f) f(result); }
+$('askForm').addEventListener('submit', (e) => { e.preventDefault(); askFinish(true); });
+$('askCancel').addEventListener('click', () => askFinish(null));
+$('askDlg').addEventListener('close', () => { if (!$('askDlg').open) askFinish(null); });
+const notice = (title, message) => ask({ title, message, notice: true });
 // 調整した値 { "動画ID@元のチャプターの開始秒": { start, end } }（キーは tools/catalog_overrides.json の segments と同じ）
 const KEY = 'yosugala-trim-v1';
 let adj = {};
@@ -348,10 +386,10 @@ $('candFile').addEventListener('change', async () => {
     cands = list.map((c) => ({ id: String(c.id), kind: c.kind, type: c.type, title: c.title.trim(),
       vid: c.vid, start: c.start, end: c.end, date: String(c.date || ''), live: String(c.live || ''), venue: String(c.venue || '') }));
     saveCands(); $('onlyCand').checked = true; setSongs(); renderList(); renderOut();
-  } catch (e) { alert(`候補を読み込めませんでした（${e.message}）`); }
+  } catch (e) { notice('候補を読み込めませんでした', e.message); }
 });
-$('candClear').addEventListener('click', () => {
-  if (!confirm('読み込んだ候補と「不要」の印をクリアしますか？（候補の範囲の調整も書き出しから消えます）')) return;
+$('candClear').addEventListener('click', async () => {
+  if (!await ask({ title: '候補をクリア', message: '読み込んだ候補と「不要」の印をクリアしますか？\n候補の範囲の調整も書き出しから消えます。', ok: 'クリア', danger: true })) return;
   cands.forEach((c) => delete adj[`${c.vid}@${c.start}`]); saveAdj();
   cands = []; drop.clear(); saveCands(); $('onlyCand').checked = false;
   if (isCand(cur)) cur = null;
@@ -434,7 +472,7 @@ function renderList() {
 $('q').addEventListener('input', renderList);
 $('onlyChanged').addEventListener('change', renderList);
 
-const idText = (s) => (isCand(s) ? `${s.song}（仮 ${s.cand.id}）` : `${s.song}（ID ${s.id}）`);   // 候補は曲 ID がまだないので仮 ID
+const idText = (s) => (isCand(s) ? s.song : `${s.song}（ID ${s.id}）`);   // 候補は曲 ID がまだないので名前だけ（仮 ID はファイルの中だけで使う）
 // how: 'play' = その曲の開始から再生（一覧で選んだとき）、'cue' = 開始の位置で止めて待つ（開いたとき）、
 //      'none' = 選び直すだけで再生位置はそのまま（候補の種類・名前を直したとき）
 function select(s, how = 'play') {
@@ -490,7 +528,7 @@ function undoVal(field) {
   const k = keyOf(cur), v = valOf(cur);
   v[field] = curOf(cur)[field];
   const e = v.end ?? vidLen(cur);
-  if (e != null && e <= v.start) { alert('戻すと終わりが開始より前になります。もう一方を先に戻してください。'); return; }
+  if (e != null && e <= v.start) { notice('戻せません', '戻すと終了が開始より前になります。もう一方を先に戻してください。'); return; }
   if (v.start === cur.start && v.end === cur.end) delete adj[k]; else adj[k] = { start: v.start, end: v.end };
   saveAdj(); renderVals(); renderList(); renderOut();
 }
@@ -499,7 +537,7 @@ function setVal(field, t) {
   if (!cur) return false;
   const k = keyOf(cur), v = valOf(cur);
   v[field] = Math.max(0, Math.floor(t));   // 表示と同じく切り捨て（YouTube のプレーヤーの表示とそろえる）
-  if ((v.end ?? vidLen(cur)) != null && (v.end ?? vidLen(cur)) <= v.start) { alert('終わりは開始より後にしてください。'); return false; }
+  if ((v.end ?? vidLen(cur)) != null && (v.end ?? vidLen(cur)) <= v.start) { notice('設定できません', '終了は開始より後にしてください。'); return false; }
   if (v.start === cur.start && v.end === cur.end) delete adj[k];   // 今の設定に戻ったら調整なし
   else adj[k] = { start: v.start, end: v.end };
   saveAdj(); renderVals(); renderList(); renderOut();
@@ -596,8 +634,8 @@ $('copy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText($('out').value); $('msg').textContent = 'コピーしました。'; }
   catch { $('out').select(); $('msg').textContent = '選択しました。コピーしてください。'; }
 });
-$('clearAll').addEventListener('click', () => {
-  if (!confirm('すべての曲の調整をリセットしますか？ このブラウザのプレーヤーも元の再生範囲に戻ります（書き出していない調整は元に戻せません）。')) return;
+$('clearAll').addEventListener('click', async () => {
+  if (!await ask({ title: 'すべてリセット', message: 'すべての曲の調整をリセットしますか？\nこのブラウザのプレーヤーも元の再生範囲に戻ります。書き出していない調整は元に戻せません。', ok: 'リセット', danger: true })) return;
   adj = {}; saveAdj(); renderVals(); renderList(); renderOut(); $('msg').textContent = '';
 });
 // 戻る: プレーヤーから開いたときはブラウザの「戻る」で元の画面（再生中の曲・位置）へ。それ以外はプレーヤーのトップへ

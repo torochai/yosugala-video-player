@@ -366,33 +366,37 @@ const TESTS = {
       { id: 3, kind: 'single', type: 'song', title: 'もう一曲', vid: fixed.vid, start: 30000, end: 30200, date: fixed.date, live: fixed.live, venue: '' }] };
     // kind・type などが抜けている／知らない値のファイルは読み込まない（何件目のどの項目かを出す）
     for (const [broken, want] of [[{ ...cand.candidates[0], kind: undefined }, '1 件目の kind'], [{ ...cand.candidates[0], type: 'talk' }, '1 件目の type']]) {
-      const msg = new Promise((r) => p.once('dialog', (d) => { r(d.message()); d.accept(); }));
-      await p.setInputFiles('#candFile', { name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ candidates: [broken] })) });
-      const m = await msg;
+      await p.setInputFiles('#candFile', { name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ candidates: [broken] })) }); await wait(150);
+      const m = await p.evaluate(() => $('askDlg').open && $('askCancel').hidden ? $('askTitle').textContent + ' ' + $('askMsg').textContent : ''); await p.click('#askOk');
       ok(`候補の ${want.split('の ')[1]} が正しくないファイルは読み込まない`, m.includes(want) && await p.evaluate(() => !cands.length), m);
     }
     await p.setInputFiles('#candFile', { name: 'cand.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(cand)) }); await wait(200);
-    ok('候補を読み込むと、一覧に「曲の候補」「MC 候補」として仮 ID 付きで並ぶ（候補だけの表示）', await p.evaluate(() => $('onlyCand').checked
+    ok('候補を読み込むと、一覧に「曲の候補」「MC 候補」として並ぶ（候補だけの表示）', await p.evaluate(() => $('onlyCand').checked
       && [...$('list').children].map((li) => li.querySelector('.badge:not(.changed)').textContent + ':' + li.querySelector('.t').textContent).sort().join()
-        === ['MC 候補:MC（テストの曲のあと）（仮 2）', '曲の候補:（曲名なし）（仮 1）', '曲の候補:もう一曲（仮 3）'].sort().join() && !$('candClear').hidden));
-    const pick = (t) => p.evaluate((t) => [...$('list').children].find((li) => li.querySelector('.t').textContent.includes(t)).click(), t);
-    await pick('仮 1）'); await wait(200);
+        === ['MC 候補:MC（テストの曲のあと）', '曲の候補:（曲名なし）', '曲の候補:もう一曲'].sort().join() && !$('candClear').hidden));
+    const pick = (t) => p.evaluate((t) => [...$('list').children].find((li) => li.querySelector('.t').textContent === t).click(), t);
+    await pick('（曲名なし）'); await wait(200);
     ok('候補では「元のチャプター」「今の設定」の代わりに「読み込んだ値」だけを出す', await p.evaluate(() => [...document.querySelectorAll('.olabel')].every((e) => e.textContent === '読み込んだ値')
       && [...document.querySelectorAll('.cpart')].every((e) => e.hidden)));
     await p.evaluate(() => { window.__t = 10005.4; }); await p.click('#setStart');
     await p.fill('#candTitle', 'アステリズム'); await p.dispatchEvent('#candTitle', 'change');
-    await pick('仮 3）'); await wait(200); await p.click('[data-type="mc"]'); await p.fill('#candTitle', 'MC（アステリズムのあと）'); await p.dispatchEvent('#candTitle', 'change');
-    await pick('仮 2）'); await wait(200); await p.click('#dropToggle');
+    await pick('もう一曲'); await wait(200); await p.click('[data-type="mc"]'); await p.fill('#candTitle', 'MC（アステリズムのあと）'); await p.dispatchEvent('#candTitle', 'change');
+    await pick('MC（テストの曲のあと）'); await wait(200); await p.click('#dropToggle');
     const add = JSON.parse(await p.inputValue('#out')).add;
     ok('書き出しの add には、不要の印のない候補だけが、直した種類・名前・範囲で入る', add.length === 2
       && JSON.stringify(add.map((x) => [x.id, x.kind, x.type, x.title, x.start, x.end])) === JSON.stringify([['1', 'full', 'song', 'アステリズム', 10005, 10100], ['3', 'single', 'mc', 'MC（アステリズムのあと）', 30000, 30200]]), add);
     ok('不要の印は一覧にも出る', await p.evaluate(() => $('list').querySelector('li.dropped .badge.drop').textContent === '不要'));
     await p.reload(); await p.waitForFunction(() => $('list').children.length > 0);
     ok('候補（直した種類・名前）と不要の印はブラウザに残る', await p.evaluate(() => cands.length === 3 && drop.size === 1 && cands[0].title === 'アステリズム' && cands[2].type === 'mc'));
-    p.once('dialog', (d) => d.accept()); await p.click('#candClear'); await wait(100);
+    await p.click('#candClear'); await wait(100);
+    ok('「候補をクリア」は自前のダイアログで確かめる（ブラウザ標準のダイアログは使わない）', await p.evaluate(() => $('askDlg').open && $('askOk').textContent === 'クリア' && !$('askCancel').hidden));
+    await p.click('#askOk'); await wait(100);
     ok('「候補をクリア」で候補・不要の印・候補の調整が消える', await p.evaluate(() => !cands.length && !drop.size && !JSON.parse($('out').value || '{}').add));
     await p.check('#onlyChanged');
-    p.once('dialog', (d) => d.accept()); await p.click('#clearAll'); await wait(100);
+    await p.click('#clearAll'); await wait(100);
+    await p.click('#askCancel'); await wait(100);
+    ok('「すべてリセット」はキャンセルすると何もしない', await p.evaluate(() => !$('askDlg').open && Object.keys(adj).length > 0));
+    await p.click('#clearAll'); await wait(100); await p.click('#askOk'); await wait(100);
     ok('「すべての調整をリセット」で調整がなくなる', await p.evaluate(() => $('out').value === '' && $('list').children.length === 0 && !Object.keys(JSON.parse(localStorage.getItem('yosugala-trim-v1'))).length));
     await close(p);
     // プレーヤー: 調整ツールの値で再生する（このブラウザだけ）。調整ツールで直すと、開いているプレーヤーにもすぐ反映
