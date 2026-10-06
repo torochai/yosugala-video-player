@@ -1,5 +1,5 @@
 {
-  "_説明": "update_catalog.py が catalog.json を作るときの手直し。aliases=曲名の統一、live_rules=動画タイトル(正規表現)→表示するライブ名、segments=「動画ID@開始秒」ごとの開始・終了の修正、exclude_videos/exclude_entries=除外 live_dates=ライブ名→公演日（タイトルに日付がない公演用。並び順と表示に使う）。 video_lives=動画ID→ライブ名（タイトルに公演名がない動画用） live_venues=ライブ名→会場名（「@ 会場名」で表示） setlists=ライブ名→セットリスト（main=本編, encore=アンコール, medley=メドレーの曲, source=出典（URL。複数なら配列）, note=補足, encore_video=本編とアンコールの両方で披露した曲のうち、映像がアンコールのほうの曲）。プレイリストの説明に表示し、フルライブ映像がない公演では曲順にも使う。",
+  "_説明": "update_catalog.py が catalog.json を作るときの手直し。aliases=曲名の統一、live_rules=動画タイトル(正規表現)→表示するライブ名、segments=「動画ID@開始秒」ごとの開始・終了の修正、exclude_videos/exclude_entries=除外 live_dates=ライブ名→公演日（タイトルに日付がない公演用。並び順と表示に使う）。 video_lives=動画ID→ライブ名（タイトルに公演名がない動画用） live_venues=ライブ名→会場名（「@ 会場名」で表示） setlists=ライブ名→セットリスト（main=本編, encore=アンコール, medley=メドレーの曲, source=出典（URL。複数なら配列）, note=補足, encore_video=本編とアンコールの両方で披露した曲のうち、映像がアンコールのほうの曲）。プレイリストの説明に表示し、フルライブ映像がない公演では曲順にも使う。 talks=MC（メンバーが話している区間）の一覧。vid・start・end・title（「MC①（次の曲のまえ）」など）。カタログでは type=\"mc\" になり、プレイヤーの「MC - 公演日順」に入る（曲の一覧・公演のプレイリストには入らない）。 talk_skips=MC の候補として確かめて要らなかった時間帯（「動画ID@開始秒」。tools/make_candidates.py が候補に出さない）。",
   "aliases": {
     "MyDear": "My Dear",
     "sparkle": "Sparkle",
@@ -535,5 +535,175 @@
         "indigo"
       ]
     }
-  }
+  },
+  "talks": [
+    {
+      "vid": "vvXavz88D0g",
+      "start": 957,
+      "end": 996,
+      "title": "MC①（嘘とか愛とかのまえ）"
+    },
+    {
+      "vid": "vvXavz88D0g",
+      "start": 1974,
+      "end": 2013,
+      "title": "MC②（ひとりごとのまえ）"
+    },
+    {
+      "vid": "vvXavz88D0g",
+      "start": 2931,
+      "end": 3622,
+      "title": "MC③（aspirationのまえ）"
+    },
+    {
+      "vid": "vvXavz88D0g",
+      "start": 4612,
+      "end": 4961,
+      "title": "MC④（夜明けの唄のまえ）"
+    },
+    {
+      "vid": "nd6EJzBDS60",
+      "start": 1178,
+      "end": 1337,
+      "title": "MC①（◯×ゲームのまえ）"
+    },
+    {
+      "vid": "nd6EJzBDS60",
+      "start": 2130,
+      "end": 2192,
+      "title": "MC②（prologueのまえ）"
+    },
+    {
+      "vid": "nd6EJzBDS60",
+      "start": 3121,
+      "end": 3244,
+      "title": "MC③（aspirationのまえ）"
+    },
+    {
+      "vid": "nd6EJzBDS60",
+      "start": 3946,
+      "end": 4186,
+      "title": "MC④（ソラノナミダのまえ）"
+    },
+    {
+      "vid": "nd6EJzBDS60",
+      "start": 5009,
+      "end": 5214,
+      "title": "MC⑤（Sparkleのまえ）"
+    },
+    {
+      "vid": "nd6EJzBDS60",
+      "start": 5451,
+      "end": 5593,
+      "title": "写真撮影（Sparkleのあと）"
+    },
+    {
+      "vid": "EiobVwTprto",
+      "start": 971,
+      "end": 1048,
+      "title": "MC①（スペードのエースのまえ）"
+    },
+    {
+      "vid": "EiobVwTprto",
+      "start": 1876,
+      "end": 2039,
+      "title": "MC②（夜更かしして寝坊するんだのまえ）"
+    },
+    {
+      "vid": "EiobVwTprto",
+      "start": 3000,
+      "end": 3229,
+      "title": "MC③（indigoのまえ）"
+    },
+    {
+      "vid": "EiobVwTprto",
+      "start": 5017,
+      "end": 5335,
+      "title": "MC④（My Dearのまえ）"
+    },
+    {
+      "vid": "9C9p08K1oAA",
+      "start": 1090,
+      "end": 1355,
+      "title": "MC①（aspirationのまえ）"
+    },
+    {
+      "vid": "9C9p08K1oAA",
+      "start": 2439,
+      "end": 2663,
+      "title": "MC②（裸足のままのまえ）"
+    },
+    {
+      "vid": "9C9p08K1oAA",
+      "start": 3511,
+      "end": 3586,
+      "title": "MC③（アステリズムのまえ）"
+    },
+    {
+      "vid": "9C9p08K1oAA",
+      "start": 5519,
+      "end": 5924,
+      "title": "MC④（四葉のクローバーのまえ）"
+    },
+    {
+      "vid": "9C9p08K1oAA",
+      "start": 6180,
+      "end": 6318,
+      "title": "エンディング"
+    },
+    {
+      "vid": "Tv7KrUG9C0Q",
+      "start": 778,
+      "end": 822,
+      "title": "バンド紹介（aspirationのまえ）"
+    },
+    {
+      "vid": "Tv7KrUG9C0Q",
+      "start": 1077,
+      "end": 1183,
+      "title": "MC①（indigoのまえ）"
+    },
+    {
+      "vid": "Tv7KrUG9C0Q",
+      "start": 2196,
+      "end": 2276,
+      "title": "MC②（きっかけのまえ）"
+    },
+    {
+      "vid": "Tv7KrUG9C0Q",
+      "start": 2512,
+      "end": 2644,
+      "title": "MC③（夜更かしして寝坊するんだのまえ）"
+    },
+    {
+      "vid": "Tv7KrUG9C0Q",
+      "start": 3348,
+      "end": 3585,
+      "title": "MC④（アステリズムのまえ）"
+    },
+    {
+      "vid": "Tv7KrUG9C0Q",
+      "start": 4560,
+      "end": 4633,
+      "title": "MC⑤（prologueのまえ）"
+    },
+    {
+      "vid": "Tv7KrUG9C0Q",
+      "start": 5451,
+      "end": 5978,
+      "title": "MC⑥（Sparkleのまえ）"
+    },
+    {
+      "vid": "Tv7KrUG9C0Q",
+      "start": 6237,
+      "end": 6379,
+      "title": "エンディング"
+    }
+  ],
+  "talk_skips": [
+    "nd6EJzBDS60@4739",
+    "EiobVwTprto@4518",
+    "EiobVwTprto@5583",
+    "9C9p08K1oAA@4942"
+  ]
 }

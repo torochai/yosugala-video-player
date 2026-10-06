@@ -775,6 +775,7 @@ function save() {
 const CATALOG_ID = '__catalog__';             // すべてのライブ映像 - 曲名順（以前からの ID のまま）
 const CATALOG_DATE_ID = '__catalog_date__';   // すべてのライブ映像 - 公演日順
 const SINGLES_ID = '__catalog_singles__';     // Official Live Video - 公開日順（単独で公開された映像だけ・古い順）
+const MC_ID = '__catalog_mc__';               // ライブMC集（メンバーが話している区間。catalog.json の type = "mc"）
 const LIVE_ID = '__live__:';                  // 公演ごと: LIVE_ID + 公演日 + '|' + 公演名
 let catalog = null, catalogAll = [], catalogPls = [], catQuery = '', lastTarget = null;
 const songById = new Map();   // 曲 ID → catalog.json の曲（vid・start・end・song・live・date・venue など）
@@ -843,8 +844,10 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
   // 保存してあるプレイリスト・共有リンクのプレイリストに、カタログの内容を付ける
   state.playlists.forEach(hydrate);
   save(); showSharedBanner();
-  // 同じ公演・同じ曲にフルライブ映像のチャプターと単独映像があるときは、どちらも一覧に出す
-  const visible = c.songs;
+  // 同じ公演・同じ曲にフルライブ映像のチャプターと単独映像があるときは、どちらも一覧に出す。
+  // MC（type = "mc"）は曲の一覧・公演のプレイリストには入れず、「MC - 公演日順」にだけ入れる
+  const isMc = (x) => x.type === 'mc';
+  const visible = c.songs.filter((x) => !isMc(x));
   const toItem = (x) => songRow(x.id, `c:${x.id}`);
   catalogAll = visible.map(toItem);   // catalog.json の並び = 曲名順（同じ曲の中は公演日の古い順）
   // 公演日順: 公演日の古い順、同じ公演の中はセットリスト順（公演日が分からないものは最後に公開日順）
@@ -856,15 +859,19 @@ fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => {
     catalogPlaylist(CATALOG_DATE_ID, 'すべてのライブ映像 - 公演日順', byDate, `${about}\n公演日の古い順に、同じ公演の中はセットリストの順に並べています。${CAT_HELP}`, true),
   ];
   // Official Live Video: 1曲ずつ公開された映像（フルライブ映像から切り出したものは入れない）を公開日の古い順に
-  const singles = c.songs.filter((x) => x.kind === 'single')
+  const singles = visible.filter((x) => x.kind === 'single')
     .sort((a, b) => a.published.localeCompare(b.published) || a.song.localeCompare(b.song)).map(toItem);
   catalogPls.push(catalogPlaylist(SINGLES_ID, 'Official Live Video - 公開日順', singles,
     `yosugala official が1曲ずつ公開している公式ライブ映像（Official Live Video）を、公開日の古い順に並べています（${singles.length} 本・${c.updated} 時点）。フルライブ映像から切り出した曲は入っていません。`));
+  // MC: 公演日の古い順、同じ映像の中は時間の順
+  const mcs = c.songs.filter(isMc).sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999') || a.vid.localeCompare(b.vid) || a.start - b.start).map(toItem);
+  if (mcs.length) catalogPls.push(catalogPlaylist(MC_ID, 'ライブMC集', mcs,
+    `フルライブ映像の中で、メンバーが話している区間（MC）を集めたものです（${mcs.length} 件・${c.updated} 時点）。公演日の古い順に並べています。名前の「（○○のまえ）」は、その MC のあとに歌った曲です。`));
   // 公演ごと（公演日が分かるものだけ）。新しい公演が上
   //   フルライブ映像がある公演は、フルライブ映像のチャプターだけをその順に（単独映像と重なるチャプターも使う）
   //   フルライブ映像がない公演は、単独映像をセットリスト順に
   const lives = new Map();
-  c.songs.filter((x) => x.date && x.live).forEach((x) => {
+  visible.filter((x) => x.date && x.live).forEach((x) => {
     const k = `${x.date}|${x.live}`;
     if (!lives.has(k)) lives.set(k, []);
     lives.get(k).push(x);
@@ -1565,6 +1572,8 @@ function moveTo(id, pick, keepPlaying) {
 $('playLive').addEventListener('click', () => {
   const it = items()[curIndex()], lp = it && livePlOf(it);
   if (!lp) return;
+  // MC のときは、その MC のあとの曲（同じ映像で、MC の終わりより後に始まる最初の曲）から再生する
+  if (infoOf(it).type === 'mc') return moveTo(lp.id, () => items().findIndex((x) => x.vid === it.vid && x.start >= it.end - 5), false);
   moveTo(lp.id, () => { const l = items(); const i = l.findIndex((x) => x.sid === it.sid); return i >= 0 ? i : l.findIndex((x) => x.title === it.title); }, true);
 });
 // 別公演の同じ曲: 「すべてのライブ映像 - 曲名順」をその曲名で絞り込んだ一覧に移る。

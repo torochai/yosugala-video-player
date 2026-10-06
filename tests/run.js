@@ -74,10 +74,24 @@ const TESTS = {
     const both = await p.evaluate(() => {
       const all = catalogPls.find((q) => q.id === CATALOG_ID).all.filter((x) => infoOf(x).date === '2024-02-18' && x.title === 'ソラノナミダ').map((x) => infoOf(x).kind);
       const live = catalogPls.find((q) => q.id === '__live__:2024-02-18|progress the night -LIQUIDROOM-').all.filter((x) => x.title === 'ソラノナミダ').map((x) => infoOf(x).kind);
-      return { all, live, total: catalogPls.find((q) => q.id === CATALOG_ID).all.length, catalog: catalog.songs.length };
+      return { all, live, total: catalogPls.find((q) => q.id === CATALOG_ID).all.length, catalog: catalog.songs.filter((x) => x.type !== 'mc').length };
     });
     ok('すべてのライブ映像にはフルライブ映像のチャプターと単独映像の両方、公演のプレイリストはフルライブ映像のチャプター',
       both.all.sort().join() === 'full,single' && both.live.join() === 'full' && both.total === both.catalog, both);
+    // ライブMC集: MC（type = "mc"）だけを公演日順に。曲の一覧・公演のプレイリストには入らない
+    const mc = await p.evaluate(() => {
+      const ids = catalog.songs.filter((x) => x.type === 'mc').map((x) => x.id), q = catalogPls.find((x) => x.id === MC_ID);
+      const inSongs = catalogPls.filter((x) => x.id !== MC_ID).some((x) => x.all.some((i) => ids.includes(i.sid)));
+      const dates = q.all.map((i) => infoOf(i).date);
+      return { name: q.name, n: q.all.length, all: ids.length, inSongs, sorted: dates.every((d, i) => !i || dates[i - 1] <= d) };
+    });
+    ok('「ライブMC集」に MC だけが公演日順に入り、曲の一覧・公演のプレイリストには入らない', mc.name === 'ライブMC集' && mc.n === mc.all && mc.n > 0 && !mc.inSongs && mc.sorted, mc);
+    const cont = await p.evaluate(() => {
+      switchTo(MC_ID); const i = items().findIndex((x) => x.title.startsWith('MC①') && infoOf(x).date === '2024-11-01'); playIndex(i);
+      const m = items()[i]; $('playLive').click();
+      const it = items()[curIndex()]; return { pl: pl().id, title: it.title, after: it.start >= m.end - 5 && it.vid === m.vid, show: !$('playOther').hidden };
+    });
+    ok('MC から「この公演の続き」で、その MC のあとの曲へ', cont.pl.startsWith('__live__:2024-11-01') && cont.after, cont);
     ok('カタログのプレイリストができる', r.lib > 5, r.lib);
     ok('URL で曲を追加する画面はない', await p.evaluate(() => !document.getElementById('addSong') && !document.getElementById('songDlg')));
     await close(p);

@@ -8,6 +8,7 @@ https://torochai.github.io/yosugala-video-player/
 - プレイリストの作成・編集（ライブ映像の一覧から追加・並べ替え・削除）、複数プレイリスト
 - 共有リンク、書き出し / 読み込み
 - リピート（全曲 / 1曲）、全画面再生
+- ライブMC集（フルライブ映像の中で、メンバーが話している区間を公演日順に）
 - 再生中の曲から「この公演の続き」「別公演の同じ曲」へ移る（止めずに続けて再生。「戻る」で元のプレイリストへ）
 - ライブラリ編集ツール（タイトル行の右端のギア）: 曲・MC の開始・終了とタイトルを直して、このブラウザのプレーヤーにすぐ反映・書き出し。新しい曲・MC の候補ファイルを読み込んで足すこともできる
 
@@ -48,3 +49,5 @@ git add catalog.json tools/video_cache.json tools/song_ids.json tools/thumb_cach
 - 補正ファイルだけを直したときは `python3 tools/update_catalog.py --offline` で、YouTube に接続せずに `video_cache.json` から作り直せます
 - 公演日はタイトルの日付から取ります。タイトルに日付がない公演は `catalog_overrides.json` の `live_dates`（ライブ名 → 公演日）に書いてください。同じ曲の中は公演日の古い順に並びます（公開日 `published` もデータに入っていますが、画面には出しません）
 - 同じ公演・同じ曲にフルライブ映像のチャプターと単独映像があるときは、どちらもプレイヤーに表示します（チャプターには、重なっている単独映像の動画 ID を `duplicate_of` に書きます）
+- MC（メンバーが話している区間）は `catalog_overrides.json` の `talks`（`vid`・`start`・`end`・`title`）に書きます。カタログでは `type: "mc"` になり、プレイヤーの「ライブMC集」にだけ入ります（曲の一覧・公演のプレイリストには入りません）。名前は「MC①（次の曲のまえ）」の形です
+- 新しい MC の候補は `python3 tools/make_candidates.py > candidates.json` で作り、ライブラリ編集ツールの「候補を読み込む」で要不要・名前・範囲を確かめて書き出します。書き出しの `add` を `talks` に入れると、曲 ID が付きます

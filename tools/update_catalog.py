@@ -127,6 +127,11 @@ def main():
     seg_fix = ov.get('segments', {})
     live_rules = [(re.compile(p, re.I), name) for p, name in ov.get('live_rules', [])]
     video_lives = ov.get('video_lives', {})
+    # MC（メンバーが話している区間）: talks = [{ vid, start, end, title }]。フルライブ映像のチャプターと同じ形でカタログに入れ、
+    # type = 'mc' を付ける（曲は type を付けない = 'song'）。kind は映像の種類（full）のまま
+    talks = {}
+    for t in ov.get('talks', []):
+        talks.setdefault(t['vid'], []).append(t)
     cache = load(CACHE, {})
 
     entries = []
@@ -189,6 +194,9 @@ def main():
                 start, end = int(c['start']), int(c['end'])
                 songs.append({'song': name, 'vid': vid, 'start': start, 'end': end, 'len': end - start,
                               'live': live, 'tdate': title_date(title), 'published': published, 'kind': 'full'})
+            for t in talks.get(vid, []):
+                songs.append({'song': t['title'], 'vid': vid, 'start': t['start'], 'end': t['end'], 'len': t['end'] - t['start'],
+                              'live': live, 'tdate': title_date(title), 'published': published, 'kind': 'full', 'type': 'mc'})
         else:
             print(f'  曲に分けられない動画をスキップ: {title[:60]}')
 
@@ -240,7 +248,7 @@ def main():
     #   フルライブ映像がない公演 → 補正ファイルの setlists（本編・アンコールの曲順）。どれでも分からなければ最後に公開日順
     setlists = ov.get('setlists', {})
     for live in {x['live'] for x in out if x['live']}:
-        group = [x for x in out if x['live'] == live]
+        group = [x for x in out if x['live'] == live and x.get('type') != 'mc']   # MC には曲順を付けない
         chapter_at = {(x['duplicate_of'], x['song']): x['start'] for x in group if x.get('duplicate_of')}
         sl = setlists.get(live, {})
         setlist = sl.get('main', []) + sl.get('encore', [])
@@ -280,8 +288,9 @@ def main():
     with open(OUT, 'w', encoding='utf-8') as f:
         json.dump({'updated': datetime.date.today().isoformat(), 'count': len(out), 'lives': lives, 'songs': out},
                   f, ensure_ascii=False, indent=1)
-    names = sorted({s['song'] for s in out}, key=str.casefold)
-    print(f'catalog.json を更新しました: 全 {len(out)} 件（{len(names)} 曲）')
+    names = sorted({s['song'] for s in out if s.get('type') != 'mc'}, key=str.casefold)
+    mc = [x for x in out if x.get('type') == 'mc']
+    print(f'catalog.json を更新しました: 全 {len(out)} 件（{len(names)} 曲' + (f'・MC {len(mc)} 件' if mc else '') + '）')
     print('曲名一覧: ' + ' / '.join(names))
     # 曲ごとの案内ページ（X で曲を共有したときのリンク先）もカタログに合わせて作り直す
     sys.path.insert(0, HERE); sys.dont_write_bytecode = True
