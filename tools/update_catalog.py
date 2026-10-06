@@ -22,6 +22,10 @@ CHANNEL = 'https://www.youtube.com/channel/UCP5_IRli-KbizrztKSmgh8Q'
 # （再生リストに入っていない新しい MV もあるため。メイキング・ティーザーなどはタイトルに【】「」などが付くので入らない）
 MV_PLAYLIST = 'https://www.youtube.com/playlist?list=PLmu11HkWPvmbgMpfY4vZ7KVy67l7YyXJk'
 MV_TITLE_RE = re.compile(r'^\s*yosugala\s*[-‐－–—]\s*[^【】\[\]「」『』()（）|｜]+$', re.I)
+# 動画ごとの情報（概要欄）を取れたときは、概要欄に「- MusicVideo」の行がある動画を MV にする（再生リスト・タイトルより優先）。
+# 新しい動画（ライブ映像でないもの）の概要欄を 1 回に MV_DESC_MAX 本まで確かめ、結果を video_cache.json の desc_mv に覚えておく
+MV_DESC_RE = re.compile(r'^\s*[-‐－–—]\s*music\s*video\s*$', re.I | re.M)
+MV_DESC_MAX = 10
 CHANNEL_ID = 'UCP5_IRli-KbizrztKSmgh8Q'
 CACHE = os.path.join(HERE, 'video_cache.json')
 OVERRIDES = os.path.join(HERE, 'catalog_overrides.json')
@@ -166,8 +170,26 @@ def main():
             print(f'Music Video の一覧を取得できませんでした（前回の分を使います）: {e}')
             mvs = [{'id': vid, 'title': info['title']} for vid, info in cache.items() if info.get('mv')]
         mvs += [e for e in entries if MV_TITLE_RE.match(e.get('title') or '')]
+        # 概要欄で確かめる: 新しい動画（ライブ映像・確かめ済みでないもの）の情報を 1 本ずつ取る。止められたら、残りは再生リスト・タイトルで判定する
+        live_ids = {e['id'] for e in lives}
+        todo = [e for e in entries if e['id'] not in cache and e['id'] not in live_ids and e['id'] not in exclude_videos][:MV_DESC_MAX]
+        if todo:
+            print(f'新しい動画の概要欄を確かめます（Music Video かどうか）: {len(todo)} 本')
+        for e in todo:
+            try:
+                d = ytdlp_json([f'https://www.youtube.com/watch?v={e["id"]}'])
+            except RuntimeError as err:
+                print(f'  {e["id"]} の取得に失敗（残りは再生リスト・タイトルで判定します）: {err}')
+                break
+            is_mv = bool(MV_DESC_RE.search(d.get('description') or ''))
+            cache[e['id']] = {'title': d.get('title', e.get('title', '')), 'duration': d.get('duration'), 'upload_date': d.get('upload_date'),
+                              'chapters': [], 'desc_mv': is_mv}
+            print(f'  {"Music Video" if is_mv else "MV ではない"}: {cache[e["id"]]["title"][:60]}')
+            time.sleep(2)   # 連続アクセスを避ける
+        mvs += [{'id': vid, 'title': info['title']} for vid, info in cache.items() if info.get('desc_mv')]
         mvs = list({e['id']: e for e in mvs}.values())
-    mvs = [e for e in mvs if e['id'] not in exclude_videos]
+    # 概要欄を確かめて MV ではなかった動画は、再生リスト・タイトルに当てはまっても入れない
+    mvs = [e for e in mvs if e['id'] not in exclude_videos and cache.get(e['id'], {}).get('desc_mv') is not False]
     print(f'Music Video: {len(mvs)} 本（うち新しく情報を取得するもの: {sum(1 for e in mvs if e["id"] not in cache)} 本）')
 
     # Music Video はチャプターがいらないので、1本ずつ取得せず、再生リストのタイトル・長さと RSS の公開日で覚えておく
@@ -247,6 +269,9 @@ def main():
             continue
         song = re.sub(r'^\s*yosugala\s*[-‐－–—]\s*', '', info['title'], flags=re.I)
         song = re.sub(r'\s*[\[［(（【][^\]］)）】]*(mv|music video)[^\]］)）】]*[\]］)）】]\s*$', '', song, flags=re.I).strip()
+        quoted = re.search(r'[「『]([^」』]+)[」』]', info['title'])
+        if not MV_TITLE_RE.match(info['title']) and quoted:
+            song = quoted.group(1).strip()   # 概要欄で MV と分かった「【MV】yosugala「曲名」」のような形は「」の中を曲名に
         songs.append({'song': song, 'vid': e['id'], 'start': 0, 'end': None, 'len': info['duration'],
                       'live': '', 'tdate': '', 'published': iso(info.get('upload_date')), 'kind': 'mv'})
 

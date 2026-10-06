@@ -53,3 +53,31 @@ git add catalog.json tools/video_cache.json tools/song_ids.json tools/thumb_cach
 - MC（メンバーが話している区間）は `catalog_overrides.json` の `talks`（`vid`・`start`・`end`・`title`）に書きます。カタログでは `type: "mc"` になり、プレイヤーの「ライブMC集」にだけ入ります（曲の一覧・公演のプレイリストには入りません）。名前は「MC①（次の曲のまえ）」の形です
 - 新しい MC の候補は `python3 tools/make_candidates.py > candidates.json` で作り、ライブラリ編集ツールの「候補を読み込む」で要不要・名前・範囲を確かめて書き出します。書き出しの `add` を `talks` に入れると、曲 ID が付きます
 - Official Music Video は、公式チャンネルの再生リスト「MusicVideo」の動画と、タイトルがちょうど「yosugala - 曲名」の動画（再生リストに入っていない新しい MV のため）を `kind: "mv"` で入れます。公開日は YouTube の RSS から取ります。プレイヤーでは「Official Music Video」にだけ入ります
+  - 新しい動画（ライブ映像以外）は、1 回に 10 本まで動画ごとの情報を取り、概要欄に「- MusicVideo」の行があれば MV、なければ MV にしません（再生リスト・タイトルより優先。結果は `video_cache.json` の `desc_mv` に残ります）。YouTube に止められて取れなかった動画は、再生リスト・タイトルで判定します。タイトルが「yosugala - 曲名」の形でない MV は、「」の中を曲名にします
+
+## 新しいライブ動画の曲・MC の候補を作る（手元の PC で）
+
+新しいライブ動画が出たら、手元の PC（macOS など）で候補を作り、ライブラリ編集ツールで確かめます。
+
+```bash
+pip install numpy faster-whisper            # 初めてのときだけ（音声を分析する場合）
+python3 tools/find_candidates.py --audio 動画ID > candidates.json
+```
+
+- 曲の候補は、チャプター → 概要欄のタイムスタンプ（「00:00 曲名」の行）→ 音声の「音楽」の区間の順に、使えるものから作ります（音声だけのときは名前が「（曲名なし）」）
+- `--audio` を付けると音声をダウンロードして分析し、曲の範囲を音楽が鳴っているところに縮め（頭の SE・終わりの歓声や MC を外す）、曲と曲の間で話し声が多いところを MC の候補にして、文字起こし（`text`）を付けます。文字起こしは faster-whisper（既定のモデルは `small`。`--model` で変更、`--no-text` で省略）
+- すでにカタログにある曲・MC と、`talk_skips` の時間帯は候補にしません（`--all` で全部）
+- YouTube のボット確認で止められたら `--cookies-from-browser safari`（または `chrome`）を付けます
+- 動画の情報・音声・分析結果・文字起こしは `~/.cache/yosugala-candidates/動画ID/` に残り、次からは使い回します（`--work` で場所を変更）。リポジトリには入れません
+- できた `candidates.json` は、ライブラリ編集ツールの「候補を読み込む」で要不要・種類・名前・範囲を直して書き出します。MC は書き出しの `add` を `talks` に入れます
+- しきい値は `--set 名前=値` で変えられます（名前は `tools/find_candidates.py` の `PARAMS`）
+
+しきい値は、今のカタログを正解として比べて決めます。
+
+```bash
+python3 tools/eval_candidates.py --audio          # カタログのフルライブ映像すべてで、候補とカタログ（曲の範囲・MC）を比べる
+python3 tools/eval_candidates.py --audio -v --set mc_talk_ratio=0.3   # しきい値を変えて、外れたものを一つずつ見る
+python3 tools/eval_candidates.py --audio --no-chapters                 # チャプターがない動画で、音声だけで曲を探したときの出来
+```
+
+曲・MC ごとに、見つけ漏れ・余計な候補の数と、開始・終了のずれ（秒）を出します。`--audio` を付けないと、チャプターだけで作ったときの出来（比べる基準）になります。

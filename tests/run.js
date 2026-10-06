@@ -342,6 +342,83 @@ const TESTS = {
   },
 
   // ライブラリ編集ツール（editor.html）と、その値のプレーヤーへの反映
+  // 候補を作る道具（tools/find_candidates.py・eval_candidates.py）と、MV の概要欄判定（update_catalog.py）。
+  // YouTube には接続しない: 動画の情報・音声の分析結果は一時フォルダに置いた作り物を使い、yt-dlp は偽物に差し替える
+  async tools() {
+    const os = require('os');
+    const { spawnSync } = require('child_process');
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'yosugala-tools-'));
+    const py = (args, opt = {}) => spawnSync('python3', args, { cwd: ROOT, encoding: 'utf8', ...opt });
+    try {
+      // 動画 1: チャプターあり。分析結果（0.5 秒ごと）: 曲A 24〜146 秒・曲B 229〜381 秒が音楽、172〜226 秒が話し声
+      const vid = 'TESTVIDEO01', work = path.join(tmp, 'work');
+      fs.mkdirSync(path.join(work, vid), { recursive: true });
+      fs.writeFileSync(path.join(work, vid, 'info.json'), JSON.stringify({ id: vid, title: '【FULL】テスト公演 2026.01.02 at テスト会場', duration: 400, description: '',
+        chapters: [{ title: 'SE', start: 0, end: 10 }, { title: '曲A', start: 10, end: 200 }, { title: '曲B', start: 200, end: 400 }] }));
+      const n = 800, db = Array(n).fill(-40), flat = Array(n).fill(0.9);
+      for (const [s, e] of [[24, 146], [229, 381]]) for (let i = s * 2; i < e * 2; i++) { db[i] = -12; flat[i] = 0.05; }
+      fs.writeFileSync(path.join(work, vid, 'analysis.json'), JSON.stringify({ hop: 0.5, vad_threshold: 0.5, rms_db: db, flat, speech: [[172, 200], [203, 226]] }));
+      const run = (args) => { const r = py(['tools/find_candidates.py', '--work', work, ...args]); return r.status === 0 ? JSON.parse(r.stdout).candidates : r.stderr; };
+      const plain = run([vid]), audio = run(['--audio', '--no-text', vid]);
+      const sum = (cs) => Array.isArray(cs) ? cs.map((c) => `${c.type}:${c.title}:${c.start}-${c.end}`).join(' ') : cs;
+      ok('find_candidates: チャプターだけのときは、チャプターの範囲で曲の候補（MC・SE のチャプターは除く）', sum(plain) === 'song:曲A:10-200 song:曲B:200-400', sum(plain));
+      ok('find_candidates: --audio では曲を音楽の区間に縮め、話し声のある空きを MC の候補に（範囲は話し声に縮める）',
+        sum(audio) === 'song:曲A:23-147 mc:MC（曲Bのまえ）:171-228 song:曲B:228-382', sum(audio));
+      ok('find_candidates: ライブ名・公演日・元のチャプターの範囲・出どころが付く', Array.isArray(audio) && audio[0].live === 'テスト公演' && audio[0].date === '2026-01-02'
+        && audio[0].chapter_start === 10 && audio[0].chapter_end === 200 && audio[0].source === 'chapter' && audio[1].talk_ratio > 0.5, audio[0]);
+      const quiet = py(['tools/find_candidates.py', '--work', work, '--audio', '--no-text', '--set', 'mc_talk_ratio=0.9', vid]);
+      ok('find_candidates: 話し声が少ない空きは MC の候補にしない（しきい値は --set で変えられる）', quiet.status === 0 && !JSON.parse(quiet.stdout).candidates.some((c) => c.type === 'mc')
+        && quiet.stderr.includes('話し声が少ない'), quiet.stderr);
+      // 動画 2: チャプターなし・概要欄にタイムスタンプ
+      const vid2 = 'TESTVIDEO02';
+      fs.mkdirSync(path.join(work, vid2), { recursive: true });
+      fs.writeFileSync(path.join(work, vid2, 'info.json'), JSON.stringify({ id: vid2, title: '【FULL】テスト公演2 2026.02.03', duration: 1000, chapters: [],
+        description: 'セットリスト\n00:00 SE\n1:00 一曲目\n05:10 二曲目\n10:00 MC\n12:30 三曲目\nhttps://example.com' }));
+      const desc = run([vid2]);
+      ok('find_candidates: チャプターがなければ概要欄のタイムスタンプから曲の候補（MC・SE の行は除く。MC の行は MC の候補に）',
+        sum(desc) === 'song:一曲目:60-310 song:二曲目:310-600 mc:MC（三曲目のまえ）:600-750 song:三曲目:750-1000', sum(desc));
+      // 候補ファイルはライブラリ編集ツールで読み込める（必須の項目がそろっている）
+      const both = py(['tools/find_candidates.py', '--work', work, vid, vid2]);
+      const e = await open('editor.html');
+      await e.waitForFunction(() => $('list').children.length > 0);
+      await e.setInputFiles('#candFile', { name: 'cand.json', mimeType: 'application/json', buffer: Buffer.from(both.stdout) }); await wait(200);
+      ok('find_candidates の候補ファイルは、ライブラリ編集ツールの「候補を読み込む」でそのまま読める', await e.evaluate(() => !$('askDlg').open && cands.length) === JSON.parse(both.stdout).candidates.length);
+      await close(e);
+      // 正解（catalog.json）と比べる: チャプターだけのときの数（カタログのフルライブ映像 5 本の曲 102・MC 27）
+      const ev = py(['tools/eval_candidates.py', '--work', work]);
+      ok('eval_candidates: カタログを正解として、曲・MC の見つけ漏れと余計な候補の数を出す', ev.status === 0
+        && /曲: 正解 102・候補 102・見つけた 102・見つけ漏れ 0・余計 0/.test(ev.stdout) && /MC: 正解 27・/.test(ev.stdout), ev.stdout.slice(-300) + ev.stderr);
+      // MV の概要欄判定: 偽の yt-dlp で、新しい動画 3 本（概要欄に「- MusicVideo」・タイトルだけ MV の形・Vlog）
+      const copy = path.join(tmp, 'repo'), bin = path.join(tmp, 'bin');
+      for (const f of spawnSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' }).stdout.trim().split('\n')) {
+        fs.mkdirSync(path.dirname(path.join(copy, f)), { recursive: true }); fs.copyFileSync(path.join(ROOT, f), path.join(copy, f));
+      }
+      for (const f of ['tools/update_catalog.py']) fs.copyFileSync(path.join(ROOT, f), path.join(copy, f));
+      fs.mkdirSync(bin);
+      fs.writeFileSync(path.join(bin, 'yt-dlp'), `#!/usr/bin/env python3
+import json, sys
+url = sys.argv[-1]
+cache = json.load(open('tools/video_cache.json'))
+old = [{'id': v, 'title': i['title'], 'duration': i['duration']} for v, i in cache.items()]
+new = [{'id': 'NEWMVDESC01', 'title': '【MV】yosugala「新曲」', 'duration': 200}, {'id': 'NEWTITLE001', 'title': 'yosugala - タイトルだけ', 'duration': 180},
+       {'id': 'NEWVLOG0001', 'title': '【Vlog】テスト', 'duration': 600}]
+if url.endswith('/videos'): print(json.dumps({'entries': new + old}))
+elif url.endswith('/streams'): sys.exit('ERROR: no streams tab')
+elif 'playlist' in url: print(json.dumps({'entries': [e for e in old if cache[e['id']].get('mv')]}))
+else:
+    v = url.split('=')[1]
+    print(json.dumps({'title': {e['id']: e['title'] for e in new}[v], 'duration': 200, 'upload_date': '20261001',
+                      'description': {'NEWMVDESC01': 'yosugala\\n- MusicVideo\\n', 'NEWTITLE001': 'ティーザー', 'NEWVLOG0001': 'vlog'}[v]}))
+`, { mode: 0o755 });
+      const up = spawnSync('python3', ['tools/update_catalog.py'], { cwd: copy, encoding: 'utf8', env: { ...process.env, PATH: `${bin}:${process.env.PATH}` } });
+      const mv = up.status === 0 ? JSON.parse(fs.readFileSync(path.join(copy, 'catalog.json'), 'utf8')).songs.filter((s) => s.kind === 'mv' && s.vid.startsWith('NEW')) : [];
+      ok('update_catalog: 新しい動画は概要欄の「- MusicVideo」で MV を判定（タイトルだけ MV の形の動画・Vlog は入れない。曲名は「」の中）',
+        mv.length === 1 && mv[0].vid === 'NEWMVDESC01' && mv[0].song === '新曲' && mv[0].published === '2026-10-01', up.status === 0 ? mv : up.stdout.slice(-300) + up.stderr);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  },
+
   async editor() {
     const p = await open('editor.html');
     await p.waitForFunction(() => $('list').children.length > 0);
