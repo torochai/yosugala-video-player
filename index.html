@@ -645,6 +645,7 @@
 // カタログ（data/catalog.json）と一緒に読み込み、届いたら applyDefs でトロ's セレクションを作り直す
 let DEFS = null;
 let linkInUrl = false;   // 共有リンク（?song= / #lib=）をアドレス欄に残しているか（dropLink で消す）
+let linkSid = null;   // 残している曲のリンクの曲 ID（ライブラリのプレイリストのリンクは null）
 
 // ---------- アイコン（SVG） ----------
 const ICON = {
@@ -1033,7 +1034,7 @@ window.addEventListener('pagehide', () => saveResume(true));
 function playIndex(i) {
   const list = items();
   if (i < 0 || i >= list.length) return;
-  dropLink();
+  if (linkSid != null && list[i].sid !== linkSid) dropLink();   // 曲のリンクは、ほかの曲に移ったら消す
   curId = list[i].id; $('msg').textContent = ''; rememberPlayed();
   showNow(); scrollCurToTop();
   if (!ready) { if (!player) pendingPlay = i; return whenReady(() => playIndex(i)); }
@@ -1148,7 +1149,7 @@ function createPlayer() {
         if (e.data === YT.PlayerState.PLAYING && /自動再生/.test($('msg').textContent)) $('msg').textContent = '';
         if (e.data === YT.PlayerState.PLAYING && !started && curIndex() >= 0) { started = true; showNow(); }
         if (e.data === YT.PlayerState.PLAYING && started) rememberPlayed();
-        if (e.data === YT.PlayerState.PLAYING) dropLink();
+        if (e.data === YT.PlayerState.PLAYING && linkSid != null && (items()[curIndex()] || {}).sid !== linkSid) dropLink();
         if (e.data === YT.PlayerState.PLAYING && started) {
           const it = items()[curIndex()];
           if (it && it.end == null && it.len == null && player.getVideoData().video_id === it.vid) {
@@ -1777,7 +1778,9 @@ function openSharedLib() {
   sharedLib = null;
   if (!id) { clearHash(); $('msg').textContent = '共有リンクのプレイリストが見つかりませんでした。'; return; }
   switchTo(id);
-  rememberPlayed();   // アドレス欄からリンクを消すので、再読み込みしてもこのプレイリストを開くように覚える
+  rememberPlayed();   // リンクが消えたあとの再読み込みでも、このプレイリストを開くように覚える
+  // ライブラリのプレイリストのリンク（曲の指定なし）は、そのプレイリストの前回の続きがあればそこから（リンクを残したまま再読み込みしたときも）
+  if (sharedSong == null && resume && resume.pl === id) { curId = null; applyResume(); if (curId == null) cueIndex(0); }
   // 曲のリンク（?song=曲ID）: その曲を選んでおく（再生は PLAY を押したとき）。
   // 再生位置のリンク（&t=秒）なら、PLAY でその位置から始める（曲の範囲の外なら曲の頭から）
   if (sharedSong != null) {
@@ -1790,21 +1793,24 @@ function openSharedLib() {
     sharedSong = sharedTime = null;
     if (i >= 0) {
       cueIndex(i); scrollCurToTop();
-      const it = items()[i];
-      if (t != null && resumeTime(it, t) > it.start) {
-        resumeAt = { id: it.id, t: resumeTime(it, t) };
-        $('msg').textContent = `共有された位置（${fmt(resumeAt.t - it.start)}）から再生します。`;
+      // リンクが残っているあいだの再読み込みも、いつも共有された位置から
+      const it = items()[i], at = t != null ? resumeTime(it, t) : it.start;
+      if (at > it.start) {
+        resumeAt = { id: it.id, t: at };
+        $('msg').textContent = `共有された位置（${fmt(at - it.start)}）から再生します。`;
       }
-      // リンクの曲・位置を「前回の続き」として覚える（アドレス欄からリンクを消すので、再読み込みしてもここに戻るように）
-      storeResume({ pl: pl().id, id: it.id, t: resumeAt ? resumeAt.t : it.start }); rememberPlayed();   // 曲の公演に切り替えたときのため
+      // リンクの曲・位置を「前回の続き」として覚える（リンクが消えたあとの再読み込みでも、ここに戻るように）
+      storeResume({ pl: pl().id, id: it.id, t: at }); rememberPlayed();   // 曲の公演に切り替えたときのため
+      linkSid = it.sid;
     }
   }
   linkInUrl = true;
 }
 // 動画・再生位置・ライブラリのプレイリストのリンクは、開いたあともアドレス欄に残し、再読み込みしたらもう一度リンクを開く
 // （X アプリの中のブラウザなどが古いページを使っていても、リンクの曲・位置に戻れるように）。
-// 再生したとき・ほかのプレイリストに切り替えたときに消す（dropLink。そのあとの再読み込みは、前回の続きから）
-function dropLink() { if (linkInUrl) { linkInUrl = false; clearHash(); } }
+// リンクは書き換えない（共有された元の位置を残す）。曲のリンクはほかの曲に移ったとき、どのリンクもほかのプレイリストに切り替えたときに消す
+// （dropLink。そのあとの再読み込みは、前回の続きから）
+function dropLink() { if (linkInUrl) { linkInUrl = false; linkSid = null; clearHash(); } }
 // 開いているページで共有リンクを開いた（# 以降だけが変わった）ときも読み込み直す
 window.addEventListener('hashchange', () => { if (/#(pl|lib)=/.test(location.hash)) location.reload(); });
 // 共有リンクの # 以降と、案内ページから来たときの ?song= / ?lib= / ?t= をアドレス欄から消す（ほかの ? はそのまま）

@@ -251,8 +251,8 @@ const TESTS = {
     // 最初の PLAY はプレイヤーを作るときの開始秒（playerVars.start）、2 回目からは loadVideoById の開始秒
     const startSec = (pg) => pg.evaluate(() => (window.__loads.at(-1) || {}).startSeconds ?? window.__cfg.playerVars.start);
     const load = await startSec(sp), url1 = await sp.evaluate(() => location.search + location.hash);
-    ok('再生位置のリンクで開くと、その曲を選び、PLAY でその位置から再生（リンクは開いたあとも残し、再生したら消す）', r1.title === 'sailing!!' && /t=\d+/.test(r1.url) && r1.msg.includes('1:23')
-      && load === s57start + 83 && url1 === '', { r1, load, url1 });
+    ok('再生位置のリンクで開くと、その曲を選び、PLAY でその位置から再生（リンクは書き換えず、その曲を再生しているあいだは残す）', r1.title === 'sailing!!' && /t=\d+/.test(r1.url) && r1.msg.includes('1:23')
+      && load === s57start + 83 && url1 === r1.url, { r1, load, url1 });
     await close(sp);
     const sp2 = await open(`s/57.html?t=1`);
     await sp2.click('#start'); await wait(400);
@@ -282,7 +282,8 @@ const TESTS = {
         && before.msg.includes('共有された位置') && got === st134 + 30, { before, got });
       await close(rp);
     }
-    // リンクで開いたあと再読み込みしても、リンクの曲・位置に戻る（リンクはアドレス欄に残る）。再生したらリンクは消え、そのあとの再読み込みは進んだ位置から
+    // リンクで開いたあと再読み込みしても、リンクの曲・共有された位置に戻る（リンクはアドレス欄に残る。その曲を再生して進んでいても）。
+    // ほかの曲に移ったらリンクは消え、そのあとの再読み込みは前回の続きから
     for (const [u, off] of [[`s/134.html?lib=mc&t=${st134 + 30}`, 30], ['s/134.html?lib=mc', 0]]) {
       const rl = await open(u, { seed: { 'yosugala-live-resume-v1': { pl: 'builtin-toro', id: 'toro:45', t: 1000000 }, 'yosugala-live-selection-v1': { current: 'builtin-toro', lastPlayed: 'builtin-toro', playlists: [] } } });
       const url = await rl.evaluate(() => location.search + location.hash);
@@ -291,14 +292,29 @@ const TESTS = {
       await rl.click('#start'); await wait(400);
       const got = await rl.evaluate(() => (window.__loads.at(-1) || {}).startSeconds ?? window.__cfg.playerVars.start);
       const played = await rl.evaluate(() => location.search + location.hash);
-      ok(`リンクで開いたあと再読み込みしても、リンクの曲・位置に戻る（${off ? '再生位置' : '曲'}のリンク）。再生したらリンクは消える`, /song=134/.test(url) && after.pl === '__catalog_mc__' && after.sid === 134
-        && (off ? after.msg.includes('0:30') : true) && got === st134 + off && played === '', { url, after, got, played });
+      ok(`リンクで開いたあと再読み込みしても、リンクの曲・位置に戻る（${off ? '再生位置' : '曲'}のリンク）。その曲を再生してもリンクは残る`, /song=134/.test(url) && after.pl === '__catalog_mc__' && after.sid === 134
+        && (off ? after.msg.includes('0:30') : true) && got === st134 + off && played === url, { url, after, got, played });
       await rl.evaluate((t) => { window.__t = t; saveResume(true); }, st134 + 80);
       await rl.reload(); await rl.waitForFunction(() => typeof catalog !== 'undefined' && catalog); await wait(400);
       await rl.click('#start'); await wait(400);
       const again = await rl.evaluate(() => ({ sid: (items()[curIndex()] || {}).sid, t: (window.__loads.at(-1) || {}).startSeconds ?? window.__cfg.playerVars.start }));
-      ok(`再生してリンクが消えたあとの再読み込みは、進んだ位置から（${off ? '再生位置' : '曲'}のリンク）`, again.sid === 134 && again.t === st134 + 80, again);
+      ok(`その曲を再生して進んでいても、リンクが残っているあいだの再読み込みは共有された位置から（${off ? '再生位置' : '曲'}のリンク）`, again.sid === 134 && again.t === st134 + off, again);
+      await rl.evaluate(() => { window.__t = undefined; }); await rl.click('#next'); await wait(400);
+      const moved = await rl.evaluate(() => ({ sid: (items()[curIndex()] || {}).sid, url: location.search + location.hash }));
+      ok(`ほかの曲に移ったらリンクは消える（${off ? '再生位置' : '曲'}のリンク）`, moved.sid !== 134 && moved.url === '', moved);
       await close(rl);
+    }
+    // 時刻指定のリンクで開いて再生を進めたあと、トップの URL を開き直したら、進んだ位置から
+    {
+      const tp = await open(`s/134.html?lib=mc&t=${st134 + 30}`);
+      await tp.click('#start'); await wait(400);
+      await tp.evaluate((t) => { window.__t = t; saveResume(true); }, st134 + 80);
+      await tp.goto(BASE); await tp.waitForFunction(() => typeof catalog !== 'undefined' && catalog); await wait(400);
+      const top = await tp.evaluate(() => ({ pl: pl().id, sid: (items()[curIndex()] || {}).sid, msg: $('msg').textContent }));
+      await tp.evaluate(() => { window.__t = undefined; }); await tp.click('#start'); await wait(400);
+      const t2 = await tp.evaluate(() => (window.__loads.at(-1) || {}).startSeconds ?? window.__cfg.playerVars.start);
+      ok('時刻指定のリンクで開いて再生を進めたあと、トップの URL を開き直したら進んだ位置から', top.pl === '__catalog_mc__' && top.sid === 134 && top.msg.includes('前回の続き') && t2 === st134 + 80, { top, t2 });
+      await close(tp);
     }
     // ライブラリのプレイリストのリンク（#lib=）も、開いたあと再読み込みしてもそのプレイリストのまま
     const lr = await open('#lib=mc', { seed: { 'yosugala-live-selection-v1': { current: 'builtin-toro', lastPlayed: 'builtin-toro', playlists: [] } } });
