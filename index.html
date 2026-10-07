@@ -1019,6 +1019,7 @@ function saveResume(force) {
 // まだ何も選んでいない・再生していないときだけ（ほかの操作やメッセージを上書きしない）
 function applyResume() {
   const r = resume;
+  if (openedBySong) return;
   if (!r || started || curId != null || r.pl !== state.current || pl().id !== state.current) return;
   const i = items().findIndex((it) => it.id === r.id);
   if (i < 0) return;
@@ -1761,6 +1762,8 @@ const query = new URLSearchParams(location.search);
 let sharedLib = (location.hash.match(/#lib=([^&]+)/) || [])[1] || (query.get('lib') ? encodeURIComponent(query.get('lib')) : null);
 let sharedSong = /^\d+$/.test(query.get('song') || '') ? +query.get('song') : null;
 let sharedTime = sharedSong != null && /^\d+$/.test(query.get('t') || '') ? +query.get('t') : null;   // 再生位置の共有（動画の秒）
+// 曲・再生位置のリンクで開いたときは、保存してある「前回の続き」は使わない（リンクの曲・位置を優先する。曲が見つからなくても）
+const openedBySong = sharedSong != null;
 function openSharedLib() {
   if (!sharedLib && !sharedSong) return;
   if (!catalog) return;   // カタログを読み込んでから開く
@@ -1773,6 +1776,11 @@ function openSharedLib() {
   // 曲のリンク（?song=曲ID）: その曲を選んでおく（再生は PLAY を押したとき）。
   // 再生位置のリンク（&t=秒）なら、PLAY でその位置から始める（曲の範囲の外なら曲の頭から）
   if (sharedSong != null) {
+    // リンクのプレイリストにその曲がなければ、その曲が入っている公演（なければ他のライブラリ）で開く
+    if (!items().some((it) => it.sid === sharedSong)) {
+      const p = catalogPls.find((q) => q.live && has(q)) || catalogPls.find(has);
+      if (p) switchTo(p.id);
+    }
     const i = items().findIndex((it) => it.sid === sharedSong), t = sharedTime;
     sharedSong = sharedTime = null;
     if (i >= 0) {

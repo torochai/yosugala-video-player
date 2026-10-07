@@ -270,6 +270,18 @@ const TESTS = {
     const mv = await open('#lib=mv');
     ok('#lib=mv で Official Music Video が開く', await mv.evaluate(() => pl().id === MV_ID));
     await close(mv);
+    // 保存してある「前回の続き」があっても、再生位置のリンクの位置から始める。リンクのプレイリストに曲がなくても前回の続きは使わない
+    const st134 = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'catalog.json'), 'utf8')).items.find((x) => x.id === 134).start;
+    for (const [u, saved] of [[`s/134.html?lib=mc&t=${st134 + 30}`, { pl: '__catalog_mc__', id: 'c:134', t: st134 + 100 }],
+                              [`s/134.html?lib=toro&t=${st134 + 30}`, { pl: 'builtin-toro', id: 'toro:45', t: 1000000 }]]) {
+      const rp = await open(u, { seed: { 'yosugala-live-resume-v1': saved, 'yosugala-live-selection-v1': { current: saved.pl, lastPlayed: saved.pl, playlists: [] } } });
+      const before = await rp.evaluate(() => ({ pl: pl().id, sid: (items()[curIndex()] || {}).sid, msg: $('msg').textContent }));
+      await rp.click('#start'); await wait(400);
+      const got = await rp.evaluate(() => (window.__loads.at(-1) || {}).startSeconds ?? window.__cfg.playerVars.start);
+      ok(`保存してある前回の続きより、再生位置のリンクを優先する（${u.split('?')[1].split('&')[0]}）`, before.pl === '__catalog_mc__' && before.sid === 134
+        && before.msg.includes('共有された位置') && got === st134 + 30, { before, got });
+      await close(rp);
+    }
     const o = await open('s/134.html?lib=nosuchlive&t=3263');
     const r = await o.evaluate(() => ({ pl: pl().id, sid: (items()[curIndex()] || {}).sid, msg: $('msg').textContent }));
     ok('曲のリンクでプレイリストが見つからないときは、その曲が入っているプレイリストで開く', r.pl === '__catalog_mc__' && r.sid === 134 && r.msg.includes('共有された位置'), r);
