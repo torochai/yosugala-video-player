@@ -1773,6 +1773,7 @@ function openSharedLib() {
   sharedLib = null; clearHash();
   if (!id) { $('msg').textContent = '共有リンクのプレイリストが見つかりませんでした。'; return; }
   switchTo(id);
+  rememberPlayed();   // アドレス欄からリンクを消すので、再読み込みしてもこのプレイリストを開くように覚える
   // 曲のリンク（?song=曲ID）: その曲を選んでおく（再生は PLAY を押したとき）。
   // 再生位置のリンク（&t=秒）なら、PLAY でその位置から始める（曲の範囲の外なら曲の頭から）
   if (sharedSong != null) {
@@ -1790,6 +1791,8 @@ function openSharedLib() {
         resumeAt = { id: it.id, t: resumeTime(it, t) };
         $('msg').textContent = `共有された位置（${fmt(resumeAt.t - it.start)}）から再生します。`;
       }
+      // リンクの曲・位置を「前回の続き」として覚える（アドレス欄からリンクを消すので、再読み込みしてもここに戻るように）
+      storeResume({ pl: pl().id, id: it.id, t: resumeAt ? resumeAt.t : it.start }); rememberPlayed();   // 曲の公演に切り替えたときのため
     }
   }
 }

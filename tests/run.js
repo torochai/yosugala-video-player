@@ -282,6 +282,24 @@ const TESTS = {
         && before.msg.includes('共有された位置') && got === st134 + 30, { before, got });
       await close(rp);
     }
+    // リンクで開いたあと（アドレス欄からリンクは消える）再読み込みしても、リンクの曲・位置に戻る（リンクの位置を前回の続きとして覚える）
+    for (const [u, off] of [[`s/134.html?lib=mc&t=${st134 + 30}`, 30], ['s/134.html?lib=mc', 0]]) {
+      const rl = await open(u, { seed: { 'yosugala-live-resume-v1': { pl: 'builtin-toro', id: 'toro:45', t: 1000000 }, 'yosugala-live-selection-v1': { current: 'builtin-toro', lastPlayed: 'builtin-toro', playlists: [] } } });
+      const url = await rl.evaluate(() => location.search + location.hash);
+      await rl.reload(); await rl.waitForFunction(() => typeof catalog !== 'undefined' && catalog); await wait(400);
+      const after = await rl.evaluate(() => ({ pl: pl().id, sid: (items()[curIndex()] || {}).sid, msg: $('msg').textContent }));
+      await rl.click('#start'); await wait(400);
+      const got = await rl.evaluate(() => (window.__loads.at(-1) || {}).startSeconds ?? window.__cfg.playerVars.start);
+      ok(`リンクで開いたあと再読み込みしても、リンクの曲・位置に戻る（${off ? '再生位置' : '曲'}のリンク）`, url === '' && after.pl === '__catalog_mc__' && after.sid === 134
+        && (off ? after.msg.includes('0:30') : true) && got === st134 + off, { url, after, got });
+      await close(rl);
+    }
+    // ライブラリのプレイリストのリンク（#lib=）も、開いたあと再読み込みしてもそのプレイリストのまま
+    const lr = await open('#lib=mc', { seed: { 'yosugala-live-selection-v1': { current: 'builtin-toro', lastPlayed: 'builtin-toro', playlists: [] } } });
+    const lurl = await lr.evaluate(() => location.hash);
+    await lr.reload(); await lr.waitForFunction(() => typeof catalog !== 'undefined' && catalog); await wait(300);
+    ok('ライブラリのプレイリストのリンクで開いたあと再読み込みしても、そのプレイリストのまま', lurl === '' && await lr.evaluate(() => pl().id === MC_ID));
+    await close(lr);
     const o = await open('s/134.html?lib=nosuchlive&t=3263');
     const r = await o.evaluate(() => ({ pl: pl().id, sid: (items()[curIndex()] || {}).sid, msg: $('msg').textContent }));
     ok('曲のリンクでプレイリストが見つからないときは、その曲が入っているプレイリストで開く', r.pl === '__catalog_mc__' && r.sid === 134 && r.msg.includes('共有された位置'), r);
