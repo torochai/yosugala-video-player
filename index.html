@@ -644,6 +644,7 @@
 // トロ's セレクション（builtin）とライブラリのプレイリストの名前・説明・共有リンクの呼び名は data/playlists.json に書く。
 // カタログ（data/catalog.json）と一緒に読み込み、届いたら applyDefs でトロ's セレクションを作り直す
 let DEFS = null;
+let linkInUrl = false;   // 共有リンク（?song= / #lib=）をアドレス欄に残しているか（dropLink で消す）
 
 // ---------- アイコン（SVG） ----------
 const ICON = {
@@ -1032,6 +1033,7 @@ window.addEventListener('pagehide', () => saveResume(true));
 function playIndex(i) {
   const list = items();
   if (i < 0 || i >= list.length) return;
+  dropLink();
   curId = list[i].id; $('msg').textContent = ''; rememberPlayed();
   showNow(); scrollCurToTop();
   if (!ready) { if (!player) pendingPlay = i; return whenReady(() => playIndex(i)); }
@@ -1146,6 +1148,7 @@ function createPlayer() {
         if (e.data === YT.PlayerState.PLAYING && /自動再生/.test($('msg').textContent)) $('msg').textContent = '';
         if (e.data === YT.PlayerState.PLAYING && !started && curIndex() >= 0) { started = true; showNow(); }
         if (e.data === YT.PlayerState.PLAYING && started) rememberPlayed();
+        if (e.data === YT.PlayerState.PLAYING) dropLink();
         if (e.data === YT.PlayerState.PLAYING && started) {
           const it = items()[curIndex()];
           if (it && it.end == null && it.len == null && player.getVideoData().video_id === it.vid) {
@@ -1547,6 +1550,7 @@ async function createPlaylist() {
 
 // ---------- プレイリスト操作 ----------
 function switchTo(id) {
+  dropLink();
   // ライブ映像の一覧を切り替えたら、絞り込みと選択は解除する
   if (id !== state.current) { catQuery = ''; $('catSearch').value = ''; catSelected.clear(); selecting = false; }
   if (dupFrom && id !== dupFrom.copyId) dupFrom = null;   // 別のプレイリストに切り替えたらコピーは確定
@@ -1770,8 +1774,8 @@ function openSharedLib() {
   const has = (p) => p.all.some((x) => x.sid === sharedSong);
   // プレイリストが見つからなくても、曲のリンクなら その曲が入っている公演（なければ他のライブラリ）で開く
   const id = (sharedLib && libId(sharedLib)) || (sharedSong != null ? (catalogPls.find((p) => p.live && has(p)) || catalogPls.find(has) || {}).id : null);
-  sharedLib = null; clearHash();
-  if (!id) { $('msg').textContent = '共有リンクのプレイリストが見つかりませんでした。'; return; }
+  sharedLib = null;
+  if (!id) { clearHash(); $('msg').textContent = '共有リンクのプレイリストが見つかりませんでした。'; return; }
   switchTo(id);
   rememberPlayed();   // アドレス欄からリンクを消すので、再読み込みしてもこのプレイリストを開くように覚える
   // 曲のリンク（?song=曲ID）: その曲を選んでおく（再生は PLAY を押したとき）。
@@ -1795,7 +1799,12 @@ function openSharedLib() {
       storeResume({ pl: pl().id, id: it.id, t: resumeAt ? resumeAt.t : it.start }); rememberPlayed();   // 曲の公演に切り替えたときのため
     }
   }
+  linkInUrl = true;
 }
+// 動画・再生位置・ライブラリのプレイリストのリンクは、開いたあともアドレス欄に残し、再読み込みしたらもう一度リンクを開く
+// （X アプリの中のブラウザなどが古いページを使っていても、リンクの曲・位置に戻れるように）。
+// 再生したとき・ほかのプレイリストに切り替えたときに消す（dropLink。そのあとの再読み込みは、前回の続きから）
+function dropLink() { if (linkInUrl) { linkInUrl = false; clearHash(); } }
 // 開いているページで共有リンクを開いた（# 以降だけが変わった）ときも読み込み直す
 window.addEventListener('hashchange', () => { if (/#(pl|lib)=/.test(location.hash)) location.reload(); });
 // 共有リンクの # 以降と、案内ページから来たときの ?song= / ?lib= / ?t= をアドレス欄から消す（ほかの ? はそのまま）

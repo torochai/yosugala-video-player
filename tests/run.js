@@ -240,7 +240,7 @@ const TESTS = {
                              ['s/108.html', (r) => r.title === 'エスカレート' && r.live]]) {
       const s = await open(u);
       const r = await s.evaluate(() => ({ title: $('nowTitle').textContent, pl: pl().id, live: !!pl().live, url: location.search + location.hash }));
-      ok(`曲の案内ページ ${u}`, want(r) && r.url === '', r);
+      ok(`曲の案内ページ ${u}（リンクはアドレス欄に残す）`, want(r) && /[?&]song=\d+/.test(r.url), r);
       await close(s);
     }
     // 再生位置のリンク（s/曲ID.html?t=動画の秒）: その曲を選び、PLAY でその位置から始める
@@ -250,9 +250,9 @@ const TESTS = {
     await sp.click('#start'); await wait(400);
     // 最初の PLAY はプレイヤーを作るときの開始秒（playerVars.start）、2 回目からは loadVideoById の開始秒
     const startSec = (pg) => pg.evaluate(() => (window.__loads.at(-1) || {}).startSeconds ?? window.__cfg.playerVars.start);
-    const load = await startSec(sp);
-    ok('再生位置のリンクで開くと、その曲を選び、PLAY でその位置から再生（URL の ?t= は消す）', r1.title === 'sailing!!' && r1.url === '' && r1.msg.includes('1:23')
-      && load === s57start + 83, { r1, load });
+    const load = await startSec(sp), url1 = await sp.evaluate(() => location.search + location.hash);
+    ok('再生位置のリンクで開くと、その曲を選び、PLAY でその位置から再生（リンクは開いたあとも残し、再生したら消す）', r1.title === 'sailing!!' && /t=\d+/.test(r1.url) && r1.msg.includes('1:23')
+      && load === s57start + 83 && url1 === '', { r1, load, url1 });
     await close(sp);
     const sp2 = await open(`s/57.html?t=1`);
     await sp2.click('#start'); await wait(400);
@@ -282,7 +282,7 @@ const TESTS = {
         && before.msg.includes('共有された位置') && got === st134 + 30, { before, got });
       await close(rp);
     }
-    // リンクで開いたあと（アドレス欄からリンクは消える）再読み込みしても、リンクの曲・位置に戻る（リンクの位置を前回の続きとして覚える）
+    // リンクで開いたあと再読み込みしても、リンクの曲・位置に戻る（リンクはアドレス欄に残る）。再生したらリンクは消え、そのあとの再読み込みは進んだ位置から
     for (const [u, off] of [[`s/134.html?lib=mc&t=${st134 + 30}`, 30], ['s/134.html?lib=mc', 0]]) {
       const rl = await open(u, { seed: { 'yosugala-live-resume-v1': { pl: 'builtin-toro', id: 'toro:45', t: 1000000 }, 'yosugala-live-selection-v1': { current: 'builtin-toro', lastPlayed: 'builtin-toro', playlists: [] } } });
       const url = await rl.evaluate(() => location.search + location.hash);
@@ -290,15 +290,23 @@ const TESTS = {
       const after = await rl.evaluate(() => ({ pl: pl().id, sid: (items()[curIndex()] || {}).sid, msg: $('msg').textContent }));
       await rl.click('#start'); await wait(400);
       const got = await rl.evaluate(() => (window.__loads.at(-1) || {}).startSeconds ?? window.__cfg.playerVars.start);
-      ok(`リンクで開いたあと再読み込みしても、リンクの曲・位置に戻る（${off ? '再生位置' : '曲'}のリンク）`, url === '' && after.pl === '__catalog_mc__' && after.sid === 134
-        && (off ? after.msg.includes('0:30') : true) && got === st134 + off, { url, after, got });
+      const played = await rl.evaluate(() => location.search + location.hash);
+      ok(`リンクで開いたあと再読み込みしても、リンクの曲・位置に戻る（${off ? '再生位置' : '曲'}のリンク）。再生したらリンクは消える`, /song=134/.test(url) && after.pl === '__catalog_mc__' && after.sid === 134
+        && (off ? after.msg.includes('0:30') : true) && got === st134 + off && played === '', { url, after, got, played });
+      await rl.evaluate((t) => { window.__t = t; saveResume(true); }, st134 + 80);
+      await rl.reload(); await rl.waitForFunction(() => typeof catalog !== 'undefined' && catalog); await wait(400);
+      await rl.click('#start'); await wait(400);
+      const again = await rl.evaluate(() => ({ sid: (items()[curIndex()] || {}).sid, t: (window.__loads.at(-1) || {}).startSeconds ?? window.__cfg.playerVars.start }));
+      ok(`再生してリンクが消えたあとの再読み込みは、進んだ位置から（${off ? '再生位置' : '曲'}のリンク）`, again.sid === 134 && again.t === st134 + 80, again);
       await close(rl);
     }
     // ライブラリのプレイリストのリンク（#lib=）も、開いたあと再読み込みしてもそのプレイリストのまま
     const lr = await open('#lib=mc', { seed: { 'yosugala-live-selection-v1': { current: 'builtin-toro', lastPlayed: 'builtin-toro', playlists: [] } } });
     const lurl = await lr.evaluate(() => location.hash);
     await lr.reload(); await lr.waitForFunction(() => typeof catalog !== 'undefined' && catalog); await wait(300);
-    ok('ライブラリのプレイリストのリンクで開いたあと再読み込みしても、そのプレイリストのまま', lurl === '' && await lr.evaluate(() => pl().id === MC_ID));
+    ok('ライブラリのプレイリストのリンクで開いたあと再読み込みしても、そのプレイリストのまま（リンクは残る）', lurl === '#lib=mc' && await lr.evaluate(() => pl().id === MC_ID && location.hash === '#lib=mc'));
+    await switchPl(lr, 'builtin-toro');
+    ok('ほかのプレイリストに切り替えたらリンクは消える', await lr.evaluate(() => location.hash === '' && pl().id === BUILTIN_ID));
     await close(lr);
     const o = await open('s/134.html?lib=nosuchlive&t=3263');
     const r = await o.evaluate(() => ({ pl: pl().id, sid: (items()[curIndex()] || {}).sid, msg: $('msg').textContent }));
